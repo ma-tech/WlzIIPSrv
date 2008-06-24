@@ -1,0 +1,57 @@
+/*!
+\mainpage Woolz IIP Server
+\section overview Overview
+
+This software is an extension of the IPP server from the IIP Image, an Open Source client-server system  (http://iipimage.sourceforge.net/index.shtml).
+
+\section install Installation
+
+\li install fcgi (see http://iipimage.sourceforge.net/server.shtml)
+\li in the project root directory run make
+
+\note The iipsrv-0.9.7 includes an fcgi server, however this is not currently built.
+Edit Makefile.am to enable fcgi build.
+
+\section usage Examples
+
+\subsection ex1 Tile request
+\verbatim http://localhost/fcgi-bin/iipsrv.fcgi?WLZ=/net/homehost/export/home/bill/pics/lobster3d.wlz&QLT=50&JTL=1,0
+\endverbatim
+
+Returns the a quality factor 50\% jpeg  tile 0 of the section with default sectioning parameters, mode UP_IS_UP and zero distance and viewing angles.
+
+\subsection ex2 Sectioning plane distance
+
+\verbatim 
+http://localhost/fcgi-bin/iipsrv.fcgi?WLZ=/net/homehost/export/home/bill/pics/lobster3d.wlz&DST=8&QLT=50&JTL=1,0
+\endverbatim
+
+As above, but the sectioning plane distance is 8.
+
+\subsection ex3 Sectioning mode
+
+\verbatim 
+http://localhost/fcgi-bin/iipsrv.fcgi?DST=40&YAW=61.5&PIT=3&ROL=0&MOD=ZETA&WLZ=/home/zsolth/small.wlz&QLT=50&JTL=1,0
+\endverbatim
+
+Sets the distance 40, yaw angle 61.5, pitch 3, roll 0 degrees, for a plane distance 40.
+
+\subsection ex4 Distance range query
+
+\verbatim 
+http://localhost/fcgi-bin/iipsrv.fcgi?YAW=61&PIT=3&ROL=0&MOD=ZETA&WLZ=/home/zsolth/small.wlz&OBJ=Wlz-distance-range
+\endverbatim
+
+Results in 
+\verbatim 
+Wlz-distance-range:0 171
+\endverbatim
+
+Tehcnical Report 000024-WLZIIPServer provides a detailed description of the extensions of the IIP protocol available in the WlzIIPServer.
+
+*/
+
+/*!
+* \defgroup    WlzIIPServer	WlzIIPServer
+* \brief All major extensions of the IIP server are contained in this module.
+*/
