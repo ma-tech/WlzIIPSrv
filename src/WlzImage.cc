@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _WlzImage_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 /*!
@@ -455,7 +455,7 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
     #endif
 
 
-    numResolutions = 0; // resoltions. currently only one resolution is used. 
+    numResolutions = 1; // resoltions. currently only one resolution is used.
 
     // Update current sections view status
     if (curViewParams == NULL)
@@ -650,6 +650,7 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   RawTile rawtile( tile, res, seq, ang, tw, th, channels, bpp );
   rawtile.data = tile_buf;
   rawtile.dataLength = tw*th*channels;
+  rawtile.width_padding = tile_width-tw;
 
   //get hash of the tile
   rawtile.filename = getHash();
