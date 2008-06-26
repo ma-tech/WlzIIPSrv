@@ -144,6 +144,11 @@ class Task {
   /// Check image
   void checkImage();
 
+  /// Verify if a woolz object, throw if not
+  void checkIfWoolz();
+
+  /// Open if the object is Woolz
+  void openIfWoolz();
 };
 
 
@@ -175,10 +180,6 @@ class OBJ : public Task {
   void wlz_true_voxel_size();
   void wlz_grey_value();
   void wlz_volume();
-
-
-  void checkIfWoolz();
-  void openIfWoolz();
 
 };
 

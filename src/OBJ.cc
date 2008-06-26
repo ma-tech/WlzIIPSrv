@@ -386,22 +386,5 @@ void OBJ::metadata( string field ){
   if( metadata.length() ){
     session->response->addResponse( field, metadata.c_str() );
   }
-
-
-}
-
-void OBJ::checkIfWoolz(){
-  string imtype = (*session->image)->getImageType();
-  if( imtype != "wlz"){
-    session->response->setError( "1 3", argument );
-    throw string( "image is not a Woolz object" );
-  }
-}
-
-void OBJ::openIfWoolz(){
-  string imtype = (*session->image)->getImageType();
-  if( imtype == "wlz"){
-    (*session->image)->openImage();
-  }
 }
 
