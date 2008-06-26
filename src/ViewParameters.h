@@ -51,30 +51,18 @@ static char _ViewParameters_h[] = "MRC HGU $Id$";
 #include <string>
 #include <iostream>
 
-/*! 
-* \ingroup      WlzIIPServer
-* \brief        WLZ command handler.
-*
-* \return       void
-* \param        session     Pointer to the current session settings
-* \param        argument    Command string (i.e. filename).
-* \par      Source:
-*                WLZ.cc
-*/
-
-
 /*!
 * \enum		_QueryPointType
 * \ingroup	WlzIIPServer
 * \brief	Query point type
-*		Typedef: ::QueryPointType.
+*		Typedef: QueryPointType.
 */
 typedef enum _QueryPointType
   {
     QUERYPOINTTYPE_NONE = 0,		/*!< point was not set yet */
     QUERYPOINTTYPE_2D   = 1,		/*!< 2D point was set */
     QUERYPOINTTYPE_3D   = 2,		/*!< 3D point was set */
-  } QueryPointType;
+  } QueryPointType ;
 
 
 /*! 
@@ -90,6 +78,7 @@ class ViewParameters{
   double            scale;                    /*!< scale of the sectioning plane */
   WlzThreeDViewMode mode;                     /*!< 3D View Mode of the sectioning plane */
   WlzDVertex3       fixed;                    /*!< fixed point */
+  WlzDVertex3       fixed2;                   /*!< second fixed point */
   WlzDVertex3       up;                       /*!< upvector */
 
   //selection have no access methods
@@ -109,7 +98,8 @@ class ViewParameters{
     roll            = 0.0;
     scale           = 1.0;
     mode            = WLZ_UP_IS_UP_MODE;
-    fixed.vtX       = fixed.vtY = fixed.vtZ = 0.0;
+    fixed.vtX       = fixed.vtY  = fixed.vtZ  = 0.0;
+    fixed2.vtX      = fixed2.vtY = fixed2.vtZ = 0.0;
     up.vtX          = up.vtY = 0.0;
     up.vtZ          = -1.0;
     x               = 0;
@@ -135,9 +125,13 @@ class ViewParameters{
   /** \param r roll angle of the sectioning plane*/
   void setRoll( double r ){ roll = r; };
 
-  /// Set the sectioning plane roll angle
+  /// Set the fixed point
   /** \param f fixed point for the sectioning plane rotation */
   void setFixedPoint( WlzDVertex3 f ){ fixed = f; };
+
+  /// Set the second fixed point
+  /** \param f second fixed point for the sectioning plane rotation in WLZ_FIXED_LINE_MODE mode*/
+  void setFixedPoint2( WlzDVertex3 f ){ fixed2 = f; };
 
   /** \param u up vector for the sectioning plane rotation */
   void setUpVector( WlzDVertex3 u){ up = u; };
@@ -147,7 +141,7 @@ class ViewParameters{
   void setScale( double s ){ scale = s; };
 
   /// Set the sectioning mode
-  /** \param s section mode as case-insensitive string. Accepted values are:
+  /** \param m section mode as case-insensitive string. Accepted values are:
     STATUE, UP_IS_UP, FIXED_LINE, ZERO_ZETA and ZETA */
   WlzErrorNum setMode( string m ){ 
     //make it uppercase
@@ -214,6 +208,9 @@ class ViewParameters{
   /// Return the fixed point for the sectioning plane rotation
   WlzDVertex3 getFixedPoint(){ return fixed; };
 
+  /// Return the second fixed point for the sectioning plane rotation
+  WlzDVertex3 getFixedPoint2(){ return fixed2; };
+
   /// Return the up vector for the sectioning plane rotation 
   WlzDVertex3 getUpVector(){ return up; };
 
@@ -232,6 +229,7 @@ class ViewParameters{
             scale == vp.scale && 
             mode  == vp.mode  && 
             WlzGeomVtxEqual3D (fixed, vp.fixed, 0)  && 
+            WlzGeomVtxEqual3D (fixed2, vp.fixed2, 0)  && 
             WlzGeomVtxEqual3D (up, vp.up ,0) ;
   }
 

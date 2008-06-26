@@ -225,9 +225,11 @@ int main( int argc, char *argv[] )
     logfile << "Setting 3D file sequence name pattern to " << filename_pattern << endl;
     logfile << "Setting default JPEG quality to " << jpeg_quality << endl;
     logfile << "Setting maximum CVT size to " << max_CVT << endl;
+
+    logfile << "Setting maximum view structure cache size to " << Environment::getMaxViewStructCacheSize() << " structures" << endl;
+    logfile << "Setting maximum object cache size to " << Environment::getMaxWlzObjCacheSize() << "MB" << endl;
+    logfile << "Tile size " << Environment::getWlzTileWidth() << " x " <<  Environment::getWlzTileHeight() << endl;
   }
-
-
 
 
   /***********************************************************

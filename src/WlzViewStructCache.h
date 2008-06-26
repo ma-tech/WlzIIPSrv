@@ -8,7 +8,7 @@ static char _WlzViewStructCache_h[] = "MRC HGU $Id$";
 #endif
 #endif
 /*!
-* \file         WlzViewStructCache.cc
+* \file         WlzViewStructCache.h
 * \author       Zsolt Husz
 * \date         June 2008
 * \version      $Id$

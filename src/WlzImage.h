@@ -110,7 +110,7 @@ class WlzImage : public IIPImage {
   };
 
   //overloaded IIPImage methods
-  void openImage() throw (std::string);
+  void openImage() ;
   void loadImageInfo( int x, int y ) throw (std::string);
   void closeImage();
   RawTile getTile( int x, int y, unsigned int r, unsigned int t ) throw (std::string);
@@ -119,7 +119,6 @@ class WlzImage : public IIPImage {
 
   // Woolz operations
   void prepareViewStruct() throw (std::string);
-  void computeWlzSection() throw (std::string);
   void prepareObject() throw (std::string);
   bool isViewChanged();
 

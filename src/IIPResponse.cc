@@ -49,7 +49,7 @@ IIPResponse::IIPResponse(){
 }
 
 
-void IIPResponse::addResponse( const string& r ){
+void IIPResponse::addResponse( const std::string& r ){
 
   responseBody.append( r );
   responseBody.append( eof );
@@ -72,7 +72,7 @@ void IIPResponse::addResponse( const char* c, int a ){
 }
 
 
-void IIPResponse::addResponse( string arg, const char* a ){
+void IIPResponse::addResponse( std::string arg, const char* a ){
 
   /* We should convert these responses to UTF-8, but for now we won't bother
      as all metadata should be in ASCII anyway and I can't get iconv to work
@@ -107,7 +107,7 @@ void IIPResponse::addResponse( const char* c, int a, int b ){
 }
 
 
-void IIPResponse::setError( const string& code, const string& arg ){
+void IIPResponse::setError( const std::string& code, const std::string& arg ){
 
   char tmp[128];
   snprintf( tmp, 128, "Error/%d:%s %s", code.length() + arg.length() + 1, code.c_str(), arg.c_str() );
@@ -134,7 +134,7 @@ string IIPResponse::formatResponse() {
 
 
 
-string IIPResponse::getAdvert( const string& version ){
+string IIPResponse::getAdvert( const std::string& version ){
 
   string advert = "Content-type: text/html" + eof;
   advert += "Content-disposition: inline;filename=\"iipsrv.html\"" + eof + eof;

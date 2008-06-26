@@ -161,24 +161,54 @@ class OBJ : public Task {
 
   void run( Session* session, std::string argument );
 
+  /// iip request handler
   void iip();
+
+  /// iip_server request handler
   void iip_server();
+
+  /// max_size request handler
   void max_size();
+
+  /// resolution_number request handler
   void resolution_number();
+
+  /// colorspace request handler
   void colorspace( std::string arg );
+
+  /// tile_size request handler
   void tile_size();
+
+  /// horizontal_views request handler
   void horizontal_views();
+
+  /// vertical_views request handler
   void vertical_views();
+
+  /// returns the meta-data requested
   void metadata( std::string field );
 
-  // Woolz related handlers
+  ///////////////////////// Woolz related handlers
+
+  /// wlz_section_size request handler
   void wlz_section_size();
+
+  /// wlz_distance_range request handler
   void wlz_distance_range();
+
+  /// wlz_sectioning_angles request handler
   void wlz_sectioning_angles();
+
+  /// wlz_coordinate_3d request handler
   void wlz_coordinate_3d();
 
+  /// wlz_true_voxel_size request handler
   void wlz_true_voxel_size();
+
+  /// wlz_grey_value request handler
   void wlz_grey_value();
+
+  /// wlz_volume request handler
   void wlz_volume();
 
 };
@@ -320,6 +350,12 @@ class MOD : public Task {
 
 /// FXP Woolz Command: sets the fixed point
 class FXP : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
+/// FXT Woolz Command: sets the second fixed point for mode WLZ_FIXED_LINE_MODE
+class FXT : public Task {
  public:
   void run( Session* session, std::string argument );
 };

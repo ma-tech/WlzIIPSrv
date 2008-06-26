@@ -67,7 +67,7 @@ void OBJ::run( Session* s, std::string a )
   else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SHD WLZ DST FXP MOD PAB PIT PRL ROL SCL UPV YAW");
 
   // IIP optional objects
-  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size wlz-true-voxel-size wlz-distance-range wlz-coordinate-3d wlz-grey-value wlz-volume wlz-sectioning-angles");
+  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles");
 
   // Resolution-number
   else if( argument == "resolution-number" ) resolution_number();
@@ -374,7 +374,7 @@ void OBJ::colorspace( std::string arg ){
 }
 
 
-void OBJ::metadata( string field ){
+void OBJ::metadata( std::string field ){
 
   checkImage();
   openIfWoolz();

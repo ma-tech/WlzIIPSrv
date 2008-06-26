@@ -8,7 +8,7 @@ static char _WlzObjectCache_h[] = "MRC HGU $Id$";
 #endif
 #endif
 /*!
-* \file         WlzObjectCache.cc
+* \file         WlzObjectCache.h
 * \author       Zsolt Husz
 * \date         June 2008
 * \version      $Id$
@@ -294,8 +294,8 @@ class WlzObjectCache {
  /*!
   * \ingroup      WlzIIPServer
   * \brief        Insert a tile
-  * \param        obj     WlzObj to be be inserted
-  * \param        key     the key of obj
+  * \param        obj       WlzObj to be be inserted
+  * \param        filename  the filename of the object used as key and file size equiry
   * \warning      Objects to big to fit in the cache are not cached
   * \par      Source:
   *                WlzObjectCache.cc

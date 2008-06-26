@@ -140,10 +140,10 @@ class IIPResponse{
   void addResponse( const char* c, double a, double b );
 
   /// Add a response string
-  /** \param c response string
+  /** \param d response string
       \param a first double value
       \param b second double value
-      \param b thired double value
+      \param c thired double value
    */
   void addResponse( const char* d, double a, double b, double c );
 

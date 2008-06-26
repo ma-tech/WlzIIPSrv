@@ -82,7 +82,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /net/mahost/export/techcompwg0/zsolth/iipserver/iipsrv-0.9.7/src
+INPUT                  = .
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \

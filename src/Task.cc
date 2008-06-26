@@ -40,7 +40,7 @@ using namespace std;
 
 
 
-Task* Task::factory( string type ){
+Task* Task::factory( std::string type ){
 
   // Convert the command string to lower case to handle incorrect
   // viewer implementations
@@ -70,6 +70,7 @@ Task* Task::factory( string type ){
   else if( type == "rol" ) return new ROL; // Sectioning roll angle
   else if( type == "mod" ) return new MOD; // Sectioning mode
   else if( type == "fxp" ) return new FXP; // Sectioning fixed point
+  else if( type == "fxt" ) return new FXT; // Sectioning second fixed point
   else if( type == "upv" ) return new UPV; // Sectioning up vector
   else if( type == "prl" ) return new PRL; // Sets a 2D point
   else if( type == "pab" ) return new PAB; // Sets a 3D point
@@ -401,6 +402,27 @@ void FXP::run( Session* session, std::string argument ){
 
     session->viewParams->setFixedPoint( point );
     if( session->loglevel >= 3 ) *(session->logfile) << "FXP :: requested Woolz sectioning fixed point is " << argument << ':' <<'(' << session->viewParams->fixed.vtX  << ',' << session->viewParams->fixed.vtY << ',' << session->viewParams->fixed.vtZ << ')'  << endl;
+  }
+}
+
+void FXT::run( Session* session, std::string argument ){
+
+  if( argument.length() ){
+
+    WlzDVertex3 point={0,0,0};
+
+    int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
+
+    // Set if the value is valid 
+    if(read!=3){
+      if( session->loglevel >= 2 ){
+	*(session->logfile) << "FXT :: Incorrect fixed point format " << argument
+                            << endl;
+      }
+    }
+
+    session->viewParams->setFixedPoint2( point );
+    if( session->loglevel >= 3 ) *(session->logfile) << "FXT :: requested second Woolz sectioning fixed point is " << argument << ':' <<'(' << session->viewParams->fixed2.vtX  << ',' << session->viewParams->fixed2.vtY << ',' << session->viewParams->fixed2.vtZ << ')'  << endl;
   }
 }
 

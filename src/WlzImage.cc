@@ -183,14 +183,13 @@ WlzObjectCache            WlzImage::cacheWlzObject(&cacheViewStruct);
 * \par      Source:
 *                WlzImage.cc
 */
-void WlzImage::openImage() throw (string)
+void WlzImage::openImage()
 {
- // Insist that the tiff and tile_buf be NULL
+ // if already opened do not reopen
   if( wlzObject || tile_buf ){
-    throw string( "WlzImage :: openImage: wlzSection  or tile_buf is not NULL" );
+    return;
   }
   loadImageInfo( 0, 0 );
-
   isSet = true;
 }
 
@@ -236,18 +235,18 @@ void WlzImage::prepareViewStruct() throw(string)
   {
 
     if((wlzViewStr = WlzAssign3DViewStruct( WlzMake3DViewStruct(WLZ_3D_VIEW_STRUCT, &errNum), NULL )) != NULL){
-      wlzViewStr->theta = viewParams->yaw * WLZ_M_PI / 180.0;
-      wlzViewStr->phi = viewParams->pitch * WLZ_M_PI / 180.0;
-      wlzViewStr->zeta = viewParams->roll * WLZ_M_PI / 180.0;
-      wlzViewStr->dist = viewParams->dist;
-      wlzViewStr->fixed = viewParams->fixed;
-      wlzViewStr->up = viewParams->up;
-      wlzViewStr->view_mode = viewParams->mode;
-      wlzViewStr->scale = viewParams->scale ;
+      wlzViewStr->theta           = viewParams->yaw   * WLZ_M_PI / 180.0;
+      wlzViewStr->phi             = viewParams->pitch * WLZ_M_PI / 180.0;
+      wlzViewStr->zeta            = viewParams->roll  * WLZ_M_PI / 180.0;
+      wlzViewStr->dist            = viewParams->dist;
+      wlzViewStr->fixed           = viewParams->fixed;
+      wlzViewStr->fixed_2         = viewParams->fixed2;
+      wlzViewStr->up              = viewParams->up;
+      wlzViewStr->view_mode       = viewParams->mode;
+      wlzViewStr->scale           = viewParams->scale ;
       wlzViewStr->voxelRescaleFlg = 0x02;  //use scale
-      //wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set with x02 if voxel size correciton is needed
-    } else
-    {
+      //wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
+    } else {
       throw string( "WlzImage :: prepareViewStruct creation failed.");
     }
 
@@ -259,13 +258,6 @@ void WlzImage::prepareViewStruct() throw(string)
   }
   return ;
 }
-
-
-/*void WlzImage::computeWlzSection( ) throw(string)
-{
-
-return;
-}*/
 
 /*!
 * \ingroup      WlzIIPServer
@@ -375,12 +367,13 @@ bool WlzImage::isViewChanged()
 
 /*!
 * \ingroup      WlzIIPServer
-* \brief        Load object specific info: image and tile size, number of tiles, metadata.
-* \param        void void pramaters are not used, required by the base class definition
+* \brief        Load object specific info: image and tile size, number of tiles, metadata. 
+* 
 *
 * \return       void
 * \par      Source:
 *                WlzImage.cc
+* \par           Pramaters are not used, required by the base class definition.
 */
 void WlzImage::loadImageInfo( int , int ) throw(string)
 {
@@ -922,14 +915,20 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
   if ( view == NULL)
       view = curViewParams;
 
-  char temp[80];
-  snprintf(temp, 80, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d)", 
-      view->dist, 
-      view->scale, 
-      view->yaw, 
-      view->pitch, 
-      view->roll, 
-      view->mode);
+  char temp[200];
+  snprintf(temp, 80, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,F=%g,%g,%g,F2=%g,%g,%g)", 
+      view->dist,
+      view->scale,
+      view->yaw,
+      view->pitch,
+      view->roll,
+      view->mode,
+      view->fixed.vtX,
+      view->fixed.vtY,
+      view->fixed.vtZ,
+      view->fixed2.vtX,
+      view->fixed2.vtY,
+      view->fixed2.vtZ);
 
   return getImagePath() + temp;
 };
