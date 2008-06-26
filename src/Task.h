@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _Task_h[] = "MRC HGU $Id$";
 #endif
 #endif
 
@@ -177,7 +177,8 @@ class OBJ : public Task {
   void wlz_volume();
 
 
-  void checkifWoolz();
+  void checkIfWoolz();
+  void openIfWoolz();
 
 };
 

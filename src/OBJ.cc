@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _OBJ_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 
@@ -166,7 +166,9 @@ void OBJ::iip_server(){
 
 
 void OBJ::max_size(){
+
   checkImage();
+  openIfWoolz();
   int x = (*session->image)->getImageWidth();
   int y = (*session->image)->getImageHeight();
   if( session->loglevel >= 2 ){
@@ -179,6 +181,7 @@ void OBJ::max_size(){
 void OBJ::resolution_number(){
 
   checkImage();
+  openIfWoolz();
   int no_res = (*session->image)->getNumResolutions();
   if( session->loglevel >= 2 ){
     *(session->logfile) << "OBJ :: Resolution-number handler returning " << no_res << endl;
@@ -190,7 +193,7 @@ void OBJ::resolution_number(){
 void OBJ::wlz_distance_range(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
   double min,max;
 
   ((WlzImage*)(*session->image))->getDepthRange(min,max);
@@ -204,7 +207,7 @@ void OBJ::wlz_distance_range(){
 void OBJ::wlz_sectioning_angles(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
 
   double theta = 0.0, phi = 0.0, zeta = 0.0;
 
@@ -219,7 +222,7 @@ void OBJ::wlz_sectioning_angles(){
 void OBJ::wlz_coordinate_3d(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
 
   WlzDVertex3 result = ((WlzImage*)(*session->image))->getCurrentPointIn3D();
 
@@ -232,7 +235,7 @@ void OBJ::wlz_coordinate_3d(){
 void OBJ::wlz_true_voxel_size(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
 
   float *voxel_size = ((WlzImage*)(*session->image))->getTrueVoxelSize();
 
@@ -245,7 +248,7 @@ void OBJ::wlz_true_voxel_size(){
 void OBJ::wlz_volume(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
 
   int volume = ((WlzImage*)(*session->image))->getVolume();
 
@@ -258,7 +261,7 @@ void OBJ::wlz_volume(){
 void OBJ::wlz_grey_value(){
 
   checkImage();
-  checkifWoolz();
+  checkIfWoolz();
   int values[3];
   int channels = ((WlzImage*)(*session->image))->getGreyValue(values);
 
@@ -337,7 +340,8 @@ void OBJ::horizontal_views(){
 
 void OBJ::colorspace( std::string arg ){
 
-  checkImage();
+   checkImage();
+   openIfWoolz();
 
   /* Assign the colourspace tag: 1 for greyscale, 3 for RGB and
      a colourspace of 4 to LAB images
@@ -373,7 +377,7 @@ void OBJ::colorspace( std::string arg ){
 void OBJ::metadata( string field ){
 
   checkImage();
-
+  openIfWoolz();
   string metadata = (*session->image)->getMetadata( field );
   if( session->loglevel >= 3 ){
     *(session->logfile) << "OBJ :: " << field << " handler returning" << metadata << endl;
@@ -386,11 +390,18 @@ void OBJ::metadata( string field ){
 
 }
 
-void OBJ::checkifWoolz(){
+void OBJ::checkIfWoolz(){
   string imtype = (*session->image)->getImageType();
   if( imtype != "wlz"){
     session->response->setError( "1 3", argument );
     throw string( "image is not a Woolz object" );
+  }
+}
+
+void OBJ::openIfWoolz(){
+  string imtype = (*session->image)->getImageType();
+  if( imtype == "wlz"){
+    (*session->image)->openImage();
   }
 }
 
