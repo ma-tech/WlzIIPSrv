@@ -43,6 +43,7 @@ void TIL::run( Session* session, std::string argument ){
   if( session->loglevel >= 3 ) *(session->logfile) << "TIL handler reached" << endl;
 
   checkImage();
+  openIfWoolz();
 
 
   // Time this command
