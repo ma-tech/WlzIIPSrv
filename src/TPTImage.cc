@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _TPTImage_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 

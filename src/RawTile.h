@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _RawTile_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 
@@ -99,6 +99,9 @@ class RawTile{
   /// The number of bits per channel for this tile
   int bpc;
 
+  /// The ignored width padding, the difference between the full tile_width and current width
+  unsigned int width_padding;
+
 
   /// Main constructor
   /** \param tn tile number
@@ -115,6 +118,7 @@ class RawTile{
     width = w; height = h; bpc = b; dataLength = 0; data = NULL;
     tileNum = tn; resolution = res; hSequence = hs ; vSequence = vs;
     localData = 0; channels = c; compressionType = UNCOMPRESSED; quality = 0;
+    width_padding = 0;
   };
 
 
@@ -139,6 +143,7 @@ class RawTile{
     compressionType = tile.compressionType;
     quality = tile.quality;
     filename = tile.filename;
+    width_padding = tile.width_padding;
 
     data = malloc( dataLength );
 
@@ -164,6 +169,7 @@ class RawTile{
     compressionType = tile.compressionType;
     quality = tile.quality;
     filename = tile.filename;
+    width_padding = tile.width_padding;
 
     data = malloc( dataLength );
 
