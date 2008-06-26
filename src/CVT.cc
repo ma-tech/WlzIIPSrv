@@ -4,7 +4,7 @@
 #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #pragma ident "MRC HGU $Id$"
 #else
-static char _WlzVolume_c[] = "MRC HGU $Id$";
+static char _CVT_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 
@@ -38,6 +38,11 @@ using namespace std;
 
 
 
+/**
+ * 
+ * @param session 
+ * @param argument 
+ */
 void CVT::run( Session* session, std::string argument ){
 
   Timer tile_timer;
@@ -120,6 +125,7 @@ void CVT::run( Session* session, std::string argument ){
     // If we have a region defined, calculate our viewport
     unsigned int view_left, view_top, view_width, view_height;
     unsigned int startx, endx, starty, endy, xoffset, yoffset;
+    unsigned int tile_width_padding;
 
     if( session->view->viewPortSet() ){
 
@@ -238,6 +244,7 @@ void CVT::run( Session* session, std::string argument ){
 	//	src_tile_height = (*session->image)->getTileHeight();
 	src_tile_width = rawtile.width;
 	src_tile_height = rawtile.height;
+	tile_width_padding = rawtile.width_padding;
 	dst_tile_width = src_tile_width;
 	dst_tile_height = src_tile_height;
 
@@ -283,7 +290,7 @@ void CVT::run( Session* session, std::string argument ){
 	for( unsigned int k=0; k<dst_tile_height; k++ ){
 
 	  buffer_index = (current_width*channels) + (k*view_width*channels);
-	  unsigned int inx = ((k+yf)*basic_tile_width*channels) + (xf*channels);
+	  unsigned int inx = ((k+yf)*(basic_tile_width-tile_width_padding)*channels) + (xf*channels);
 	  unsigned char* ptr = (unsigned char*) rawtile.data;
 
 	  // If we have a CIELAB image, convert each pixel to sRGB first
