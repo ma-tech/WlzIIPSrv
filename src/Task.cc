@@ -291,14 +291,6 @@ void DST::run( Session* session, std::string argument ){
 
     double distance = atof( argument.c_str() );
 
-    // Check the value is realistic
-/*    if( distance < 0 || factor > 100 ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
-      }
-    }*/
-
     session->viewParams->setDistance( distance );
     if( session->loglevel >= 3 ) *(session->logfile) << "DST :: requested Woolz sectioning distance is "
 						   << session->viewParams->dist  << endl;
@@ -312,12 +304,12 @@ void YAW::run( Session* session, std::string argument ){
     double value = atof( argument.c_str() );
 
     // Check the value is realistic
-/*    if( distance < 0 || factor > 100 ){
+    if( value < 0 || value > 360 ){
       if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
+	*(session->logfile) << "YAW :: Yaw of" << argument
+			    << " out of bounds. Must be 0-360 degrees." << endl;
       }
-    }*/
+    }
 
     session->viewParams->setYaw( value );
     if( session->loglevel >= 3 ) *(session->logfile) << "YAW :: requested Woolz sectioning yaw angle is "
@@ -332,12 +324,12 @@ void PIT::run( Session* session, std::string argument ){
     double value = atof( argument.c_str() );
 
     // Check the value is realistic
-/*    if( distance < 0 || factor > 100 ){
+    if( value < 0 || value > 180 ){
       if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
+	*(session->logfile) << "PIT :: Pitch of" << argument
+			    << " out of bounds. Must be 0-180 degrees." << endl;
       }
-    }*/
+    }
 
     session->viewParams->setPitch( value );
     if( session->loglevel >= 3 ) *(session->logfile) << "PIT :: requested Woolz sectioning pitch angle is "
@@ -352,12 +344,12 @@ void ROL::run( Session* session, std::string argument ){
     double value = atof( argument.c_str() );
 
     // Check the value is realistic
-/*    if( distance < 0 || factor > 100 ){
+    if( value < 0 || value > 360 ){
       if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
+	*(session->logfile) << "ROL :: Roll of" << argument
+			    << " out of bounds. Must be 0-360 degrees." << endl;
       }
-    }*/
+    }
 
     session->viewParams->setRoll( value );
     if( session->loglevel >= 3 ) *(session->logfile) << "ROL :: requested Woolz sectioning roll angle is "
@@ -467,6 +459,13 @@ void PRL::run( Session* session, std::string argument ){
                             << endl;
       }
     }
+    // Check the value is realistic
+    if( t <= -1){
+      if( session->loglevel >= 2 ){
+        *(session->logfile) << "PRL :: tile must be greater than -1: " << argument << endl;
+      }
+    }
+
     session->viewParams->setPoint( x, y, t );
     if( session->loglevel >= 3 ) 
           *(session->logfile) << "PRL :: requested Woolz query point is " << argument << " (tile,x,y): " <<'(' << session->viewParams->tile  << ',' << session->viewParams->x << ',' << session->viewParams->y << ") / " <<  session->viewParams->queryPointType   << endl;
@@ -506,12 +505,11 @@ void SCL::run( Session* session, std::string argument ){
     double value = atof( argument.c_str() );
 
     // Check the value is realistic
-/*    if( distance < 0 || factor > 100 ){
+    if( value  <= 0){
       if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
+        *(session->logfile) << "SCL :: Scale must be positive: " << argument << endl;
       }
-    }*/
+    }
 
     session->viewParams->setScale( value );
     if( session->loglevel >= 3 ) 
