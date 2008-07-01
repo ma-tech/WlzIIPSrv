@@ -2,7 +2,7 @@
 \mainpage Woolz IIP Server
 \section overview Overview
 
-This software is an extension of the IPP server from the IIP Image, an Open Source client-server system  (http://iipimage.sourceforge.net/index.shtml).
+This software is an extension of the IIP server from the IIP Image, an Open Source client-server system  (http://iipimage.sourceforge.net/index.shtml).
 
 \section install Installation
 
