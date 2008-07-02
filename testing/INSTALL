@@ -1,0 +1,6 @@
+WlzIIPSrv test interface.
+
+To install:
+1. Extract testing.tgz into a public web directory (e.g. ~/public_html/testing) 
+2. Set read/write acess to others on ~/public_html/testing.
+3. Assure read access to all files in ~/public_html/testing.
