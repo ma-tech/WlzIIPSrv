@@ -125,6 +125,27 @@ AC_SUBST(LIBFCGI_INCLUDES)
 AC_SUBST(LIBFCGI_LDFLAGS)
 AC_SUBST(LIBFCGI_LIBS)
 
+dnl	************************************************************ 
+
+dnl 	Check for user specified locations for Woolz libraries
+
+AC_ARG_WITH( wlz-incl,
+   [  --with-wlz-incl=DIR          location of the fcgi include files],
+   wlz_include_path=$withval, wlz_include_path="../../../Core")
+
+
+AC_ARG_WITH( wlz-lib,
+   [  --with-wlz-lib=DIR           location of the fcgi libraries],
+   wlz_lib_path=$withval, wlz_lib_path="../../../Core")
+
+LIBWLZ_INCLUDES="-I$wlz_include_path/libAlc -I$wlz_include_path/libAlg -I$wlz_include_path/libWlz -I$wlz_include_path/libWlzExtFF -I$wlz_include_path/libbibfile -I$wlz_include_path";
+LIBWLZ_LDFLAGS="-L$wlz_lib_path/libAlc -L$wlz_lib_path/libAlg -L$wlz_lib_path/libWlz -L$wlz_lib_path/libWlzExtFF -L$wlz_lib_path/libbibfile -L$wlz_lib_path";
+LIBWLZ_LIBS="-lWlzExtFF -lWlz -lAlc -lAlg "
+
+AC_SUBST(LIBWLZ_INCLUDES)
+AC_SUBST(LIBWLZ_LDFLAGS)
+AC_SUBST(LIBWLZ_LIBS)
+
 
 dnl	************************************************************ 
 

@@ -36,9 +36,9 @@
 
 noinst_PROGRAMS =	iipsrv.fcgi
 
-INCLUDES =		-I/net/homehost/export/home/zsolth/ma-week/MouseAtlas/include @INCLUDES@ @LIBFCGI_INCLUDES@  @JPEG_INCLUDES@ @TIFF_INCLUDES@ 
-LIBS =			-L/net/homehost/export/home/zsolth/ma-week/MouseAtlas/lib -lWlzExtFF -lWlz -lAlc -lAlg @LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lz -lm
-AM_LDFLAGS =		@LIBFCGI_LDFLAGS@ 
+INCLUDES =		@LIBWLZ_INCLUDES@ @LIBFCGI_INCLUDES@  @JPEG_INCLUDES@ @TIFF_INCLUDES@ 
+LIBS =			@LIBWLZ_LIBS@ @LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lz -lm
+AM_LDFLAGS =		@LIBWLZ_LDFLAGS@
 
 if ENABLE_MODULES
 
