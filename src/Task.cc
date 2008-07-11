@@ -308,6 +308,7 @@ void YAW::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
 	*(session->logfile) << "YAW :: Yaw of" << argument
 			    << " out of bounds. Must be 0-360 degrees." << endl;
+        return;
       }
     }
 
@@ -328,6 +329,7 @@ void PIT::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
 	*(session->logfile) << "PIT :: Pitch of" << argument
 			    << " out of bounds. Must be 0-180 degrees." << endl;
+        return;
       }
     }
 
@@ -348,6 +350,7 @@ void ROL::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
 	*(session->logfile) << "ROL :: Roll of" << argument
 			    << " out of bounds. Must be 0-360 degrees." << endl;
+        return;
       }
     }
 
@@ -366,6 +369,7 @@ void MOD::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
 	*(session->logfile) << "MOD :: Unknown mode " << argument
 			    << ". The mode must be STATUE, UP_IS_UP, FIXED_LINE ZERO_ZETA or ZETA." << endl;
+        return;
       }
     }
 
@@ -389,6 +393,7 @@ void FXP::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
 	*(session->logfile) << "FXP :: Incorrect fixed point format " << argument
                             << endl;
+        return;
       }
     }
 
@@ -408,8 +413,9 @@ void FXT::run( Session* session, std::string argument ){
     // Set if the value is valid 
     if(read!=3){
       if( session->loglevel >= 2 ){
-	*(session->logfile) << "FXT :: Incorrect fixed point format " << argument
+        *(session->logfile) << "FXT :: Incorrect fixed point format " << argument
                             << endl;
+        return;
       }
     }
 
@@ -434,6 +440,7 @@ void UPV::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "UPV :: Incorrect fixed point format " << argument
                             << endl;
+      return;
       }
     }
 
@@ -457,12 +464,14 @@ void PRL::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "PRL :: Incorrect point of interest format " << argument
                             << endl;
+      return;
       }
     }
     // Check the value is realistic
     if( t <= -1){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "PRL :: tile must be greater than -1: " << argument << endl;
+      return;
       }
     }
 
@@ -488,6 +497,7 @@ void PAB::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "PAB :: Incorrect query point format " << argument
                             << endl;
+        return;
       }
     }
 
@@ -509,6 +519,7 @@ void SCL::run( Session* session, std::string argument ){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "SCL :: Scale must be positive: " << argument << endl;
       }
+      return;
     }
 
     session->viewParams->setScale( value );
