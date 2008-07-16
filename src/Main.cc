@@ -27,6 +27,9 @@ static char _Main_cc[] = "MRC HGU $Id$";
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+    \bug: CVT command may crash for small strides compressed by JPEGCompressor::CompressStrip.
+          See JPEGCompressor.cc for details.
 */
 
 
@@ -108,6 +111,7 @@ void IIPSignalHandler( int signal )
 }
 
 
+Session session;
 
 
 
@@ -376,7 +380,7 @@ int main( int argc, char *argv[] )
 
 
       // Set up our session data object
-      Session session;
+//      Session session;
       session.image = &image;
       session.response = &response;
       session.view = &view;
