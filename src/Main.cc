@@ -111,8 +111,6 @@ void IIPSignalHandler( int signal )
 }
 
 
-Session session;
-
 
 
 int main( int argc, char *argv[] )
@@ -380,7 +378,7 @@ int main( int argc, char *argv[] )
 
 
       // Set up our session data object
-//      Session session;
+      Session session;
       session.image = &image;
       session.response = &response;
       session.view = &view;
