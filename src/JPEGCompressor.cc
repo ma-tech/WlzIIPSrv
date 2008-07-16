@@ -8,8 +8,9 @@ static char _JPEGCompressor_cc[] = "MRC HGU $Id$";
 #endif
 #endif
 
-/*  JPEG class wrapper to ijg jpeg library 
+/**  JPEG class wrapper to ijg jpeg library 
 
+    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
     Copyright (C) 2000-2005 Ruven Pillay.
 
     This program is free software; you can redistribute it and/or modify
@@ -25,6 +26,9 @@ static char _JPEGCompressor_cc[] = "MRC HGU $Id$";
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+   \bug          CompressStrip may crash if the uncompressed strip size is smaller then the 
+                            compressed strip.
 */
 
 
@@ -152,6 +156,14 @@ void iip_term_destination( j_compress_ptr cinfo )
 
   // Copy the JPEG data to our output tile buffer
   if( datacount > 0 ){
+
+    //reallocate if needed
+    if (datacount > dest->sourcesize )
+    {
+      free(dest->source);
+      dest->source = (unsigned char*)malloc(datacount);
+      dest->sourcesize=datacount;
+    }
     memcpy( dest->source, dest->buffer, datacount );
   }
 
@@ -220,6 +232,8 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
   dest->strip_height = strip_height;
 
   dest->source = data;
+  dest->sourcesize = rawtile.dataLength;
+
 
   cinfo.image_width = width;
   cinfo.image_height = height;
@@ -241,6 +255,10 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
   // Copy the JPEG header data to our output tile buffer
   size_t datacount = dest->size - dest->pub.free_in_buffer;
   header_size = datacount;
+
+  /* Assumes dest->source size is enough for the destination. If not then the server will crash. This might happen
+  if the image is too small. Calling code has to account for this or buf must be reallocated here
+  */
   if( datacount > 0 ){
     memcpy( header, dest->buffer, datacount );
   }
@@ -266,7 +284,7 @@ unsigned int JPEGCompressor::CompressStrip( unsigned char* buf, unsigned int til
   JSAMPROW row[1];
   int row_stride = width * channels;
   dest->source = buf;
-
+  dest->sourcesize = 0; 
 
 //   JSAMPROW *array = new JSAMPROW[tile_height+1];
 //   for( int y=0; y < tile_height; y++ ){
@@ -284,6 +302,10 @@ unsigned int JPEGCompressor::CompressStrip( unsigned char* buf, unsigned int til
 
   // Copy the JPEG data to our output tile buffer
   size_t datacount = dest->size - dest->pub.free_in_buffer;
+
+  /* Assumes dest->source size is enough for the destination. If not then the server will crash. This might happen
+  if the image is too small. Calling code has to account for this or buf must be reallocated here
+  */
   if( datacount > 0 ){
     memcpy( dest->source, dest->buffer, datacount );
   }
@@ -313,6 +335,10 @@ unsigned int JPEGCompressor::Finish() throw (string)
   dest->pub.free_in_buffer -= 3;
 
   // Copy the JPEG data to our output tile buffer
+
+  /* Assumes dest->source size is enough for the destination. If not then the server will crash. This might happen
+  if the image is too small. Calling code has to account for this or buf must be reallocated here
+  */
   size_t datacount = dest->size - dest->pub.free_in_buffer;
   if( datacount > 0 ){
     memcpy( dest->source, dest->buffer, datacount );
@@ -394,6 +420,7 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
   dest->strip_height = 0;
 
   dest->source = data;
+  dest->sourcesize = rawtile.dataLength;
 
 
   // Set floating point quality (highest, but possibly slower depending
@@ -402,6 +429,7 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
   cinfo.image_height = height;
   cinfo.input_components = channels;
   cinfo.in_color_space = ( channels == 3 ? JCS_RGB : JCS_GRAYSCALE );
+
   jpeg_set_defaults( &cinfo );
 
   // Set compression quality (highest, but possibly slower depending
@@ -447,7 +475,14 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
 
 
   // Set the tile compression type
+
+  // check if more space was needed and data tile was reallocated
+  if (rawtile.data != dest->source)
+  {
+    rawtile.data = dest->source;
+  }
   rawtile.dataLength = y;
+
   rawtile.compressionType = JPEG;
   rawtile.quality = Q;
 

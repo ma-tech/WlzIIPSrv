@@ -57,6 +57,7 @@ typedef struct {
   size_t size;                       /**< size of source data */
   JOCTET *buffer;		     /**< working buffer */
   unsigned char* source;             /**< source data */
+  unsigned int sourcesize;         /**< source data size*/
   unsigned int strip_height;         /**< used for stream-based encoding */
 
 } iip_destination_mgr;
