@@ -35,6 +35,9 @@
 ## Process this file with automake to produce Makefile.in
 AUTOMAKE_OPTIONS = dist-bzip2
 SUBDIRS = src
-#SUBDIRS = fcgi src
 
 EXTRA_DIST = TODO COPYING.FCGI doc
+
+
+doc:
+	doxygen src/Doxyfile

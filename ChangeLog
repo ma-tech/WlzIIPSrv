@@ -1,3 +1,8 @@
+16/07/2008:
+        - Removed fcgi-2.4.0 source code from WlzIIPSrv. fcgi is available from 
+	http://www.fastcgi.com/dist/.
+	- Fixed JPEG compression for small tiles. Known bug: CVT mail crash if 
+	strips are to small, no checking is implemented in the original iipsrv.
 23/06/2008:
 	- Woolz sectioning added to IIPSrv 0.9.7
 	
