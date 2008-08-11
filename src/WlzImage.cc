@@ -771,6 +771,26 @@ float* WlzImage::getTrueVoxelSize(){
 
 /*!
 * \ingroup      WlzIIPServer
+* \brief        Return 3D bounding box
+* \return       void
+* \par      Source:
+*                WlzImage.cc
+*/
+void WlzImage::get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkl){
+  prepareObject();
+  plane1 = wlzObject->domain.p->plane1;
+  lastpl = wlzObject->domain.p->lastpl;
+  line1  = wlzObject->domain.p->line1;
+  lastln = wlzObject->domain.p->lastln;
+  kol1   = wlzObject->domain.p->kol1;
+  lastkl = wlzObject->domain.p->lastkl;
+  return ;
+}
+
+
+
+/*!
+* \ingroup      WlzIIPServer
 * \brief        Return object volume
 * \return       the object volume
 * \par      Source:

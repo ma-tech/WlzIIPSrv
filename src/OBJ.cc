@@ -67,7 +67,7 @@ void OBJ::run( Session* s, std::string a )
   else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SHD WLZ DST FXP MOD PAB PIT PRL ROL SCL UPV YAW");
 
   // IIP optional objects
-  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles");
+  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles Wlz-3d-bounding-box");
 
   // Resolution-number
   else if( argument == "resolution-number" ) resolution_number();
@@ -126,6 +126,9 @@ void OBJ::run( Session* s, std::string a )
 
   // Volume
   else if( argument == "wlz-volume" ) wlz_volume();
+
+  // 3D Bounding Box
+  else if( argument == "wlz-3d-bounding-box" ) wlz_3d_bounding_box();
 
   // Sectioning angles
   else if( argument == "wlz-sectioning-angles" ) wlz_sectioning_angles();
@@ -218,6 +221,22 @@ void OBJ::wlz_sectioning_angles(){
   }
   session->response->addResponse( "Wlz-sectioning-angles", phi, theta, zeta );
 }
+
+void OBJ::wlz_3d_bounding_box(){
+
+  checkImage();
+  checkIfWoolz();
+
+  int plane1 = 0, lastpl = 0, line1 = 0, lastln = 0, kol1 = 0, lastkol = 0;
+
+  ((WlzImage*)(*session->image))->get3DBoundingBox( plane1, lastpl, line1, lastln, kol1, lastkol);
+
+  if( session->loglevel >= 2 ){
+    *(session->logfile) << "OBJ :: Wlz-3d-bounding-box handler returning " << plane1 << " -" << lastpl << " -" << line1 << " -" << lastln << " -" << kol1 << " -" <<  lastkol << endl;
+  }
+  session->response->addResponse( "Wlz-3d-bounding-box", plane1, lastpl, line1, lastln, kol1, lastkol );
+}
+
 
 void OBJ::wlz_coordinate_3d(){
 

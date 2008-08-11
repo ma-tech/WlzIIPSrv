@@ -157,7 +157,15 @@ void IIPResponse::addResponse( const char* c, double a, double b ){
 void IIPResponse::addResponse( const char* d, double a, double b, double c ){
 
   char tmp[128]; 
-  snprintf( tmp, 64, "%s:%g %g %g", d, a, b, c );
+  snprintf( tmp, 128, "%s:%g %g %g", d, a, b, c );
+  responseBody.append( tmp );
+  responseBody.append( eof );
+}
+
+void IIPResponse::addResponse( const char* g, int a, int b, int c, int d, int e, int f  ){
+
+  char tmp[128]; 
+  snprintf( tmp, 128, "%s:%d %d %d %d %d %d", g, a, b, c, d, e, f);
   responseBody.append( tmp );
   responseBody.append( eof );
 }

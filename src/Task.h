@@ -199,6 +199,10 @@ class OBJ : public Task {
   /// wlz_sectioning_angles request handler
   void wlz_sectioning_angles();
 
+  /// wlz_3d_bounding_box request handler
+  void wlz_3d_bounding_box();
+
+
   /// wlz_coordinate_3d request handler
   void wlz_coordinate_3d();
 

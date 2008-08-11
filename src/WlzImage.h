@@ -128,6 +128,7 @@ class WlzImage : public IIPImage {
   int getGreyValue(int *points);
   void getDepthRange(double& min, double& max);
   void getAngles(double& theta, double& phi, double& zeta);
+  void get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkol);
   WlzDVertex3 getCurrentPointIn3D();
 
 

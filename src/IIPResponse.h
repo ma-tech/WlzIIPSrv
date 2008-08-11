@@ -147,6 +147,18 @@ class IIPResponse{
    */
   void addResponse( const char* d, double a, double b, double c );
 
+  /// Add a response string
+  /** \param g response string
+      \param a first integer value
+      \param b second integer value
+      \param c thired integer value
+      \param d thired integer value
+      \param e thired integer value
+      \param f thired integer value
+   */
+  void addResponse( const char* g, int a, int b, int c, int d, int e, int f  );
+
+
 };
 
 
