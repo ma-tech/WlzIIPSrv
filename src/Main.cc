@@ -124,7 +124,7 @@ int main( int argc, char *argv[] )
 #ifdef VERSION
   string version = string( VERSION );
 #else
-  string version = string( "0.9.9.9" );
+  string version = string( "0.9.9.0" );
 #endif
 
 
@@ -164,8 +164,9 @@ int main( int argc, char *argv[] )
 
       logfile << "<----------------------------------->" << endl
 	      << date << endl
-	      << "IIPImage Server. Version " << version << endl
-	      << "*** Ruven Pillay <ruven@users.sourceforge.net> ***" << endl << endl
+	      << "WlzIIPImage Server. Version " << version << endl
+	      << "*** MRC Human Genetics Unit, Zsolt Husz <Zsolt.Husz@hgu.mrc.ac.uk> ***" << endl << endl
+	      << "*** based on Ruven Pillay <ruven@users.sourceforge.net> IIPImage code***" << endl << endl
 	      << "Verbosity level set to " << loglevel << endl;
     }
 
@@ -179,6 +180,7 @@ int main( int argc, char *argv[] )
 
   FCGX_Request request;
   int listen_socket = 0;
+  int usePort = 0;
 
   if( argv[1] && (string(argv[1]) == "--standalone") ){
     string socket = argv[2];
@@ -191,18 +193,39 @@ int main( int argc, char *argv[] )
       logfile << "Unable to open socket '" << socket << "'" << endl << endl;
       exit(1);
     }
+  } else
+  if( argv[1] && (string(argv[1]) == "--port") ){
+    string port = argv[2];
+    if( !port.length() ){
+      logfile << "No port is specified" << endl << endl;
+      exit(1);
+    }
+    if (port[0]!=':') 
+        port = ':'+ port; // make sure port number starts with :
+    listen_socket = FCGX_OpenSocket( port.c_str(), 10 );
+    if( listen_socket < 0 ){
+      if( loglevel >= 1 )  
+        logfile << "Unable to open port '" << port << "'" << endl << endl;
+      exit(1);
+    }
+   if( loglevel >= 1 ) logfile << "Server started on port '" << port << "'" << endl << endl;
+
+    usePort = 1;
   }
 
   if( FCGX_InitRequest( &request, listen_socket, 0 ) ) return(1);
 
-  if( FCGX_IsCGI() ){
+  if( FCGX_IsCGI() && usePort==0){
     if( loglevel >= 1 ) logfile << "CGI-only mode detected. Terminating" << endl << endl;
     return( 1 );
   }
   else{
-    if( loglevel >= 1 ) logfile << "Running in FCGI mode" << endl << endl;
+    if( loglevel >= 1 )
+      if (usePort)
+        logfile << "Running in independent server mode" << endl << endl;
+      else
+        logfile << "Running in FCGI mode" << endl << endl;
   }
-
 #endif
 
 
