@@ -170,7 +170,6 @@ RawTile TileManager::getTile( int resolution, int tile, int xangle, int yangle, 
     {
 
     case JPEG:
-      *logfile << "Get 2: " << image->getHash() <<" res:" << resolution << ", tile: " << tile << endl;
       if( (rawtile = tileCache->getTile( image->getHash(), resolution, tile,
 					  xangle, yangle, JPEG, jpeg->getQuality() )) ) break;
       if( (rawtile = tileCache->getTile( image->getHash(), resolution, tile,

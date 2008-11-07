@@ -140,8 +140,7 @@ int main( int argc, char *argv[] )
 
   loglevel = Environment::getVerbosity();
 
-  if( loglevel >= 1 ){
-
+  if( loglevel >= 1){
     // Check for the requested log file path
     string lf = Environment::getLogFile();
 
@@ -150,7 +149,6 @@ int main( int argc, char *argv[] )
     if( !logfile ){
       loglevel = 0;
     }
-
     // Put a header marker and credit in the file
     else{
 
@@ -168,6 +166,9 @@ int main( int argc, char *argv[] )
 	      << "*** MRC Human Genetics Unit, Zsolt Husz <Zsolt.Husz@hgu.mrc.ac.uk> ***" << endl << endl
 	      << "*** based on Ruven Pillay <ruven@users.sourceforge.net> IIPImage code***" << endl << endl
 	      << "Verbosity level set to " << loglevel << endl;
+        // loglevel == -1 for logging WLZ requests only
+        if (loglevel == 99) 
+          loglevel = -1;
     }
 
   }
@@ -397,6 +398,17 @@ int main( int argc, char *argv[] )
 
       if( loglevel >=2 ){
 	logfile << "Full Request is " << request_string << endl;
+      }
+
+       if( loglevel == -1 ){
+        #ifdef HAVE_TIME_H
+                time_t current_time = time( NULL );
+                char *date = ctime( &current_time );
+                date[strlen(date)-1]=0; //surpress ending \n
+        #else
+                char *date = "Today";
+        #endif
+        logfile << date << " " << request_string << endl;
       }
 
 
