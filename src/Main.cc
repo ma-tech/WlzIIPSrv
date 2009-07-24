@@ -315,6 +315,8 @@ int main( int argc, char *argv[] )
 #ifndef WIN32
   signal( SIGUSR1, IIPSignalHandler );
   signal( SIGHUP, IIPSignalHandler );
+  signal( SIGKILL, IIPSignalHandler);
+  signal( SIGINT, IIPSignalHandler);
 #endif
 
   signal( SIGTERM, IIPSignalHandler );
