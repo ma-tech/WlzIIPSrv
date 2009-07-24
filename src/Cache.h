@@ -143,7 +143,7 @@ class Cache {
    */
   void _remove( const TileMap::iterator &miter ) {
     // Reduce our current size counter
-    currentSize -= ( (miter->second->second).dataLength + tileSize );
+    currentSize -= ( (miter->second->second).dataLength + (miter->second->second).filename.length()*sizeof(char) + tileSize );
     tileList.erase( miter->second );
     tileMap.erase( miter );
   }

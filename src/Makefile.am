@@ -36,8 +36,8 @@
 
 noinst_PROGRAMS =	iipsrv.fcgi
 
-INCLUDES =		@LIBWLZ_INCLUDES@ @LIBFCGI_INCLUDES@  @JPEG_INCLUDES@ @TIFF_INCLUDES@ 
-LIBS =			@LIBWLZ_LIBS@ @LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lz -lm
+INCLUDES =		@LIBWLZ_INCLUDES@ @LIBFCGI_INCLUDES@  @JPEG_INCLUDES@ @TIFF_INCLUDES@ @PNG_INCLUDES@
+LIBS =			@LIBWLZ_LIBS@ @LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ @PNG_LIBS@ -lz -lm
 AM_LDFLAGS =		@LIBWLZ_LDFLAGS@ @LIBFCGI_LDFLAGS@
 
 if ENABLE_MODULES
@@ -50,6 +50,8 @@ iipsrv_fcgi_SOURCES = \
 			TPTImage.cc \
 			JPEGCompressor.h \
 			JPEGCompressor.cc \
+			PNGCompressor.h \
+			PNGCompressor.cc \
 			RawTile.h \
 			Timer.h \
 			Cache.h \
@@ -71,6 +73,7 @@ iipsrv_fcgi_SOURCES = \
 			WLZ.cc \
 			WlzImage.cc \
 			JTL.cc \
+			PTL.cc \
 			TIL.cc \
 			ICC.cc \
 			CVT.cc \
@@ -87,6 +90,8 @@ iipsrv_fcgi_SOURCES = \
 			TPTImage.cc \
 			JPEGCompressor.h \
 			JPEGCompressor.cc \
+			PNGCompressor.h \
+			PNGCompressor.cc \
 			RawTile.h \
 			Timer.h \
 			Cache.h \
@@ -107,6 +112,7 @@ iipsrv_fcgi_SOURCES = \
 			FIF.cc \
 			WLZ.cc \
 			WlzImage.cc \
+			PTL.cc \
 			JTL.cc \
 			TIL.cc \
 			ICC.cc \

@@ -61,21 +61,24 @@ void CVT::run( Session* session, std::string argument ){
   transform( argument.begin(), argument.end(), argument.begin(), ::tolower );
 
 
-  // For the moment, only deal with JPEG. If we have specified something else, give a warning
+  // For the moment, only deal with JPEG and PNG. If we have specified something else, give a warning
   // and send JPEG anyway
-  if( argument != "jpeg" ){
+  if( argument != "jpeg" && argument != "png"){ // png added by Zsolt Husz, 8/05/2009
     if( session->loglevel >= 1 ) *(session->logfile) << "CVT :: Unsupported request: '" << argument << "'. Sending JPEG." << endl;
     argument = "jpeg";
   }
 
+  if( argument == "jpeg" || argument == "png") { // png added by Zsolt Husz, 8/05/2009
 
+    enum CompressionType requestType=JPEG; // png added by Zsolt Husz, 8/05/2009
 
-  if( argument == "jpeg" ){
+    if (argument == "png") // png added by Zsolt Husz, 8/05/2009
+      requestType = PNG;
 
-    int cielab = 0;
     unsigned int n;
+    int cielab = 0;
 
-    if( session->loglevel >= 3 ) *(session->logfile) << "CVT :: JPEG output handler reached" << endl;
+    if( session->loglevel >= 3 ) *(session->logfile) << "CVT :: JPEG/PNG output handler reached" << endl;
 
 
     // Get a fake tile in case we are dealing with a sequence
@@ -89,6 +92,8 @@ void CVT::run( Session* session, std::string argument ){
     session->view->setImageSize( im_width, im_height );
     session->view->setMaxResolutions( num_res );
 
+    session->viewParams->setAlpha(requestType==PNG);
+    (*session->image)->recomputeChannel(requestType==PNG); //forces channel number update
 
     int requested_res = session->view->getResolution();
     im_width = session->view->getImageWidth();
@@ -114,13 +119,12 @@ void CVT::run( Session* session, std::string argument ){
     unsigned int rem_y = im_height % src_tile_height;
 
     unsigned int channels = (*session->image)->getNumChannels();
-    
 
     // The number of tiles in each direction
     unsigned int ntlx = (im_width / src_tile_width) + (rem_x == 0 ? 0 : 1);
     unsigned int ntly = (im_height / src_tile_height) + (rem_y == 0 ? 0 : 1);
-    int len;
 
+    int len;
 
     // If we have a region defined, calculate our viewport
     unsigned int view_left, view_top, view_width, view_height;
@@ -152,8 +156,7 @@ void CVT::run( Session* session, std::string argument ){
 			    << "CVT :: End Tiles: " << endx << "," << endy << endl;
 		
       }
-    }
-    else{
+    } else {
       if( session->loglevel >= 4 ) *(session->logfile) << "CVT :: No view port set" << endl;
       view_left = 0;
       view_top = 0;
@@ -168,35 +171,54 @@ void CVT::run( Session* session, std::string argument ){
     // Allocate memory for a strip (tile height x image width)
     unsigned int o_channels = channels;
     if( session->view->shaded ) o_channels = 1;
-    unsigned char* buf = new unsigned char[view_width * src_tile_height * o_channels];
 
+    unsigned char* buf = new unsigned char[view_width * src_tile_height * o_channels + 4000]; // If image to small then 4000 bytes 
+                                                                                             // should be enought to cover the compression overhead
 
     // Create a RawTile for the entire image
     RawTile complete_image( 0, 0, 0, 0, view_width, view_height, o_channels, 8 );
-    complete_image.dataLength = view_width * view_height * o_channels;
+
+    complete_image.dataLength = view_width * src_tile_height * o_channels + 4000;
     complete_image.data = buf;
 
+    if(requestType == PNG) { // png added by Zsolt Husz, 8/05/2009
 
-    // Initialise our JPEG compression object
-    session->jpeg->InitCompression( complete_image, src_tile_height );
-
+    // Initialise our PNH compression object
+      len = session->png->InitCompression( complete_image, src_tile_height );
 #ifndef DEBUG
-    session->out->printf( // 			  "Pragma: no-cache\r\n"
+      session->out->printf( // 			  "Pragma: no-cache\r\n"
+			 "Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT\r\n"
+			 "ETag: \"CVT\"\r\n"
+ 			 "Content-type: image/png\r\n"
+			 "Content-disposition: inline;filename=\"cvt.png\""
+			 "\r\n\r\n" );
+#endif
+      // Send the PNG header to the client
+      if( session->out->putStr( (const char*) complete_image.data, len ) != len ){
+        if( session->loglevel >= 1 ){
+	 *(session->logfile) << "CVT :: Error writing png header" << endl;
+        }
+      }
+    } else { //JPEG
+      // Initialise our JPEG compression object
+
+      session->jpeg->InitCompression( complete_image, src_tile_height );
+#ifndef DEBUG
+      session->out->printf( // 			  "Pragma: no-cache\r\n"
 			 "Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT\r\n"
 			 "ETag: \"CVT\"\r\n"
  			 "Content-type: image/jpeg\r\n"
 			 "Content-disposition: inline;filename=\"cvt.jpg\""
 			 "\r\n\r\n" );
 #endif
-
     // Send the JPEG header to the client
-    len = session->jpeg->getHeaderSize();
-    if( session->out->putStr( (const char*) session->jpeg->getHeader(), len ) != len ){
-      if( session->loglevel >= 1 ){
-	*(session->logfile) << "CVT :: Error writing jpeg header" << endl;
+      len = session->jpeg->getHeaderSize();
+      if( session->out->putStr( (const char*) session->jpeg->getHeader(), len ) != len ){
+        if( session->loglevel >= 1 ){
+	 *(session->logfile) << "CVT :: Error writing jpeg header" << endl;
+        }
       }
     }
-
 
     // Decode the image strip by strip and dynamically compress with JPEG
 
@@ -214,7 +236,7 @@ void CVT::run( Session* session, std::string argument ){
 	if( session->loglevel >= 2 ) tile_timer.start();
 
 	// Get an uncompressed tile from our TileManager
-	TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->logfile, session->loglevel );
+	TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
 	RawTile rawtile = tilemanager.getTile( requested_res, (i*ntlx) + j, session->view->xangle, session->view->yangle, UNCOMPRESSED );
 
 	if( session->loglevel >= 2 ){
@@ -273,10 +295,11 @@ void CVT::run( Session* session, std::string argument ){
 	    if( i < endy - 1 ) dst_tile_height = src_tile_height - yoffset;
 	    else dst_tile_height = view_height;
 	    yf = yoffset;
+  
 	  }
 	  else if( i == endy-1 ){
 	    dst_tile_height = (view_height+view_top) % basic_tile_width;
-	  }
+  	  }
 
 	  if( session->loglevel >= 4 ){
 	    *(session->logfile) << "CVT :: destination tile height: " << dst_tile_height
@@ -291,7 +314,7 @@ void CVT::run( Session* session, std::string argument ){
 
 	  buffer_index = (current_width*channels) + (k*view_width*channels);
 	  unsigned int inx = ((k+yf)*(basic_tile_width-tile_width_padding)*channels) + (xf*channels);
-	  unsigned char* ptr = (unsigned char*) rawtile.data;
+	  unsigned char* ptr = (unsigned char*) rawtile.data; 
 
 	  // If we have a CIELAB image, convert each pixel to sRGB first
 	  // Otherwise just do a fast memcpy
@@ -330,15 +353,14 @@ void CVT::run( Session* session, std::string argument ){
 	    memcpy( &buf[buffer_index],	&ptr[inx], dst_tile_width*channels );
 	  }
 	}
-
 	current_width += dst_tile_width;
-
       }
 
-
       // Compress the strip
-      len = session->jpeg->CompressStrip( buf, dst_tile_height );
-
+      if(requestType == PNG) // png added by Zsolt Husz, 8/05/2009
+        len = session->png->CompressStrip( buf, dst_tile_height );
+      else
+        len = session->jpeg->CompressStrip( buf, dst_tile_height );  // bug fix 15/05/2009
 
       if( session->loglevel >= 3 ){
 	*(session->logfile) << "CVT :: Compressed data strip length is " << len << endl;
@@ -360,7 +382,11 @@ void CVT::run( Session* session, std::string argument ){
     }
 
     // Finish off the image compression
-    len = session->jpeg->Finish();
+    if(requestType == PNG)  // png added by Zsolt Husz, 8/05/2009
+      len = session->png->Finish();
+    else
+      len = session->jpeg->Finish();
+
     if( session->out->putStr( (const char*) complete_image.data, len ) != len ){
       if( session->loglevel >= 1 ){
 	*(session->logfile) << "CVT :: Error writing jpeg EOI markers" << endl;
@@ -372,24 +398,21 @@ void CVT::run( Session* session, std::string argument ){
 
     if( session->out->flush()  == -1 ) {
       if( session->loglevel >= 1 ){
-	*(session->logfile) << "CVT :: Error flushing jpeg tile" << endl;
+	*(session->logfile) << "CVT :: Error flushing image" << endl;
       }
     }
 
     // Inform our response object that we have sent something to the client
     session->response->setImageSent();
 
+
     // Don't forget to delete our strip of memory
     delete[] buf;
 
-  } // End of if( argument == "jpeg" )
-
-
+  } // End of if( argument == "jpeg" || argument == "png")
 
   // Total CVT response time
   if( session->loglevel >= 2 ){
     *(session->logfile) << "CVT :: Total command time " << command_timer.getTime() << " microseconds" << endl;
   }
-
-
-}  
+}

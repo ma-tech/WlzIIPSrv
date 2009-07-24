@@ -86,6 +86,8 @@ class ViewParameters{
   int y;                                       /*!< current point y coordinate */
   int tile;                                    /*!< current point tile */
 
+  bool alpha;                                  /*!< ask for transparent tile (for PNG)*/
+
   WlzDVertex3       queryPoint;                /*!< 3D point for GreyValue enquery */
   QueryPointType    queryPointType;            /*!< type of point to be used for GreyValue enquery */
 
@@ -106,6 +108,7 @@ class ViewParameters{
     y               = 0;
     tile            = 0;
     queryPointType = QUERYPOINTTYPE_NONE;
+    alpha           = false;
   };
 
 
@@ -139,6 +142,10 @@ class ViewParameters{
   /// Set the sectioning scale
   /** \param s scale factor*/
   void setScale( double s ){ scale = s; };
+
+  /// Set the alpha channel request
+  /** \param a if true alpha channel is generated*/
+  void setAlpha( bool  a ){ alpha = a; };
 
   /// Set the sectioning mode
   /** \param m section mode as case-insensitive string. Accepted values are:
@@ -220,6 +227,10 @@ class ViewParameters{
   /// Return the query point type
   QueryPointType getQueryPointType(){ return queryPointType; };
 
+  /// Return the query point type
+  bool getAlpha(){ return alpha; };
+
+
   /// Test equality of section defining parameters: dist, yaw, pitch, roll, scale, mode, fixed and up. Query parameters are ignored.
   bool operator==(const ViewParameters& vp) const {
      return dist  == vp.dist  && 
@@ -228,6 +239,7 @@ class ViewParameters{
             roll  == vp.roll  && 
             scale == vp.scale && 
             mode  == vp.mode  && 
+            alpha == vp.alpha  && 
             WlzGeomVtxEqual3D (fixed, vp.fixed, 0)  && 
             WlzGeomVtxEqual3D (fixed2, vp.fixed2, 0)  && 
             WlzGeomVtxEqual3D (up, vp.up ,0) ;

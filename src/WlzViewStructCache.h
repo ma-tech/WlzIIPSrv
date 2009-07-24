@@ -130,7 +130,7 @@ class WlzViewStructCache {
   void _remove( const WlzThreeDViewStructMap::iterator &miter ) {
 
     WlzFree3DViewStruct( miter->second->second);
-    currentSize -= 1;
+    currentSize --;
     objList.erase( miter->second );
     objMap.erase( miter );
   }
@@ -286,18 +286,6 @@ class WlzViewStructCache {
 
     return miter->second->second;
   }
-
-
-  /*void WlzViewStructCache::clearall() {
-    WlzThreeDViewStructList_Iter liter ;
-    while( currentSize > 0 ) {
-      *(session.logfile) << "WLZViewStructureCache :: cleanup"<< endl;
-      // Remove all
-      liter = objList.end();
-      --liter;
-      this->_remove( liter->first );
-    }
-   }*/
 
 };
 #endif

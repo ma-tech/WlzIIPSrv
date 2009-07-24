@@ -10,7 +10,7 @@ static char _JPEGCompressor_cc[] = "MRC HGU $Id$";
 
 /**  JPEG class wrapper to ijg jpeg library 
 
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
+    Copyright (C) 2009 Zsolt Husz, Medical research Council, UK.
     Copyright (C) 2000-2005 Ruven Pillay.
 
     This program is free software; you can redistribute it and/or modify
@@ -36,10 +36,10 @@ static char _JPEGCompressor_cc[] = "MRC HGU $Id$";
 
 #include "JPEGCompressor.h"
 
-
+//for debug only
+//#include "Task.h"
+//extern      Session session;
 using namespace std;
-
-
 
 
 /* My version of the JPEG error_exit function. We want to pass control back
@@ -186,6 +186,12 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
   height = rawtile.height;
   channels = rawtile.channels;
 
+  bool localData = false;
+
+  if( (channels==2) || (channels==4) ){   //added by Zsolt Husz 14/05/2009 to remove alpha channel
+      channels--;
+      localData = true;
+  }
 
   // Make sure we only try to compress images with 1 or 3 channels
   if( ! ( (channels==1) || (channels==3) )  ){
@@ -230,7 +236,6 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
   dest->pub.empty_output_buffer = iip_empty_output_buffer;
   dest->pub.term_destination = iip_term_destination;
   dest->strip_height = strip_height;
-
   dest->source = data;
   dest->sourcesize = rawtile.dataLength;
 
@@ -270,6 +275,8 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
   dest->pub.next_output_byte = dest->buffer;
   dest->pub.free_in_buffer = mx;
 
+  if (localData)
+     channels++;
 }
 
 
@@ -281,25 +288,34 @@ void JPEGCompressor::InitCompression( RawTile& rawtile, unsigned int strip_heigh
  */
 unsigned int JPEGCompressor::CompressStrip( unsigned char* buf, unsigned int tile_height ) throw (string)
 {
-  JSAMPROW row[1];
+  bool localData = false;
+  int channels_real=channels;
+
+  if( (channels==2) || (channels==4) ){   //added by Zsolt Husz 14/05/2009 to remove alpha channel
+      unsigned int i,size=width*tile_height;
+      channels--;
+      localData = true;
+
+      unsigned char white[3]={255,255,255};
+      for (i=0;i<size;i++) {
+        if (((unsigned char*)buf)[i*(channels+1)+channels]==0)
+           memcpy(((unsigned char*)buf)+i*channels, white, channels);
+        else
+           memcpy(buf+i*channels, buf+i*(channels+1), channels);
+      }
+  }
+
   int row_stride = width * channels;
+  JSAMPROW row[1];
   dest->source = buf;
   dest->sourcesize = 0; 
 
-//   JSAMPROW *array = new JSAMPROW[tile_height+1];
-//   for( int y=0; y < tile_height; y++ ){
-//     array[y] = &data[ y * row_stride ];
-//   }
-//   jpeg_write_scanlines( &cinfo, array, tile_height );
-//   delete[] array;
-
-
-  while( cinfo.next_scanline < tile_height ) {
+  int i;
+  for (i=tile_height;i>0;i--)
+  {
     row[0] = &buf[ cinfo.next_scanline * row_stride ];
     jpeg_write_scanlines( &cinfo, row, 1 );
   }
-
-
   // Copy the JPEG data to our output tile buffer
   size_t datacount = dest->size - dest->pub.free_in_buffer;
 
@@ -310,7 +326,6 @@ unsigned int JPEGCompressor::CompressStrip( unsigned char* buf, unsigned int til
     memcpy( dest->source, dest->buffer, datacount );
   }
 
-
   // Set compressor pointers for library
   size_t mx = (cinfo.image_width * dest->strip_height * cinfo.input_components) + 1024;
   dest->pub.next_output_byte = dest->buffer;
@@ -318,12 +333,11 @@ unsigned int JPEGCompressor::CompressStrip( unsigned char* buf, unsigned int til
   cinfo.next_scanline = 0;
   dest->size = mx;
 
-
-  return datacount;
+  if (localData) { //added by Zsolt Husz 14/05/2009 to remove alpha channel
+    channels=channels_real;
+  }
+  return datacount; 
 }
-
-
-
 
 unsigned int JPEGCompressor::Finish() throw (string)
 {
@@ -355,8 +369,6 @@ unsigned int JPEGCompressor::Finish() throw (string)
 }
 
 
-
-
 int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
 {
 
@@ -367,12 +379,29 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
   struct jpeg_error_mgr jerr;
   iip_destination_mgr dest_mgr;
   iip_dest_ptr dest = &dest_mgr;
-
+  int dataLength = rawtile.dataLength;
 
   // Set up the correct width and height for this particular tile
   width = rawtile.width;
   height = rawtile.height;
   channels = rawtile.channels;
+
+
+  bool localData = false;
+
+  if( (channels==2) || (channels==4)){   //added by Zsolt Husz 14/05/2009 to remove alpha channel
+      int i,size=width*height;
+      channels--;
+      localData = true;
+      unsigned char white[3]={255,255,255};
+      for (i=0;i<size;i++) {
+        if (((unsigned char*)rawtile.data)[i*(channels+1)+channels]==0)
+           memcpy(((unsigned char*)data)+i*channels, white, channels);
+        else
+           memcpy(((unsigned char*)data)+i*channels, ((unsigned char*)rawtile.data)+i*(channels+1), channels);
+      }
+     dataLength = size*channels;
+  }
 
 
   // Make sure we only try to compress images with 1 or 3 channels
@@ -420,8 +449,7 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
   dest->strip_height = 0;
 
   dest->source = data;
-  dest->sourcesize = rawtile.dataLength;
-
+  dest->sourcesize = dataLength;
 
   // Set floating point quality (highest, but possibly slower depending
   //  on hardware)
@@ -467,25 +495,23 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
     }
   }
 
-
   // Tidy up, get the compressed data size and de-allocate memory
   jpeg_finish_compress( &cinfo );
   y = dest->size;
   jpeg_destroy_compress( &cinfo );
 
-
-  // Set the tile compression type
-
   // check if more space was needed and data tile was reallocated
   if (rawtile.data != dest->source)
   {
+    // no free is needed, because the was already freed in
+    // iip_term_destination, just before reallocation
     rawtile.data = dest->source;
   }
   rawtile.dataLength = y;
 
+  // Set the tile compression type
   rawtile.compressionType = JPEG;
   rawtile.quality = Q;
-
 
   // Return the size of the data we have compressed
   return y;

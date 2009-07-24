@@ -329,13 +329,13 @@ void WlzImage::prepareObject() throw(string)
     case WLZ_GREY_LONG:
     case WLZ_GREY_INT:
     case WLZ_GREY_SHORT:
-    case WLZ_GREY_UBYTE:
     case WLZ_GREY_FLOAT:
     case WLZ_GREY_DOUBLE:
-      channels = (unsigned int) 1; 
-      break;
+    case WLZ_GREY_UBYTE:
+      channels = viewParams->alpha ? (unsigned int) 2 :(unsigned int) 1;
+         break;
     case WLZ_GREY_RGBA:
-      channels = (unsigned int) 3; 
+      channels = viewParams->alpha ? (unsigned int) 4 :(unsigned int) 3;
       break;
     default:
             throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
@@ -426,8 +426,8 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
      prepareViewStruct();
 #endif
 
-    image_width  = wlzViewStr->maxvals.vtX-wlzViewStr->minvals.vtX + 1;
-    image_height = wlzViewStr->maxvals.vtY-wlzViewStr->minvals.vtY + 1;
+    image_width  = (unsigned int)(wlzViewStr->maxvals.vtX-wlzViewStr->minvals.vtX) + 1;
+    image_height = (unsigned int)(wlzViewStr->maxvals.vtY-wlzViewStr->minvals.vtY) + 1;
 
     #ifdef __EXTENDED_DEBUG
       *(session.logfile) << "WlzImage :: loadImageInfo: image size : "<< image_width << " x " << image_height << endl;
@@ -517,7 +517,7 @@ void WlzImage::closeImage()
 * \par      Source:
 *                WlzImage.cc
 */
-RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile ) throw (string)
+RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile) throw (string)
 {
   int tw, th; //real tile width and height
 
@@ -559,8 +559,8 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
     WlzDomain     domain;
     WlzValues     values;
 
-    pos.vtX = (tile % ntlx) * tile_width + wlzViewStr->minvals.vtX;
-    pos.vtY = (tile / ntlx) * tile_height + wlzViewStr->minvals.vtY;
+    pos.vtX = (tile % ntlx) * tile_width + (unsigned int)(wlzViewStr->minvals.vtX);
+    pos.vtY = (tile / ntlx) * tile_height + (unsigned int)(wlzViewStr->minvals.vtY);
 
     if((domain.i = WlzMakeIntervalDomain(WLZ_INTERVALDOMAIN_RECT,
                                     WLZ_NINT(pos.vtY),
@@ -616,19 +616,8 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
 
 
   // extract a 1 or 3 channel tile
-  switch (channels) {
-  case 1:
-    WlzGreyP gp;
-    gp.v=tile_buf;
-    errNum=WlzToArray1D(gp, WLZ_GREY_UBYTE, gBufBox, 0, wlzSection);
-    break;
-  case 3:
-    errNum=convertObjToRGB(tile_buf, wlzSection);
-  break;
-  default:
-    throw string( "WlzImage : Get WlzToArray1D: incorrect channel number. ");
 
-  }
+  errNum=convertObjToRGB(tile_buf, wlzSection);
 
   if (errNum!=WLZ_ERR_NONE){
     char temp[20];
@@ -644,6 +633,9 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   rawtile.data = tile_buf;
   rawtile.dataLength = tw*th*channels;
   rawtile.width_padding = tile_width-tw;
+
+  // 15/07/08 memmory leak fixed by Zsolt Husz
+  WlzFreeObj(wlzSection);
 
   //get hash of the tile
   rawtile.filename = getHash();
@@ -849,6 +841,10 @@ int WlzImage::getGreyValue(int *points){
           points[0]=WLZ_RGBA_RED_GET((*(gvWSp->gVal)).rgbv);
           points[1]=WLZ_RGBA_GREEN_GET((*(gvWSp->gVal)).rgbv);
           points[2]=WLZ_RGBA_BLUE_GET((*(gvWSp->gVal)).rgbv);
+	  if (channels==4) { 
+            points[3]=WLZ_RGBA_ALPHA_GET((*(gvWSp->gVal)).rgbv);
+            return 4;
+          }
           return 3;
         default:
            break;
@@ -891,12 +887,66 @@ WlzErrorNum WlzImage::convertObjToRGB(void * buffer, WlzObject* obj) {
       while((errNum = WlzNextGreyInterval(&iwsp)) == WLZ_ERR_NONE){
         WlzUInt val;
         switch( gType ){
+
+       case WLZ_GREY_LONG:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = gwsp.u_grintptr.lnp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+       case WLZ_GREY_INT:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = gwsp.u_grintptr.inp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+       case WLZ_GREY_SHORT:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = gwsp.u_grintptr.shp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+       case WLZ_GREY_FLOAT:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = (unsigned char)gwsp.u_grintptr.flp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+       case WLZ_GREY_DOUBLE:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = (unsigned char)gwsp.u_grintptr.dbp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+
+       case WLZ_GREY_UBYTE:
+          for(i=0; i < width; i++){
+            cbuffer[j++] = gwsp.u_grintptr.ubp[i];
+            if (channels==2) {
+              cbuffer[j++] = 255;
+            }
+          }
+          break;
+
         case WLZ_GREY_RGBA:
           for(i=0; i < width; i++){
             val = gwsp.u_grintptr.rgbp[i];
             cbuffer[j++] = WLZ_RGBA_RED_GET(val);
             cbuffer[j++] = WLZ_RGBA_GREEN_GET(val);
             cbuffer[j++] = WLZ_RGBA_BLUE_GET(val);
+            if (channels==4) {
+              cbuffer[j++] = WLZ_RGBA_ALPHA_GET(val);
+            }
           }
           break;
         default:
@@ -935,14 +985,15 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
   if ( view == NULL)
       view = curViewParams;
 
-  char temp[200];
-  snprintf(temp, 80, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,F=%g,%g,%g,F2=%g,%g,%g)", 
+  char temp[256];
+  snprintf(temp, 256, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
       view->dist,
       view->scale,
       view->yaw,
       view->pitch,
       view->roll,
       view->mode,
+      channels,
       view->fixed.vtX,
       view->fixed.vtY,
       view->fixed.vtZ,

@@ -37,8 +37,6 @@ static char _WLZ_cc[] = "MRC HGU $Id$";
 * Boston, MA  02110-1301, USA.
 * \brief	Provides the WLZ command of the WlzIIPServer. Implementation is based on TPTImage class
 * \ingroup	WlzIIPServer
-* \todo         -
-* \bug          None known.
 */
 
 #include "Task.h"

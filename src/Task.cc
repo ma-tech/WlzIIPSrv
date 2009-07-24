@@ -75,6 +75,7 @@ Task* Task::factory( std::string type ){
   else if( type == "prl" ) return new PRL; // Sets a 2D point
   else if( type == "pab" ) return new PAB; // Sets a 3D point
   else if( type == "scl" ) return new SCL; // Sets scale
+  else if( type == "ptl" ) return new PTL; // PNG tile request, equivalent to JTL
   else return NULL;
 }
 
@@ -242,7 +243,7 @@ void JTLS::run( Session* session, std::string argument ){
     session->view->xangle = values[0];
     session->view->yangle = values[3];
     char tmp[128];
-    snprintf( tmp, 56, "%d,%d", values[1], values[2] );
+    snprintf( tmp, 128, "%d,%d", values[1], values[2] );
     JTL jtl;
     jtl.run( session, tmp );
   }

@@ -695,4 +695,150 @@ else
         $2
 fi
 
-])dnl
+])
+dnl
+
+
+dnl
+dnl FIND_PNG[ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]]
+dnl ------------------------------------------------
+dnl
+dnl Find PNG libraries and headers
+dnl
+dnl Put compile stuff in PNG_INCLUDES
+dnl Put link stuff in PNG_LIBS
+dnl
+dnl Default ACTION-IF-FOUND defines HAVE_PNG
+dnl
+AC_DEFUN([FIND_PNG], [
+
+PNG_INCLUDES=""
+PNG_LIBS=""
+
+dnl AC_ARG_WITH(png, 
+dnl [  --without-png		do not use libpng])
+# Treat --without-png like --without-png-includes --without-png-libraries.
+if test "$with_png" = "no"; then
+	PNG_INCLUDES=no
+	PNG_LIBS=no
+fi
+
+AC_ARG_WITH(png-includes,
+[  --with-png-includes=DIR	PNG include files are in DIR],
+PNG_INCLUDES="-I$withval")
+AC_ARG_WITH(png-libraries,
+[  --with-png-libraries=DIR	PNG libraries are in DIR],
+PNG_LIBS="-L$withval -lpng")
+
+AC_MSG_CHECKING(for PNG)
+
+# Look for png.h 
+if test "$PNG_INCLUDES" = ""; then
+	png_save_LIBS="$LIBS"
+
+	LIBS="-lpng $LIBS"
+
+	# Check the standard search path
+	AC_TRY_COMPILE([
+		#include <stdio.h>
+		#include <png.h>],[int a],[
+		PNG_INCLUDES=""
+	], [
+		# png.h is not in the standard search path.
+
+		# A whole bunch of guesses
+		for dir in \
+			"${prefix}"/*/include \
+			/usr/local/include \
+			/usr/*/include \
+			/usr/local/*/include /usr/*/include \
+			"${prefix}"/include/* \
+			/usr/include/* /usr/local/include/* /*/include; do
+			if test -f "$dir/png.h"; then
+				PNG_INCLUDES="-I$dir"
+				break
+			fi
+		done
+
+		if test "$PNG_INCLUDES" = ""; then
+			PNG_INCLUDES=no
+		fi
+	])
+
+	LIBS="$png_save_LIBS"
+fi
+
+# Now for the libraries
+if test "$PNG_LIBS" = ""; then
+	png_save_LIBS="$LIBS"
+	png_save_INCLUDES="$INCLUDES"
+
+	LIBS="-lpng $LIBS"
+	INCLUDES="$PNG_INCLUDES $INCLUDES"
+
+	# Try the standard search path first
+	AC_TRY_LINK([
+		#include <stdio.h>
+		#include <png.h>],[png_abort((void*)0)], [
+		PNG_LIBS="-lpng"
+	], [
+		# libpng is not in the standard search path.
+
+		# A whole bunch of guesses
+		for dir in \
+			"${prefix}"/*/lib \
+			/usr/local/lib \
+			/usr/*/lib \
+			"${prefix}"/lib/* /usr/lib/* \
+			/usr/local/lib/* /*/lib; do
+			if test -d "$dir" && test "`ls $dir/libpng.* 2> /dev/null`" != ""; then
+				PNG_LIBS="-L$dir -lpng"
+				break
+			fi
+		done
+
+		if test "$PNG_LIBS" = ""; then
+			PNG_LIBS=no
+		fi
+	])
+
+	LIBS="$png_save_LIBS"
+	INCLUDES="$png_save_INCLUDES"
+fi
+
+AC_SUBST(PNG_LIBS)
+AC_SUBST(PNG_INCLUDES)
+
+# Print a helpful message
+png_libraries_result="$PNG_LIBS"
+png_includes_result="$PNG_INCLUDES"
+
+if test x"$png_libraries_result" = x""; then
+	png_libraries_result="in default path"
+fi
+if test x"$png_includes_result" = x""; then
+	png_includes_result="in default path"
+fi
+
+if test "$png_libraries_result" = "no"; then
+	png_libraries_result="(none)"
+fi
+if test "$png_includes_result" = "no"; then
+	png_includes_result="(none)"
+fi
+
+AC_MSG_RESULT(
+  [libraries $png_libraries_result, headers $png_includes_result])
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test "$PNG_INCLUDES" != "no" && test "$PNG_LIBS" != "no"; then
+        ifelse([$1],,AC_DEFINE(HAVE_PNG,1,[Define if you have png libraries and header files.]),[$1])
+        :
+else
+	PNG_INCLUDES=""
+	PNG_LIBS=""
+        $2
+fi
+
+])
+dnl

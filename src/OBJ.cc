@@ -281,7 +281,7 @@ void OBJ::wlz_grey_value(){
 
   checkImage();
   checkIfWoolz();
-  int values[3];
+  int values[4];
   int channels = ((WlzImage*)(*session->image))->getGreyValue(values);
 
   if( session->loglevel >= 2 ){
@@ -290,7 +290,10 @@ void OBJ::wlz_grey_value(){
         *(session->logfile) << "OBJ :: Wlz-grey-value handler returning: " << values[0]  << endl;
         break;
       case 3:
-        *(session->logfile) << "OBJ :: Wlz-grey-value handler returning: " << values[0] << ' ' << values[1] << ' '<< values[2] << ' '<< endl;
+        *(session->logfile) << "OBJ :: Wlz-grey-value handler returning: " << values[0] << ' ' << values[1] << ' '<< values[2] << endl;
+        break;
+      case 4:
+        *(session->logfile) << "OBJ :: Wlz-grey-value handler returning: " << values[0] << ' ' << values[1] << ' '<< values[2] << ' '<< ' ' << values[3] << endl;
         break;
       default:
         throw string( "Wlz-grey-value: unknow channel number" );
@@ -367,7 +370,7 @@ void OBJ::colorspace( std::string arg ){
      WARNING: LAB support is an extension and is not in the
      IIP protocol standard (as of version 1.05)
   */
-  char *planes = "3 0 1 2";
+  const char *planes = "3 0 1 2";
   int calibrated = 0;
   int colourspace;
   if( (*session->image)->getColourSpace() == CIELAB ){

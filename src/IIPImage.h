@@ -232,9 +232,9 @@ class IIPImage {
   /// Return the image hash
   virtual const std::string getHash() { return getImagePath(); };
 
-
+  /// Forces channel no update to alpha value 
+  /// add by Zsolt Husz 12/05/2009
+  virtual void recomputeChannel(bool alpha) { };
 };
-
-
 
 #endif

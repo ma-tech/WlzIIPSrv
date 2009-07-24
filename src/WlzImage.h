@@ -113,7 +113,7 @@ class WlzImage : public IIPImage {
   void openImage() ;
   void loadImageInfo( int x, int y ) throw (std::string);
   void closeImage();
-  RawTile getTile( int x, int y, unsigned int r, unsigned int t ) throw (std::string);
+  RawTile getTile( int x, int y, unsigned int r, unsigned int t) throw (std::string);
   string getFileName( );
   const std::string getHash();
 
@@ -132,8 +132,7 @@ class WlzImage : public IIPImage {
   WlzDVertex3 getCurrentPointIn3D();
 
 
-  //other
-  /*! 
+  /*!
   * \ingroup      WlzIIPServer
   * \brief        Sets pointer to task parameters
   * \param        viewP pointer to view parameters
@@ -142,6 +141,22 @@ class WlzImage : public IIPImage {
   *                WlzImage.cc
   */
   void setView( const ViewParameters  *viewP ){ viewParams = viewP; };
+
+  /*!
+  * \ingroup      WlzIIPServer
+  * \brief        Forces channel no update to alpha value. 
+  * \param        alpha new alpha value
+  * \return       void
+  * \par      Source:
+  *                WlzImage.cc
+  */
+  virtual void recomputeChannel(bool alpha) {
+    if (channels == 3 || channels == 4)
+      channels = alpha ? (unsigned int)4 : (unsigned int)3;
+    else 
+    if (channels == 1 || channels == 2)
+      channels = alpha ? (unsigned int)2 : (unsigned int)1;
+  };
 
   //internal functions
  protected:

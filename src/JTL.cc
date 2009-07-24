@@ -60,7 +60,7 @@ void JTL::run( Session* session, std::string argument ){
   tile = atoi( argument.substr( delimitter + 1, argument.length() ).c_str() );
 
 
-  TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->logfile, session->loglevel );
+  TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
   RawTile rawtile = tilemanager.getTile( resolution, tile, session->view->xangle,
 					 session->view->yangle, JPEG );
 

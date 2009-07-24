@@ -50,6 +50,7 @@ static char _Main_cc[] = "MRC HGU $Id$";
 
 #include "TPTImage.h"
 #include "JPEGCompressor.h"
+#include "PNGCompressor.h"
 #include "Tokenizer.h"
 #include "IIPResponse.h"
 #include "View.h"
@@ -84,8 +85,7 @@ int loglevel;
 ofstream logfile;
 unsigned long IIPcount;
 
-
-
+//      Session session;
 
 /* Handle a signal - print out some stats and exit
  */
@@ -366,6 +366,8 @@ int main( int argc, char *argv[] )
     IIPImage *image = NULL;
     JPEGCompressor jpeg( jpeg_quality );
 
+    PNGCompressor png;
+
 
     // View object for use with the CVT command etc
     View view;
@@ -420,6 +422,7 @@ int main( int argc, char *argv[] )
       session.viewParams = &viewParams;
 
       session.jpeg = &jpeg;
+      session.png = &png;
       session.loglevel = loglevel;
       session.logfile = &logfile;
       session.imageCache = &imageCache;

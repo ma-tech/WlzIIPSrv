@@ -41,6 +41,7 @@ static char _TileManager_h[] = "MRC HGU $Id$";
 #include "RawTile.h"
 #include "IIPImage.h"
 #include "JPEGCompressor.h"
+#include "PNGCompressor.h"
 #include "Cache.h"
 #include "Timer.h"
 
@@ -55,6 +56,7 @@ class TileManager{
 
   Cache* tileCache;
   JPEGCompressor* jpeg;
+  PNGCompressor* png;
   IIPImage* image;
   std::ofstream* logfile;
   int loglevel;
@@ -89,13 +91,15 @@ class TileManager{
    * @param tc pointer to tile cache object
    * @param im pointer to IIPImage object
    * @param j  pointer to JPEGCompressor object
+   * @param p  pointer to PNGCompressor object
    * @param s  pointer to output file stream
    * @param l  logging level
    */
-  TileManager( Cache* tc, IIPImage* im, JPEGCompressor* j, std::ofstream* s, int l ){
+  TileManager( Cache* tc, IIPImage* im, JPEGCompressor* j, PNGCompressor* p, std::ofstream* s, int l ){
     tileCache = tc; 
     image = im;
     jpeg = j;
+    png = p;
     logfile = s ;
     loglevel = l;
   };

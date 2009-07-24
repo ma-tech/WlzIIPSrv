@@ -38,10 +38,10 @@ static char _RawTile_cc[] = "MRC HGU $Id$";
 
 
 /// Colour spaces - GREYSCALE, sRGB and CIELAB
-enum ColourSpaces { GREYSCALE, sRGB, CIELAB };
+enum ColourSpaces { GREYSCALE, sRGB, CIELAB, sRGBA, GREYSCALEA }; // added sRGBA, GREYSCALEA by Zsolt Husz, 11/05/2009
 
 /// Compression Types
-enum CompressionType { UNCOMPRESSED, JPEG, DEFLATE };
+enum CompressionType { UNCOMPRESSED, JPEG, DEFLATE, PNG }; // added PNG by Zsolt Husz, 8/05/2009
 
 
 
@@ -114,7 +114,7 @@ class RawTile{
       \param b bits per channel per sample
   */
   RawTile( int tn = 0, int res = 0, int hs = 0, int vs = 0,
-	   int w = 0, int h = 0, int c = 0, int b = 0 ) {
+	   int w = 0, int h = 0, int c = 0, int b = 0) {
     width = w; height = h; bpc = b; dataLength = 0; data = NULL;
     tileNum = tn; resolution = res; hSequence = hs ; vSequence = vs;
     localData = 0; channels = c; compressionType = UNCOMPRESSED; quality = 0;

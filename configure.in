@@ -100,11 +100,25 @@ AC_CHECK_HEADERS(lcms/lcms.h, AC_CHECK_LIB(lcms, cmsOpenProfileFromMem, LIBS="${
 
 
 dnl	************************************************************ 
+dnl 	Check for user specified location for libpng
 
+dnl AC_ARG_WITH(libpng-incl,
+dnl   [  --with-libpng-incl=DIR     location of the png library include files],
+dnl   png_incl=-I$withval)
+
+dnl AC_ARG_WITH(libpng-lib,
+dnl   [  --with-libpng-lib=DIR     location of the png library files],
+dnl   png_lib=-L$withval)
+
+dnl AC_CHECK_LIB(png, png_write_png,
+dnl   LIBPNG_INCL=$png_incl; LIBTPNG_LIB="$png_lib -lpng",
+dnl   AC_MSG_ERROR(unable to find libpng),
+dnl   $png_lib -lpng)
+
+FIND_PNG(,[AC_MSG_ERROR([libpng not found])])
+
+dnl	************************************************************ 
 dnl 	Check for user specified locations for fast cgi library
-
-
-
 
 
 AC_ARG_WITH( fcgi-incl,

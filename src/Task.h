@@ -91,6 +91,7 @@ typedef std::map<const std::string,IIPImage> imageCacheMapType;
 struct Session {
   IIPImage **image;
   JPEGCompressor* jpeg;
+  PNGCompressor* png;
   View* view;
   IIPResponse* response;
   int loglevel;
@@ -384,6 +385,12 @@ class PAB : public Task {
 
 /// POI Woolz Command: scale parameter
 class SCL : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
+/// PNG Tile Command
+class PTL : public Task {
  public:
   void run( Session* session, std::string argument );
 };
