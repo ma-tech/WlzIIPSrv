@@ -57,13 +57,13 @@ class TPTImage : public IIPImage {
       simplicity.
    */
   tdata_t tile_buf;
-
+  tsize_t tile_size;
 
  public:
 
   /// Constructor
   TPTImage():IIPImage() { 
-    tiff = NULL; tile_buf = NULL; 
+    tiff = NULL; tile_buf = NULL; tile_size = 0;
     tile_width = 0; tile_height = 0;
     numResolutions = 0;
   };

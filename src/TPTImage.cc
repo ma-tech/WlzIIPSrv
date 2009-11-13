@@ -53,8 +53,16 @@ void TPTImage::openImage() throw (string)
     throw string( "tiff open failed for: " + filename );
   }
 
-  if( ( tile_buf = _TIFFmalloc( TIFFTileSize( tiff ) ) ) == NULL ){
-    throw string( "tiff malloc tile failed" );
+  tsize_t acutal_tile_size = TIFFTileSize( tiff );
+  if( !tile_buf || (tile_size < acutal_tile_size)){
+    if (tile_buf)
+        tile_buf = _TIFFrealloc(tile_buf, acutal_tile_size);
+    else
+        tile_buf = _TIFFmalloc(acutal_tile_size);
+    if (tile_buf == NULL){
+        throw string( "tiff (re)malloc tile failed" );
+    }
+    tile_size = acutal_tile_size;
   }
 
   loadImageInfo( currentX, currentY );
@@ -91,8 +99,18 @@ void TPTImage::loadImageInfo( int seq, int ang ) throw(string)
     if( ( tiff = TIFFOpen( filename.c_str(), "r" ) ) == NULL ){
       throw string( "tiff open failed for:" + filename );
     }
-    if( ( tile_buf = _TIFFmalloc( TIFFTileSize( tiff ) ) ) == NULL ){
-      throw string( "tiff malloc tile failed" );
+    tsize_t acutal_tile_size = TIFFTileSize( tiff );
+
+    if( !tile_buf || (tile_size < acutal_tile_size))
+    {
+      if (tile_buf)
+          tile_buf = _TIFFrealloc(tile_buf, acutal_tile_size);
+      else
+          tile_buf = _TIFFmalloc(acutal_tile_size);
+      if (tile_buf == NULL){
+        throw string( "tiff (re)malloc tile failed" );
+      }
+      tile_size = acutal_tile_size;
     }
     currentX = seq;
     currentY = ang;
@@ -135,6 +153,7 @@ void TPTImage::closeImage()
   }
   if( tile_buf != NULL ){
     _TIFFfree( tile_buf );
+    tile_size =0;
     tile_buf = NULL;
   }
 }
@@ -146,7 +165,6 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   uint32 rem_x, rem_y;
   uint16 colour;
   string filename;
-
 
   // Try to open image and allocate a buffer if not already open
 
@@ -162,12 +180,6 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
     filename = getFileName( seq, ang );
     if( ( tiff = TIFFOpen( filename.c_str(), "r" ) ) == NULL ){
       throw string( "tiff open failed for:" + filename );
-    }
-  }
-
-  if( !tile_buf ){
-    if( ( tile_buf = _TIFFmalloc( TIFFTileSize( tiff ) ) ) == NULL ){
-      throw string( "tiff malloc tile failed" );
     }
   }
 
@@ -191,6 +203,18 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
     throw string( "TIFFSetDirectory failed" );
   }
   
+  tsize_t acutal_tile_size = TIFFTileSize( tiff );
+  if( !tile_buf || (tile_size < acutal_tile_size))
+  {
+    if (tile_buf)
+        tile_buf = _TIFFrealloc(tile_buf, acutal_tile_size);
+    else
+        tile_buf = _TIFFmalloc(acutal_tile_size);
+    if (tile_buf == NULL){
+        throw string( "tiff (re)malloc tile failed" );
+    }
+    tile_size = acutal_tile_size;
+  }
 
   // Check that a valid tile number was given
   
@@ -210,8 +234,8 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   TIFFGetField( tiff, TIFFTAG_IMAGEWIDTH, &im_width );
   TIFFGetField( tiff, TIFFTAG_IMAGELENGTH, &im_height );
   TIFFGetField( tiff, TIFFTAG_PHOTOMETRIC, &colour );
-//   TIFFGetField( tiff, TIFFTAG_SAMPLESPERPIXEL, &channels );
-//   TIFFGetField( tiff, TIFFTAG_BITSPERSAMPLE, &bpp );
+  TIFFGetField( tiff, TIFFTAG_SAMPLESPERPIXEL, &channels );
+//  TIFFGetField( tiff, TIFFTAG_BITSPERSAMPLE, &bpp );
 
   
   // Get the width and height for last row and column tiles
@@ -219,8 +243,7 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   rem_x = im_width % tw;
   rem_y = im_height % th;
 
-
-  // Calculate the number of tiles in each direction
+ // Calculate the number of tiles in each direction
    
   ntlx = (im_width / tw) + (rem_x == 0 ? 0 : 1);
   ntly = (im_height / th) + (rem_y == 0 ? 0 : 1);
@@ -248,7 +271,7 @@ RawTile TPTImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
 
   // Decode and read the tile
   int length = TIFFReadEncodedTile( tiff, (ttile_t) tile,
-				    tile_buf, (tsize_t) - 1 );
+                                    tile_buf, (tsize_t) - 1 );
   if( length == -1 ) {
     throw string( "TIFFReadEncodedTile failed for " + getFileName( seq, ang ) );
   }
