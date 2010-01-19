@@ -243,7 +243,7 @@ int main( int argc, char *argv[] )
 
 
   //  Get our max CVT size
-  int max_CVT = Environment::getMaxCVT();
+  int max_CVT = Environment::getMaxCVT();  //ZH: NOTE: this is not respected by Woolz objects
 
 
   if( loglevel >= 1 ){
