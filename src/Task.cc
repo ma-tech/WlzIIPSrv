@@ -90,7 +90,7 @@ void Task::checkImage(){
 
 void Task::checkIfWoolz(){
   string imtype = (*session->image)->getImageType();
-  if( imtype != "wlz"){
+  if( imtype != "wlz" && imtype != "gz"){
     session->response->setError( "1 3", argument );
     throw string( "image is not a Woolz object" );
   }
@@ -98,7 +98,7 @@ void Task::checkIfWoolz(){
 
 void Task::openIfWoolz(){
   string imtype = (*session->image)->getImageType();
-  if( imtype == "wlz"){
+  if( imtype == "wlz" || imtype == "gz"){
     (*session->image)->openImage();
   }
 }
