@@ -141,6 +141,14 @@ void WLZ::run( Session* session, std::string argument ){
 
       *session->image = test;
     }
+    else if( imtype == "gz"){
+      if( session->loglevel >= 2 ) *(session->logfile) << "WLZ :: Gziped Woolz image requested" << endl;
+
+      //set current view parameters
+      test->setView( session->viewParams );
+
+      *session->image = test;
+    }
     else throw string( "WLZ: Unsupported image type: " + imtype );
 
     if( session->loglevel >= 3 ){
