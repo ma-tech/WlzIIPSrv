@@ -83,7 +83,7 @@ unsigned int View::getResolution(){
     else dimension = (int) (height*view_width);
 
     i = 1;
-    while( (dimension / i) > max_size ){
+    while( (dimension / i) > max_size && resolution > 0){
       dimension /= 2;
       width = (int) (width / 2);
       height = (int) (height / 2 );

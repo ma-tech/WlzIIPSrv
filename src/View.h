@@ -47,7 +47,7 @@ class View{
   unsigned int max_resolutions;               /// Total available resolutions
   unsigned int left, top, width, height;      /// Requested width and height
   unsigned int min_size;                      /// Minimum viewport dimension
-  unsigned int max_size;                      /// Maximum viewport dimension
+  unsigned int max_size;                      /// Maximum viewport dimension; ZH: NOTE: this is not respected by Woolz objects
   unsigned int requested_width;               /// Width requested by WID command
   unsigned int requested_height;              /// Height requested by HEI command
   float contrast;                             /// Contrast adjustment requested by CNT command
