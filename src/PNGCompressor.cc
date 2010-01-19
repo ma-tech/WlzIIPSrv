@@ -245,7 +245,7 @@ int PNGCompressor::Compress( RawTile& rawtile ) throw (string) {
   if (dest.size > rawtile.dataLength ) {
       free(rawtile.data);
       rawtile.data = (unsigned char*)malloc(dest.size);
-    }
+  }
   rawtile.dataLength = dest.size;
   memcpy(rawtile.data, dest.data, rawtile.dataLength);
   free(dest.data);
