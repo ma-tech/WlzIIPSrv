@@ -140,7 +140,7 @@ string IIPResponse::getAdvert( const std::string& version ){
   advert += "Content-disposition: inline;filename=\"iipsrv.html\"" + eof + eof;
   advert += "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" ><head><title>IIP Server</title><meta name=\"author\" content=\"Zsolt Husz &lt;Zsolt.Huszn@hgu.mrc.ac.uk&gt; Ruven Pillay &lt;ruven@users.sourceforge.net&gt;\"/></head><body style=\"font-family:Helvetica,sans-serif; margin:4em\"><center><h1>Woolz Internet Imaging Protocol Server</h1><h2>Version "
     + version +
-    "</h2><br/><h3>Edinburgh Mouse Atlas: <a href=\"http://http://www.emouseatlas.org\">http://http://www.emouseatlas.org</a></h3> <br/><h4>by<br/>MRC, Human Genetics Unit, Zsolt Husz</h4> <h3> IIP Home Page: <a href=\"http://iipimage.sourceforge.net\">http://iipimage.sourceforge.net</a></h3><br/><h4>by<br/>Ruven Pillay</h4></center></body></html>";
+    "</h2><br/><h3>Edinburgh Mouse Atlas: <a href=\"http://www.emouseatlas.org\">http://www.emouseatlas.org</a></h3> <br/><h4>by<br/>MRC, Human Genetics Unit, Zsolt Husz</h4> <h3> IIP Home Page: <a href=\"http://iipimage.sourceforge.net\">http://iipimage.sourceforge.net</a></h3><br/><h4>by<br/>Ruven Pillay</h4></center></body></html>";
 
   return advert;
 
