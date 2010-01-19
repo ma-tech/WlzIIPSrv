@@ -244,8 +244,12 @@ void WlzImage::prepareViewStruct() throw(string)
       wlzViewStr->up              = viewParams->up;
       wlzViewStr->view_mode       = viewParams->mode;
       wlzViewStr->scale           = viewParams->scale ;
-      wlzViewStr->voxelRescaleFlg = 0x02;  //use scale
-      //wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
+      wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
+      if (wlzObject && wlzObject->domain.p) {  // set voxel size
+        wlzViewStr->voxelSize[0]    = wlzObject->domain.p->voxel_size[0];
+        wlzViewStr->voxelSize[1]    = wlzObject->domain.p->voxel_size[1];
+        wlzViewStr->voxelSize[2]    = wlzObject->domain.p->voxel_size[2];
+      }
     } else {
       throw string( "WlzImage :: prepareViewStruct creation failed.");
     }
@@ -276,6 +280,7 @@ void WlzImage::prepareObject() throw(string)
   if( !wlzObject ) {
 
     string filename;
+    int usepipe = 0;
 
     #ifdef __EXTENDED_DEBUG
       *(session.logfile) << "WlzImage :: prepareObject: reloading" << endl;
@@ -286,12 +291,29 @@ void WlzImage::prepareObject() throw(string)
 
     wlzObject  = WlzAssignObject( cacheWlzObject.get(filename), NULL );
 
+
     if (wlzObject == NULL)  // cache miss?
     {
       // if not in cache then load
 
-      wlzObject = WlzEffReadObj( NULL, filename.c_str(), WLZEFF_FORMAT_WLZ, 0, &errNum );
+      FILE *fp = NULL;
+      if (filename.substr(filename.length()-3, 3) == ".gz") {
+        string command = "gunzip -c ";
+        command += filename;
+        fp = popen( command.c_str(), "r");
+        usepipe = 1;
+      } else
+        fp = fopen(filename.c_str(), "r");
 
+      if (fp)
+        wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ, 0, &errNum );
+
+      if (fp) {
+          if (usepipe)
+              pclose(fp);
+          else
+              fclose(fp);
+      }
       //test object type
       switch (wlzObject->type) {
           case WLZ_3D_DOMAINOBJ:
@@ -559,8 +581,8 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
     WlzDomain     domain;
     WlzValues     values;
 
-    pos.vtX = (tile % ntlx) * tile_width + (unsigned int)(wlzViewStr->minvals.vtX);
-    pos.vtY = (tile / ntlx) * tile_height + (unsigned int)(wlzViewStr->minvals.vtY);
+    pos.vtX = (tile % ntlx) * tile_width + WLZ_NINT(wlzViewStr->minvals.vtX);
+    pos.vtY = (tile / ntlx) * tile_height + WLZ_NINT(wlzViewStr->minvals.vtY);
 
     if((domain.i = WlzMakeIntervalDomain(WLZ_INTERVALDOMAIN_RECT,
                                     WLZ_NINT(pos.vtY),
@@ -570,7 +592,7 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
                                         &errNum))){
 
       #ifdef __EXTENDED_DEBUG
-        *(session.logfile) << "WlzImage :: domainn size "<< pos.vtX<<","<< pos.vtY<<","<<tw<<","<< th<<" ---" <<wlzObject->domain.core->type<<endl;
+        *(session.logfile) << "WlzImage :: domain size "<< pos.vtX<<","<< pos.vtY<<","<<tw<<","<< th<<" ---" <<wlzObject->domain.core->type<<endl;
       #endif
 
       values.core = NULL;
