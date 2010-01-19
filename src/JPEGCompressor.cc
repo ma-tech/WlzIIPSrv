@@ -498,7 +498,6 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
   // Tidy up, get the compressed data size and de-allocate memory
   jpeg_finish_compress( &cinfo );
   y = dest->size;
-  jpeg_destroy_compress( &cinfo );
 
   // check if more space was needed and data tile was reallocated
   if (rawtile.data != dest->source)
@@ -508,6 +507,8 @@ int JPEGCompressor::Compress( RawTile& rawtile ) throw (string)
     rawtile.data = dest->source;
   }
   rawtile.dataLength = y;
+
+  jpeg_destroy_compress( &cinfo );
 
   // Set the tile compression type
   rawtile.compressionType = JPEG;
