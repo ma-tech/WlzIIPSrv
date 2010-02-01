@@ -35,6 +35,8 @@ static char _RawTile_cc[] = "MRC HGU $Id$";
 
 #include <cstring>
 #include <string>
+#include <alloca.h>
+#include <cstdlib>
 
 
 /// Colour spaces - GREYSCALE, sRGB and CIELAB

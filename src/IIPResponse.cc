@@ -31,7 +31,7 @@ static char _IIPResponse_cc[] = "MRC HGU $Id$";
 
 #include "IIPResponse.h"
 #include <cstdio>
-// #include <iconv.h>
+#include <string.h>
 
 
 using namespace std;
