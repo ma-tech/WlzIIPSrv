@@ -123,21 +123,22 @@ dnl 	Check for user specified locations for fast cgi library
 
 AC_ARG_WITH( fcgi-incl,
   [  --with-fcgi-incl=DIR          location of the fcgi include files],
-fcgi_include_path=$withval)
+fcgi_include_path=-I$withval)
 
 AC_ARG_WITH( fcgi-lib,
   [  --with-fcgi-lib=DIR           location of the fcgi libraries],
-  fcgi_lib_path=$withval)
+  fcgi_lib_path=-L$withval;
+  fcgi_lib_path_only=$withval)
 
 AC_ARG_ENABLE(static-fcgi,
  [  --enable-static-fcgi    enable staticaly linked libfcgi],
-	echo "Using static fcgi library"; LIBFCGI_INCLUDES="-I$fcgi_include_path"; LIBFCGI_LIBS="$fcgi_lib_path/libfcgi.a",
+	echo "Using static fcgi library"; LIBFCGI_INCLUDES="$fcgi_include_path"; LIBFCGI_LIBS="$fcgi_lib_path_only/libfcgi.a",
 	AC_CHECK_LIB( fcgi, FCGI_Accept,echo "fcgi found";
-		LIBFCGI_INCLUDES="-I$fcgi_include_path";
-		LIBFCGI_LDFLAGS="-L$fcgi_lib_path";
+		LIBFCGI_INCLUDES="$fcgi_include_path";
+		LIBFCGI_LDFLAGS="$fcgi_lib_path";
 		LIBFCGI_LIBS="-lfcgi",
 	echo "Using fcgi library from $fcgi_lib_path and includes from $fcgi_include_path .";
-		LIBFCGI_LDFLAGS="-L$fcgi_lib_path"; LIBFCGI_INCLUDES="-I$fcgi_include_path"; LIBFCGI_LIBS="-lfcgi" ))
+		LIBFCGI_LDFLAGS="$fcgi_lib_path"; LIBFCGI_INCLUDES="$fcgi_include_path"; LIBFCGI_LIBS="-lfcgi" ))
 
 AC_SUBST(LIBFCGI_INCLUDES)
 AC_SUBST(LIBFCGI_LDFLAGS)
