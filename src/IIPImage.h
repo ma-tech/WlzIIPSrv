@@ -163,7 +163,7 @@ class IIPImage {
   unsigned int getNumBitsPerPixel() { return bpp; };
 
   /// Return the number of channels for this image
-  unsigned int getNumChannels() { return channels; };
+  virtual unsigned int getNumChannels() { return channels; };
 
   /// Return the image width in pixels
   unsigned int getImageWidth() { return image_width; };
