@@ -73,6 +73,7 @@ iipsrv_fcgi_SOURCES = \
 			WLZ.cc \
 			WlzImage.cc \
 			JTL.cc \
+			SEL.cc \
 			PTL.cc \
 			TIL.cc \
 			ICC.cc \
@@ -113,6 +114,7 @@ iipsrv_fcgi_SOURCES = \
 			WLZ.cc \
 			WlzImage.cc \
 			PTL.cc \
+			SEL.cc \
 			JTL.cc \
 			TIL.cc \
 			ICC.cc \

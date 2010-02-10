@@ -395,5 +395,11 @@ class PTL : public Task {
   void run( Session* session, std::string argument );
 };
 
+/// SEL Command for compound objects
+class SEL : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
 
 #endif
