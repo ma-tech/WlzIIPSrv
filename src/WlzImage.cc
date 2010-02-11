@@ -41,24 +41,6 @@ static char _WlzImage_cc[] = "MRC HGU $Id$";
 * \bug          None known.
 */
 
-
-/*
-TODO:
-
-2. Default commands / metadata
-3. 
-    - range ??
-    - other , default ocmmands
-
-    - return features of the image: check default parameters  - title, etc
-    - read metadata for wlz
-
-    - error handling:
-      - range chechking - what other parameters?
-
-    - reset changed features?
-*/
-
 #include "WlzImage.h"
 #include <WlzProto.h>
 #include <WlzExtFF.h>
@@ -245,20 +227,34 @@ void WlzImage::prepareViewStruct() throw(string)
       wlzViewStr->view_mode       = viewParams->mode;
       wlzViewStr->scale           = viewParams->scale ;
       wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
-      if (wlzObject && wlzObject->domain.p) {  // set voxel size
-        wlzViewStr->voxelSize[0]    = wlzObject->domain.p->voxel_size[0];
-        wlzViewStr->voxelSize[1]    = wlzObject->domain.p->voxel_size[1];
-        wlzViewStr->voxelSize[2]    = wlzObject->domain.p->voxel_size[2];
-      }
     } else {
       throw string( "WlzImage :: prepareViewStruct creation failed.");
     }
+    if (wlzObject->type == WLZ_COMPOUND_ARR_2) {
+        WlzCompoundArray *array = (WlzCompoundArray *)wlzObject;
+        WlzObject *obj = array->o[0];
+        if (array && array->n>0 && obj) {
+            if (obj->domain.p) {
+              wlzViewStr->voxelSize[0]    = obj->domain.p->voxel_size[0];
+              wlzViewStr->voxelSize[1]    = obj->domain.p->voxel_size[1];
+              wlzViewStr->voxelSize[2]    = obj->domain.p->voxel_size[2];
+            }
+            errNum = WlzInit3DViewStruct(wlzViewStr, array->o[0]);
+        } else
+           throw string( "WlzImage :: can't find object to prepare ViewStruct.");
+    } else {
+        if (wlzObject && wlzObject->domain.p) {
+          wlzViewStr->voxelSize[0]    = wlzObject->domain.p->voxel_size[0];
+          wlzViewStr->voxelSize[1]    = wlzObject->domain.p->voxel_size[1];
+          wlzViewStr->voxelSize[2]    = wlzObject->domain.p->voxel_size[2];
+      }
+        errNum = WlzInit3DViewStruct(wlzViewStr, wlzObject);
+    }
 
-    WlzInit3DViewStruct(wlzViewStr, wlzObject);
-    ////////////////////////////////////////////////////////
+    if (errNum != WLZ_ERR_NONE)
+      throw string( "WlzImage :: WlzInit3DViewStruct failed.");
 
     cacheViewStruct.insert(wlzViewStr , hash);
-
   }
   return ;
 }
@@ -314,12 +310,15 @@ void WlzImage::prepareObject() throw(string)
           else
               fclose(fp);
       }
+
       //test object type
       switch (wlzObject->type) {
           case WLZ_3D_DOMAINOBJ:
               break;
+          case WLZ_COMPOUND_ARR_2:
+              break;
           default:
-              throw string( "WlzImage :: prepareObject:  Incorrect object type. Currently supported: WLZ_3D_DOMAINOBJ.");
+              throw string( "WlzImage :: prepareObject:  Incorrect object type. Currently supported: WLZ_3D_DOMAINOBJ, and WLZ_COMPOUND_ARR_2 with WLZ_3D_DOMAINOBJ.");
       }
 
 
@@ -341,8 +340,18 @@ void WlzImage::prepareObject() throw(string)
     #endif
   }
 
+  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzObject *initObj = array?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
+
+  if (!initObj)
+      throw string( "WlzImage :: prepareObject:  unsuported objet.");
+
   //set global parameters
-  gType = WlzGreyTypeFromObj(wlzObject, &errNum);
+  if (initObj->values.c == NULL) // no values
+       gType = WLZ_GREY_UBYTE; // consider it UBYTE
+  else
+       gType = WlzGreyTypeFromObj(initObj, &errNum);
+
   if (errNum != WLZ_ERR_NONE) {
           throw string( "WlzImage :: prepareObject:  Error while WrlGreyTypeFromObj.");
   }
@@ -360,7 +369,7 @@ void WlzImage::prepareObject() throw(string)
       channels = viewParams->alpha ? (unsigned int) 4 :(unsigned int) 3;
       break;
     default:
-            throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
+      throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
   }
 
   bpp = (unsigned int) 8;  //bits per channel
@@ -370,6 +379,43 @@ void WlzImage::prepareObject() throw(string)
   else if( channels == 1 ) colourspace = GREYSCALE;
   else colourspace = sRGB;
 
+  //set background
+  if (initObj->values.c == NULL)
+  {
+      background[0]=0;    // black background
+      background[1]=0;    // alpha 0, transparent
+  } else {
+    WlzPixelV pixel=WlzGetBackground(initObj, NULL);
+    background[1]=0;  // alpha 0, transparent
+    switch( gType ){
+      case WLZ_GREY_LONG:
+        background[0] = pixel.v.lnv%255;
+        break;
+      case WLZ_GREY_INT:
+        background[0] = pixel.v.inv%255;
+        break;
+      case WLZ_GREY_SHORT:
+        background[0] = pixel.v.shv%255;
+        break;
+      case WLZ_GREY_FLOAT:
+        background[0] = ((int)round(pixel.v.flv))%255;
+        break;
+      case WLZ_GREY_DOUBLE:
+        background[0] = ((int)round(pixel.v.dbv))%255;
+        break;
+      case WLZ_GREY_UBYTE:
+        background[0] = pixel.v.ubv;
+           break;
+      case WLZ_GREY_RGBA:
+         background[0] = WLZ_RGBA_RED_GET(pixel.v.rgbv);
+         background[1] = WLZ_RGBA_GREEN_GET(pixel.v.rgbv);
+         background[2] = WLZ_RGBA_BLUE_GET(pixel.v.rgbv);
+         background[3] = WLZ_RGBA_ALPHA_GET(pixel.v.rgbv);
+        break;
+      default:
+         throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
+    }
+  }
 }
 
 /*!
@@ -391,7 +437,6 @@ bool WlzImage::isViewChanged()
 * \ingroup      WlzIIPServer
 * \brief        Load object specific info: image and tile size, number of tiles, metadata. 
 * 
-*
 * \return       void
 * \par      Source:
 *                WlzImage.cc
@@ -493,19 +538,16 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
 }
 
 /*!
-* \ingroup      WlzIIPServer
-* \brief        Release the object and all related data.
-*
-* \return       void
-* \par      Source:
-*                WlzImage.cc
-*/
-void WlzImage::closeImage()
-{
-
+ * \ingroup      WlzIIPServer
+ * \brief        Release the object and all related data.
+ *
+ * \return       void
+ * \par      Source:
+ *                WlzImage.cc
+ */
+void WlzImage::closeImage() {
   // free tile temporary data
   if( tile_buf != NULL ){
-    //AlcFree(tile_buf);
     free(tile_buf);
     tile_buf = NULL;
   }
@@ -525,7 +567,55 @@ void WlzImage::closeImage()
   // release current object parameters
   if (curViewParams != NULL){
     delete curViewParams;
+    curViewParams = NULL;
   }
+}
+
+/*!
+* \ingroup      WlzIIPServer
+* \brief        Sections a 3D object wlzObject to generate a single tile in tile_buf for the tileing given by tileObject
+* \param        tile_buf   allocated memmory location for the tile
+* \param        wlzObject  3D woolz object to section
+* \param        tileObject sectioning object set up result the tile requested
+* \param        pos        section bounding box origin
+* \param        size       section bounding box size
+* \param        sel        selector with the colour to be used for the section
+* \return       WLZ_ERR_NONE if success
+* \par      Source:
+*                WlzImage.cc
+*/
+WlzErrorNum WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObject, WlzObject *tileObject, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel) {
+   WlzObject *wlzSection = NULL;
+   WlzErrorNum errNum = WLZ_ERR_NONE;
+   wlzSection =  WlzAssignObject(
+                  WlzGetSubSectionFromObject(wlzObject,
+                        tileObject,
+                        wlzViewStr,
+                        interp,
+                        NULL,
+                        &errNum ) ,
+                NULL);
+
+   if (wlzSection == NULL || errNum != WLZ_ERR_NONE) {
+     throw string( "WlzImage : Sectioning failed.");
+   }
+
+   #ifdef __EXTENDED_DEBUG
+   //  *(session.logfile) << "WlzImage :: closeImage: malloc " << size.vtX << size.vtY << endl;
+   #endif
+
+   if (wlzObject->values.i == NULL)  { // no values
+         errNum = convertDomainObjToRGB(tile_buf,  wlzSection,  pos, size, sel);
+   } else {  // wit values
+         errNum = convertValueObjToRGB(tile_buf,  wlzSection,  pos, size, sel);
+   }
+
+   if (errNum!=WLZ_ERR_NONE) {
+     char temp[20];
+     snprintf(temp, 20, " no %d" ,errNum);
+     throw string( "WlzImage :: conversion to array" + (string)temp);
+   }
+   WlzFreeObj(wlzSection);
 }
 
 /*!
@@ -541,8 +631,7 @@ void WlzImage::closeImage()
 */
 RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile) throw (string)
 {
-  int tw, th; //real tile width and height
-
+  int tw=0, th=0; //real tile width and height
   WlzErrorNum errNum=WLZ_ERR_NONE;
 
   string filename;
@@ -551,7 +640,7 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   WlzIVertex3   pos;
   WlzObject     *wlzSection = NULL;
 
-  seq = ang = res  = 0; // force unused parameters to zero to, facilitate cache match
+  //seq = ang =  res  = 0; // force unused parameters to zero to, facilitate cache match
   loadImageInfo( 0, 0);
 
   // Check that a valid tile number was given
@@ -600,24 +689,6 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
                           values, NULL, NULL, &errNum), NULL);
     }
   }
-
-  if( errNum == WLZ_ERR_NONE ){
-    wlzSection =  WlzAssignObject(
-                    WlzGetSubSectionFromObject(wlzObject,
-                          tmpObj,
-                          wlzViewStr,
-                          interp,
-                          NULL,
-                          &errNum ) ,
-                  NULL);
-    WlzFreeObj(tmpObj);
-  }
-
-  if (wlzSection == NULL || errNum != WLZ_ERR_NONE)
-  {
-    throw string( "WlzImage : Sectioning failed.");
-  }
-
   WlzIBox3 gBufBox;
   gBufBox.xMin=pos.vtX;
   gBufBox.yMin=pos.vtY;
@@ -626,42 +697,72 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   gBufBox.zMin=0;
   gBufBox.zMax=0;
 
+  WlzIVertex2 pos2D;
+  WlzIVertex2 size;
+  pos2D.vtX = pos.vtX;
+  pos2D.vtY = pos.vtY;
+  size.vtX= tw;
+  size.vtY= th;
+
+  //recompute out channels
+  int outchannels=getNumChannels();
+  WlzCompoundArray *array = (wlzObject->type == WLZ_COMPOUND_ARR_2) ? (WlzCompoundArray*) wlzObject : NULL;
+
   if (!tile_buf) {
-    // allocate tile buffer for the maximum sized buffer,
-    // even if this tile is edge tile (\ie smaller)
-    tile_buf = malloc ( tile_width * tile_height * channels); 
+    tile_buf = (unsigned char*)malloc ( tile_width * tile_height * outchannels);
   }
 
-  #ifdef __EXTENDED_DEBUG
-  //  *(session.logfile) << "WlzImage :: closeImage: malloc " << size.vtX << size.vtY << endl;
-  #endif
+  //init tile buffer
+  for (int i=0;i<size.vtX*size.vtY;i++)
+         memcpy(tile_buf +i*outchannels, background, outchannels);
 
-
-  // extract a 1 or 3 channel tile
-
-  errNum=convertObjToRGB(tile_buf, wlzSection);
-
-  if (errNum!=WLZ_ERR_NONE){
-    char temp[20];
-    snprintf(temp, 20, " no %d" ,errNum);
-    throw string( "WlzImage :: conversion to array" + (string)temp);
+  if (viewParams->selector) {
+    //if selector existis
+    CompoundSelector *iter = viewParams->selector;
+    WlzObject *obj= NULL;
+    while (iter) {
+        if (array) {
+            if (array->n>iter->index) {
+              obj = array->o[iter->index];
+              if (obj)
+                sectionObject(tile_buf, obj, tmpObj, pos2D, size, iter);
+          }
+        } else {
+            // use selector with lowest index
+            sectionObject(tile_buf, wlzObject, tmpObj, pos2D, size, iter);
+            break;
+        }
+        iter = iter->next;
+    }
+  } else {
+      //use default selector
+      CompoundSelector sel;
+      sel.index = 0;
+      sel.a=255;
+      sel.r=255;
+      sel.g=255;
+      sel.b=255;
+      if (array) {
+          if (array->n >0 && array->o[0])
+              sectionObject(tile_buf, array->o[0], tmpObj, pos2D, size, &sel);
+      } else
+        sectionObject(tile_buf, wlzObject , tmpObj, pos2D, size, &sel);
   }
+
+  //free tileing object
+  WlzFreeObj(tmpObj);
 
   #ifdef __EXTENDED_DEBUG
     *(session.logfile) << "WlzImage :: getTile : Raw creation "<< endl;
   #endif
 
-  RawTile rawtile( tile, res, seq, ang, tw, th, channels, bpp );
+  RawTile rawtile( tile, res, seq, ang, tw, th, outchannels, bpp );
   rawtile.data = tile_buf;
-  rawtile.dataLength = tw*th*channels;
+  rawtile.dataLength = tw*th*outchannels;
   rawtile.width_padding = tile_width-tw;
-
-  // 15/07/08 memmory leak fixed by Zsolt Husz
-  WlzFreeObj(wlzSection);
-
+  
   //get hash of the tile
   rawtile.filename = getHash();
-
   return( rawtile );
 
 }
@@ -678,7 +779,6 @@ string WlzImage::getFileName( )
 {
   return getImagePath();
 }
-
 
 
 /*!
@@ -780,7 +880,9 @@ WlzDVertex3 WlzImage::getCurrentPointIn3D(){
 */
 float* WlzImage::getTrueVoxelSize(){
   prepareObject();
-  return wlzObject->domain.p->voxel_size;
+  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
+  return obj->domain.p->voxel_size;
 }
 
 /*!
@@ -792,16 +894,18 @@ float* WlzImage::getTrueVoxelSize(){
 */
 void WlzImage::get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkl){
   prepareObject();
-  plane1 = wlzObject->domain.p->plane1;
-  lastpl = wlzObject->domain.p->lastpl;
-  line1  = wlzObject->domain.p->line1;
-  lastln = wlzObject->domain.p->lastln;
-  kol1   = wlzObject->domain.p->kol1;
-  lastkl = wlzObject->domain.p->lastkl;
+
+  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
+
+  plane1 = obj->domain.p->plane1;
+  lastpl = obj->domain.p->lastpl;
+  line1  = obj->domain.p->line1;
+  lastln = obj->domain.p->lastln;
+  kol1   = obj->domain.p->kol1;
+  lastkl = obj->domain.p->lastkl;
   return ;
 }
-
-
 
 /*!
 * \ingroup      WlzIIPServer
@@ -812,7 +916,9 @@ void WlzImage::get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastl
 */
 int WlzImage::getVolume(){
   prepareObject();
-  return WlzVolume(wlzObject,  NULL);
+  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
+  return WlzVolume(obj,  NULL);
 }
 
 /*!
@@ -845,7 +951,10 @@ int WlzImage::getGreyValue(int *points){
 
   prepareObject();
 
-  gvWSp =  WlzGreyValueMakeWSp(wlzObject, &errNum);
+  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
+
+  gvWSp =  WlzGreyValueMakeWSp(obj, &errNum);
   if (errNum == WLZ_ERR_NONE) {
       WlzGreyValueGet(gvWSp, pos.vtZ, pos.vtY, pos.vtX);
 
@@ -882,92 +991,206 @@ int WlzImage::getGreyValue(int *points){
 *               into a 3 channel raw bitmap
 * \param        buffer to store converted image. the buffer has to be correctly preallocated
 * \param        obj object to be converted
+* \param        pos the origin of the tile
 * \return       void
 * \par      Source:
 *                WlzImage.cc
 */
-WlzErrorNum WlzImage::convertObjToRGB(void * buffer, WlzObject* obj) {
+WlzErrorNum WlzImage::convertDomainObjToRGB(unsigned char *cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel) {
+  if (!cbuffer || !obj)
+      return WLZ_ERR_OBJECT_NULL;
 
+  WlzIntervalWSpace     iwsp;
+  int           i;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  int col1= pos.vtX;
+  int line1= pos.vtY;
+  int lineoff = 0;
+  int iwidth = 0;
+
+  int alpha = sel ? sel->a:255;
+  float fA = alpha/255.0;
+  float r = (sel ? sel->r:255) * fA;
+  float g = (sel ? sel->g:255) * fA;
+  float b = (sel ? sel->b:255) * fA;
+
+  if (obj->values.i != NULL)  {
+     return WLZ_ERR_DOMAIN_TYPE;
+  }
+
+  int outchannels = getNumChannels();
+
+  //scan the object
+  if((errNum = WlzInitRasterScan(obj, &iwsp, WLZ_RASTERDIR_ILIC)) == WLZ_ERR_NONE) {
+      while((errNum = WlzNextInterval(&iwsp)) == WLZ_ERR_NONE){
+        WlzUInt val;
+        lineoff = (size.vtX*(iwsp.linpos-line1)+(iwsp.lftpos-col1))*outchannels;
+        iwidth = iwsp.rgtpos-iwsp.lftpos;
+        for(i=0; i <= iwidth; i++) {
+           cbuffer[lineoff+i*outchannels] =  (unsigned char)(r + cbuffer[lineoff+i*outchannels] * (1.0f-fA))  ;
+           cbuffer[lineoff+i*outchannels + 1] = (unsigned char)(g + cbuffer[lineoff+i*outchannels + 1] * (1.0f-fA))  ;
+           cbuffer[lineoff+i*outchannels + 2] = (unsigned char)(b + cbuffer[lineoff+i*outchannels + 2] * (1.0f-fA))  ;
+           if (outchannels==4) {
+               float a2=cbuffer[lineoff+i*outchannels+3]/255.0f;
+               cbuffer[lineoff+i*outchannels+3] = round((fA + a2 - a2 * fA)*255.0);
+           }
+        }
+      }
+  }
+  if( errNum == WLZ_ERR_EOO ) {
+    errNum = WLZ_ERR_NONE;
+  }
+  return errNum ;
+}
+
+/*!
+ * \ingroup      WlzIIPServer
+ * \brief        Converts a 2D value object to a linearised 2D array
+ * \param        cbuffer    allocated memmory location for the output
+ *  \param        obj        input object
+ * \param        pos        section bounding box origin
+ * \param        size       section bounding box size
+ * \param        sel        selector with the colour to be used for the section
+ * \return       WLZ_ERR_NONE if success
+ * \par      Source:
+ *                WlzImage.cc
+ */
+WlzErrorNum WlzImage::convertValueObjToRGB(unsigned char *cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel) {
   WlzIntervalWSpace     iwsp;
   WlzGreyWSpace         gwsp;
   int           i, j;
   WlzGreyType   gType;
-  int           width;
-  WlzErrorNum   errNum;
-  unsigned char          *cbuffer=(unsigned char*)buffer;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if( obj->type != WLZ_2D_DOMAINOBJ ){
-    return WLZ_ERR_OBJECT_TYPE;
+  if (!cbuffer || !obj)
+      return WLZ_ERR_OBJECT_NULL;
+
+  if (obj->values.i == NULL)  {
+     return WLZ_ERR_DOMAIN_NULL;
   }
 
-  gType = WlzGreyTypeFromObj(obj, &errNum);
-  width = obj->domain.i->lastkl - obj->domain.i->kol1 + 1;
+  int col1= pos.vtX;
+  int line1= pos.vtY;
+  int lineoff = 0;
+  int iwidth = 0;
+  int outchannels = getNumChannels();
+  bool copyGreyToRGB = outchannels != channels;
+  int alphaoffset = (outchannels == 2 || outchannels==4) ? (copyGreyToRGB ? 3 :1) : 0;
+  float gray;
+  int alpha = sel ? sel->a : 255;
+  float fA = alpha / 255.0f;
+  float fR = sel ? sel->r/255.0f : 1.0f;
+  float fG = sel ? sel->g/255.0f : 1.0f;
+  float fB = sel ? sel->b/255.0f : 1.0f;
+  float fAlphaPrev = 0;
 
+  gType = WlzGreyTypeFromObj(obj, &errNum);
   //scan the object
   if((errNum = WlzInitGreyScan(obj, &iwsp, &gwsp)) == WLZ_ERR_NONE){
       j = 0;
       while((errNum = WlzNextGreyInterval(&iwsp)) == WLZ_ERR_NONE){
+          lineoff = (size.vtX*(iwsp.linpos-line1)+(iwsp.colpos-col1))*outchannels;
+          iwidth = iwsp.rgtpos-iwsp.lftpos;
         WlzUInt val;
         switch( gType ){
 
        case WLZ_GREY_LONG:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = gwsp.u_grintptr.lnp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
+            for(i=0; i <= iwidth; i++){
+             gray = gwsp.u_grintptr.lnp[i] * fA;
+             cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+             if (copyGreyToRGB) {
+                 cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+                 cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+             }
+             if (alphaoffset>0) {
+                 fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                 cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+             }
             }
-          }
           break;
        case WLZ_GREY_INT:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = gwsp.u_grintptr.inp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
+          for(i=0; i <= iwidth; i++){
+            gray = gwsp.u_grintptr.inp[i] * fA;
+            cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+            if (copyGreyToRGB) {
+                cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+                cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+            }
+            if (alphaoffset>0) {
+                fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
             }
           }
           break;
        case WLZ_GREY_SHORT:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = gwsp.u_grintptr.shp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
+          for(i=0; i <= iwidth; i++){
+            gray= gwsp.u_grintptr.shp[i] * fA;
+            cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+            if (copyGreyToRGB) {
+                cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+                cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+            }
+            if (alphaoffset>0) {
+                fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
             }
           }
           break;
        case WLZ_GREY_FLOAT:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = (unsigned char)gwsp.u_grintptr.flp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
+          for(i=0; i <= iwidth; i++){
+            gray= gwsp.u_grintptr.flp[i] * fA;
+            cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+            if (copyGreyToRGB) {
+                cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+                cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB+ cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+            }
+            if (alphaoffset>0) {
+                fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
             }
           }
           break;
        case WLZ_GREY_DOUBLE:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = (unsigned char)gwsp.u_grintptr.dbp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
+          for(i=0; i <= iwidth; i++){
+            gray= gwsp.u_grintptr.dbp[i] * fA;
+
+            cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+            if (copyGreyToRGB) {
+                cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+                cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+            }
+            if (alphaoffset>0) {
+                fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
             }
           }
           break;
 
        case WLZ_GREY_UBYTE:
-          for(i=0; i < width; i++){
-            cbuffer[j++] = gwsp.u_grintptr.ubp[i];
-            if (channels==2) {
-              cbuffer[j++] = 255;
-            }
+          for(i=0; i <= iwidth; i++){
+           gray= gwsp.u_grintptr.ubp[i] * fA;
+           cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+           if (copyGreyToRGB) {
+               cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+               cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+           }
+           if (outchannels==2 || outchannels==4) {
+               fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+               cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+           }
           }
           break;
 
         case WLZ_GREY_RGBA:
-          for(i=0; i < width; i++){
+          for(i=0; i <= iwidth; i++){
             val = gwsp.u_grintptr.rgbp[i];
-            cbuffer[j++] = WLZ_RGBA_RED_GET(val);
-            cbuffer[j++] = WLZ_RGBA_GREEN_GET(val);
-            cbuffer[j++] = WLZ_RGBA_BLUE_GET(val);
-            if (channels==4) {
-              cbuffer[j++] = WLZ_RGBA_ALPHA_GET(val);
+            cbuffer[lineoff+i*outchannels]   = (unsigned char)(WLZ_RGBA_RED_GET(val)   * fA * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+            cbuffer[lineoff+i*outchannels+1] = (unsigned char)(WLZ_RGBA_GREEN_GET(val) * fA * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
+            cbuffer[lineoff+i*outchannels+2] = (unsigned char)(WLZ_RGBA_BLUE_GET(val)  * fA * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+            if (outchannels==4) {
+                fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
             }
           }
           break;
@@ -975,25 +1198,93 @@ WlzErrorNum WlzImage::convertObjToRGB(void * buffer, WlzObject* obj) {
           return WLZ_ERR_GREY_TYPE;
         }
       }
+  }
 
-      if( errNum == WLZ_ERR_EOO ){
-        errNum = WLZ_ERR_NONE;
-      }
-    }
+  if( errNum == WLZ_ERR_EOO ){
+    errNum = WLZ_ERR_NONE;
+  }
     return errNum ;
 }
 
+/*!
+ * \ingroup      WlzIIPServer
+ * \brief        Converts a 2D domain or value object to a linearised 2D array
+ * \param        cbuffer    allocated memmory location for the output
+ * \param        obj        input object
+ * \param        pos        section bounding box origin
+ * \param        size       section bounding box size
+ * \return       WLZ_ERR_NONE if success
+ * \par      Source:
+ *                WlzImage.cc
+ */
+WlzErrorNum WlzImage::convertObjToRGB(unsigned char * cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size) {
+  if (!cbuffer || !obj)
+      return WLZ_ERR_OBJECT_NULL;
+
+   int i = 0;
+
+  //clear buffer
+  int outchannel = getNumChannels();
+  for (i=0;i<size.vtX*size.vtY;i++)
+         memcpy(cbuffer+i*channels, background, outchannel);
+
+  if( obj->type == WLZ_EMPTY_OBJ ){
+      //return empty object
+      return WLZ_ERR_NONE;
+  }
+
+  if( obj->type != WLZ_2D_DOMAINOBJ ){
+    return WLZ_ERR_OBJECT_TYPE;
+  }
+
+  WlzErrorNum   errNum;
+
+  if (obj->values.i == NULL)  { // no values
+        errNum = convertDomainObjToRGB(cbuffer,  obj,  pos, size, NULL);
+  } else {  // wit values
+        errNum = convertValueObjToRGB(cbuffer,  obj,  pos, size, NULL);
+  }
+
+  return errNum ;
+}
 
 /*!
-* \ingroup      WlzIIPServer
-  \brief        Return the image hash
-* \return       the hash string
-* \par      Source:
-*                WlzImage.cc
-*/
+ * \ingroup      WlzIIPServer
+ * \brief        Return the image hash
+ * \return       the hash string
+ * \par      Source:
+ *                WlzImage.cc
+ */
 const std::string WlzImage::getHash() { 
-  return generateHash(viewParams);
+  return generateHash(viewParams) + selString(viewParams);
 };
+
+/*!
+ * \ingroup      WlzIIPServer
+ * \brief        The hash string component generated by SEL commands
+ * \param        view parameters
+ * \return       the hash string
+ * \par      Source:
+ *                WlzImage.cc
+ */
+const std::string WlzImage::selString(const ViewParameters* view ) {
+  if ( view == NULL)
+      return "";
+  char temp[25];
+  std::string selstr;
+   CompoundSelector *iter = view->selector;
+   if (iter) {
+     snprintf(temp, 25, "%d,%d,%d,%d,%d",iter->index,iter->r,iter->g,iter->b,iter->a);
+     selstr = temp;
+     iter=iter->next;
+     while (iter) {
+         snprintf(temp, 25, ";%d,%d,%d,%d,%d",iter->index,iter->r,iter->g,iter->b,iter->a);
+         selstr += temp;
+         iter=iter->next;
+     }
+   }
+   return "S="+selstr;
+}
 
 /*!
 * \ingroup      WlzIIPServer
@@ -1006,6 +1297,7 @@ const std::string WlzImage::getHash() {
 const std::string WlzImage::generateHash(const ViewParameters* view ) { 
   if ( view == NULL)
       view = curViewParams;
+  prepareObject();  // needs to have set channel number
 
   char temp[256];
   snprintf(temp, 256, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
@@ -1015,13 +1307,12 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
       view->pitch,
       view->roll,
       view->mode,
-      channels,
+      getNumChannels(),
       view->fixed.vtX,
       view->fixed.vtY,
       view->fixed.vtZ,
       view->fixed2.vtX,
       view->fixed2.vtY,
       view->fixed2.vtZ);
-
-  return getImagePath() + temp;
+  return getImagePath() + temp ;
 };

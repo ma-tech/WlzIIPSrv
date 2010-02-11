@@ -78,7 +78,7 @@ class WlzImage : public IIPImage {
                                                      These might not be reflected yet in wlzViewStr*/
 
 
-  void                        *tile_buf;          /*!< Tile data buffer */
+  unsigned char               *tile_buf;          /*!< Tile data buffer */
   int                         number_of_tiles;    /*!< Number of tiles */
   static const WlzInterpolationType interp ;      /*!< Type of interpollation */
 
@@ -87,7 +87,7 @@ class WlzImage : public IIPImage {
 
   int                         ntlx;               /*!< Number of tiles per row */
   int                         ntly;               /*!< Number of tiles per columns */
-
+  unsigned char               background[4];      /*!< Background value */
  public:
   static WlzObjectCache       cacheWlzObject;     /*!< object cache*/
   static WlzViewStructCache   cacheViewStruct;    /*!< view structure cache*/
@@ -131,7 +131,6 @@ class WlzImage : public IIPImage {
   void get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkol);
   WlzDVertex3 getCurrentPointIn3D();
 
-
   /*!
   * \ingroup      WlzIIPServer
   * \brief        Sets pointer to task parameters
@@ -142,9 +141,9 @@ class WlzImage : public IIPImage {
   */
   void setView( const ViewParameters  *viewP ){ viewParams = viewP; };
 
-  /*!
+ /*!
   * \ingroup      WlzIIPServer
-  * \brief        Forces channel no update to alpha value. 
+  * \brief        Forces channel no update to alpha value.
   * \param        alpha new alpha value
   * \return       void
   * \par      Source:
@@ -160,11 +159,25 @@ class WlzImage : public IIPImage {
 
   //internal functions
  protected:
-  WlzErrorNum convertObjToRGB(void * buffer, WlzObject* obj);
+  WlzErrorNum convertObjToRGB(unsigned char * cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size);
+  WlzErrorNum convertDomainObjToRGB(unsigned char *cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel);
+  WlzErrorNum convertValueObjToRGB(unsigned char *cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel);
+  WlzErrorNum sectionObject(unsigned char* tile_buf, WlzObject *wlzObject, WlzObject *tileObject, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel);
   WlzDVertex3 getCurrentPointInPlane();
   const std::string generateHash(const ViewParameters *view);
-};
+  const std::string selString(const ViewParameters* view );
 
-/*check if parameter header is duplicated*/
+  /*!
+   * \ingroup      WlzIIPServer
+   * \brief        Return the number of channels for the output
+   * \return       void
+   * \par      Source:
+   *                WlzImage.cc
+   */
+  unsigned int getNumChannels() {
+      // forces RGB/RGBA output if a selector is specified
+      return (viewParams->selector) ? ((viewParams->alpha) ? 4:3) : channels;
+  };
+};
 
 #endif
