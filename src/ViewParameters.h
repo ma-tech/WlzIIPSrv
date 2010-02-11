@@ -176,7 +176,8 @@ class ViewParameters{
         *lastsel = *iter;
         iter = iter->next;
     }
-    lastsel->next = NULL;
+    if (lastsel)
+        lastsel->next = NULL;
   };
 
   /// assignement operator
@@ -216,7 +217,8 @@ class ViewParameters{
         *lastsel = *iter;
         iter = iter->next;
     }
-    lastsel->next = NULL;
+    if (lastsel)
+        lastsel->next = NULL;
 
     return *this;
 };
