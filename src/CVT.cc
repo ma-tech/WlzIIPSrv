@@ -173,7 +173,13 @@ void CVT::run( Session* session, std::string argument ){
     if( session->view->shaded ) o_channels = 1;
 
     unsigned char* buf = new unsigned char[view_width * src_tile_height * o_channels + 4000]; // If image to small then 4000 bytes 
-                                                                                             // should be enought to cover the compression overhead
+                                                                              // should be enought to cover the compression overhead
+
+    unsigned char* bufDest = buf;                                  // destination buffer. PNGs need destination different from source
+    if(requestType == PNG) { // png added by Zsolt Husz, 8/05/2009
+        bufDest = new unsigned char[view_width * src_tile_height * o_channels + 4000]; // If image to small then 4000 bytes
+    }                                                                                     // should be enought to cover the compression overhead
+
 
     // Create a RawTile for the entire image
     RawTile complete_image( 0, 0, 0, 0, view_width, view_height, o_channels, 8 );
@@ -184,7 +190,7 @@ void CVT::run( Session* session, std::string argument ){
     if(requestType == PNG) { // png added by Zsolt Husz, 8/05/2009
 
     // Initialise our PNH compression object
-      len = session->png->InitCompression( complete_image, src_tile_height );
+    len = session->png->InitCompression( complete_image, src_tile_height );
 #ifndef DEBUG
       session->out->printf( // 			  "Pragma: no-cache\r\n"
 			 "Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT\r\n"
@@ -202,7 +208,7 @@ void CVT::run( Session* session, std::string argument ){
     } else { //JPEG
       // Initialise our JPEG compression object
 
-      session->jpeg->InitCompression( complete_image, src_tile_height );
+        session->jpeg->InitCompression( complete_image, src_tile_height );
 #ifndef DEBUG
       session->out->printf( // 			  "Pragma: no-cache\r\n"
 			 "Last-Modified: Mon, 1 Jan 2000 00:00:00 GMT\r\n"
@@ -223,9 +229,7 @@ void CVT::run( Session* session, std::string argument ){
     // Decode the image strip by strip and dynamically compress with JPEG
 
     for( unsigned int i=starty; i<endy; i++ ){
-
       unsigned int buffer_index = 0;
-
       // Keep track of the current pixel boundary horizontally. ie. only up
       //  to the beginning of the current tile boundary.
       int current_width = 0;
@@ -242,7 +246,6 @@ void CVT::run( Session* session, std::string argument ){
 	if( session->loglevel >= 2 ){
 	  *(session->logfile) << "CVT :: Tile access time " << tile_timer.getTime() << " microseconds" << endl;
 	}
-
 
 	// Check the colour space - CIELAB images will need to be converted
 	if( (*session->image)->getColourSpace() == CIELAB ){
@@ -320,13 +323,13 @@ void CVT::run( Session* session, std::string argument ){
 	  // Otherwise just do a fast memcpy
 	  if( cielab ){
 	    for( n=0; n<dst_tile_width*channels; n+=channels ){
-	      iip_LAB2sRGB( &ptr[inx + n], &buf[buffer_index + n] );
+              iip_LAB2sRGB( &ptr[inx + n], &bufDest[buffer_index + n] );
 	    }
 	  }
 	  else if( session->view->shaded ){
 	    int m;
 	    for( n=0, m=0; n<dst_tile_width*channels; n+=channels, m++ ){
-	      shade( &ptr[inx + n], &buf[current_width + (k*view_width) + m],
+              shade( &ptr[inx + n], &bufDest[current_width + (k*view_width) + m],
 		     session->view->shade[0], session->view->shade[1],
 		     session->view->getContrast() );
 	    }
@@ -338,7 +341,7 @@ void CVT::run( Session* session, std::string argument ){
 	    for( n=0; n<dst_tile_width*channels; n++ ){
 	      float v = (float)sptr[inx+n] * session->view->getContrast();
 	      if( v > 255.0 ) v = 255.0;
-	      buf[buffer_index + n] = (unsigned char) v;
+              bufDest[buffer_index + n] = (unsigned char) v;
 	    }
 	  }
 	  else if( (rawtile.bpc == 8) && (session->view->getContrast() != 1.0) ){
@@ -346,21 +349,23 @@ void CVT::run( Session* session, std::string argument ){
 	    for( n=0; n<dst_tile_width*channels; n++ ){
 	      float v = (float)sptr[inx+n] * session->view->getContrast();
 	      if( v > 255.0 ) v = 255.0;
-	      buf[buffer_index + n] = (unsigned char) v;
+              bufDest[buffer_index + n] = (unsigned char) v;
 	    }
 	  }
 	  else{
-	    memcpy( &buf[buffer_index],	&ptr[inx], dst_tile_width*channels );
-	  }
+            memcpy( &bufDest[buffer_index],	&ptr[inx], (basic_tile_width-tile_width_padding)*channels );
+//	    memcpy( &buf[buffer_index],	&ptr[inx], dst_tile_width*channels );
+
+        }
 	}
 	current_width += dst_tile_width;
       }
 
       // Compress the strip
       if(requestType == PNG) // png added by Zsolt Husz, 8/05/2009
-        len = session->png->CompressStrip( buf, dst_tile_height );
+        len = session->png->CompressStrip( bufDest, dst_tile_height );
       else
-        len = session->jpeg->CompressStrip( buf, dst_tile_height );  // bug fix 15/05/2009
+        len = session->jpeg->CompressStrip( bufDest, dst_tile_height );  // bug fix 15/05/2009
 
       if( session->loglevel >= 3 ){
 	*(session->logfile) << "CVT :: Compressed data strip length is " << len << endl;
@@ -407,6 +412,8 @@ void CVT::run( Session* session, std::string argument ){
 
 
     // Don't forget to delete our strip of memory
+    if (bufDest!=buf)
+       delete[] bufDest;
     delete[] buf;
 
   } // End of if( argument == "jpeg" || argument == "png")

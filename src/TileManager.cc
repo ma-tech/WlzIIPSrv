@@ -80,6 +80,7 @@ RawTile TileManager::getNewTile( int resolution, int tile, int xangle, int yangl
       len = jpeg->Compress( ttt );
       if( loglevel >= 2 ) *logfile << "TileManager :: JPEG Compression Time: "
 				   << compression_timer.getTime() << " microseconds" << endl;
+      ttt.compressionType = JPEG;
     }
     break;
 
@@ -91,6 +92,7 @@ RawTile TileManager::getNewTile( int resolution, int tile, int xangle, int yangl
       len = png->Compress( ttt );
       if( loglevel >= 2 ) *logfile << "TileManager :: PNG Compression Time: "
 				   << compression_timer.getTime() << " microseconds" << endl;
+      ttt.compressionType = PNG;
     }
     break;
 
@@ -99,13 +101,10 @@ RawTile TileManager::getNewTile( int resolution, int tile, int xangle, int yangl
 
     // No deflate for the time being ;-)
     if( loglevel >= 2 ) *logfile << "TileManager :: DEFLATE Compression requested: Not currently available" << endl;
+
     break;
-
-
   default:
-
     break;
-
   }
 
 
