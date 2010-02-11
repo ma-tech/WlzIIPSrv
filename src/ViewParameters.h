@@ -65,6 +65,31 @@ typedef enum _QueryPointType
   } QueryPointType ;
 
 
+/*!
+    Storage class for compound object selection
+*/
+class CompoundSelector{
+ public:
+
+    /// Constructor
+    CompoundSelector() : next(NULL), index(0), r(0), g(0), b(0), a(0) {
+    }
+
+    /// Destructor
+    ~CompoundSelector() {
+        if (next) delete next;
+        next = NULL;
+    }
+
+    /// Data
+    CompoundSelector *next;            /*!< point to the next element */
+    int index;                         /*!< index of the selected object */
+    unsigned char r;                   /*!< red value */
+    unsigned char g;                   /*!< green value */
+    unsigned char b;                   /*!< blue value */
+    unsigned char a;                   /*!< alpha value */
+};
+
 /*! 
     Storage class for session dependent, Woolz specific view parameters
 */
@@ -91,9 +116,11 @@ class ViewParameters{
   WlzDVertex3       queryPoint;                /*!< 3D point for GreyValue enquery */
   QueryPointType    queryPointType;            /*!< type of point to be used for GreyValue enquery */
 
+  CompoundSelector  *selector;                 /*!< list of compound object selection */
+  CompoundSelector  *lastsel;                  /*!< last element of the selector list */
+
   /// Constructor
   ViewParameters() {
-
     dist            = 0.0;
     yaw             = 0.0;
     pitch           = 0.0;
@@ -107,10 +134,98 @@ class ViewParameters{
     x               = 0;
     y               = 0;
     tile            = 0;
-    queryPointType = QUERYPOINTTYPE_NONE;
+    queryPointType  = QUERYPOINTTYPE_NONE;
+    queryPoint.vtX  = 0;
+    queryPoint.vtY  = 0;
+    queryPoint.vtZ  = 0;
     alpha           = false;
+    selector        = NULL;
+    lastsel         = NULL;
   };
 
+  /// Copy constructor
+  ViewParameters(const ViewParameters& viewParameters) {
+    dist            = viewParameters.dist;
+    yaw             = viewParameters.yaw;
+    pitch           = viewParameters.pitch;
+    roll            = viewParameters.roll;
+    scale           = viewParameters.scale;
+    mode            = viewParameters.mode;
+    fixed           = viewParameters.fixed;
+    fixed2          = viewParameters.fixed2;
+    up              = viewParameters.up;
+    x               = viewParameters.x;
+    y               = viewParameters.y;
+    tile            = viewParameters.tile;
+    queryPointType  = viewParameters.queryPointType;
+    queryPoint      = viewParameters.queryPoint;
+    alpha           = viewParameters.alpha;
+    lastsel = NULL;
+    selector = NULL;
+
+    //copy selection structure
+    CompoundSelector * iter = viewParameters.selector;
+    while (iter) {
+        if (!lastsel) {
+            lastsel = new CompoundSelector;
+            selector = lastsel;
+        } else {
+            lastsel->next = new CompoundSelector;
+            lastsel = lastsel->next;
+        };
+        *lastsel = *iter;
+        iter = iter->next;
+    }
+    lastsel->next = NULL;
+  };
+
+  /// assignement operator
+  const ViewParameters& operator= (const ViewParameters& viewParameters) {
+    dist            = viewParameters.dist;
+    yaw             = viewParameters.yaw;
+    pitch           = viewParameters.pitch;
+    roll            = viewParameters.roll;
+    scale           = viewParameters.scale;
+    mode            = viewParameters.mode;
+    fixed           = viewParameters.fixed;
+    fixed2          = viewParameters.fixed2;
+    up              = viewParameters.up;
+    x               = viewParameters.x;
+    y               = viewParameters.y;
+    tile            = viewParameters.tile;
+    queryPointType  = viewParameters.queryPointType;
+    queryPoint      = viewParameters.queryPoint;
+    alpha           = viewParameters.alpha;
+
+    if (selector)
+        delete selector;
+
+    lastsel = NULL;
+    selector = NULL;
+
+    //copy selection structure
+    CompoundSelector * iter = viewParameters.selector;
+    while (iter)  {
+        if (!lastsel) {
+            lastsel = new CompoundSelector;
+            selector = lastsel;
+        } else {
+            lastsel->next = new CompoundSelector;
+            lastsel = lastsel->next;
+        };
+        *lastsel = *iter;
+        iter = iter->next;
+    }
+    lastsel->next = NULL;
+
+    return *this;
+};
+
+  /// Destructor
+  ~ViewParameters() {
+      if (selector)
+          delete selector;
+  }
 
   /// Set the sectioning plane distance
   /** \param d distance to the sectioning plane*/
