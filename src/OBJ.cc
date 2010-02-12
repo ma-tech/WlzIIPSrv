@@ -64,10 +64,10 @@ void OBJ::run( Session* s, std::string a )
   }
   else if( argument == "iip-server" ) iip_server();
   // IIP optional commands
-  else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SHD WLZ DST FXP MOD PAB PIT PRL ROL SCL UPV YAW");
+  else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SEL SHD WLZ DST FXP MOD PAB PIT PRL ROL SCL UPV YAW");
 
   // IIP optional objects
-  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles Wlz-3d-bounding-box");
+  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-3d-bounding-box Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles Wlz-transformed-coordinate-3d");
 
   // Resolution-number
   else if( argument == "resolution-number" ) resolution_number();
