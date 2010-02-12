@@ -132,6 +132,9 @@ void OBJ::run( Session* s, std::string a )
 
   // Sectioning angles
   else if( argument == "wlz-sectioning-angles" ) wlz_sectioning_angles();
+
+  // 3D point transformation
+  else if( argument == "wlz-transformed-coordinate-3d" ) wlz_transform_3d();
   // Woolz queries end
   //////////////////////////////////
 
@@ -237,7 +240,6 @@ void OBJ::wlz_3d_bounding_box(){
   session->response->addResponse( "Wlz-3d-bounding-box", plane1, lastpl, line1, lastln, kol1, lastkol );
 }
 
-
 void OBJ::wlz_coordinate_3d(){
 
   checkImage();
@@ -250,6 +252,20 @@ void OBJ::wlz_coordinate_3d(){
   }
   session->response->addResponse( "Wlz-coordinate-3d", result.vtX, result.vtY, result.vtZ );
 }
+
+void OBJ::wlz_transform_3d(){
+
+  checkImage();
+  checkIfWoolz();
+
+  WlzDVertex3 result = ((WlzImage*)(*session->image))->getTransformed3DPoint();
+
+  if( session->loglevel >= 2 ){
+    *(session->logfile) << "OBJ :: Wlz-transformed-coordinate-3d handler returning " << round(result.vtX)<< "," << round(result.vtY) << "," << result.vtZ << endl;
+  }
+  session->response->addResponse( "Wlz-transformed-coordinate-3d", round(result.vtX), round(result.vtY), result.vtZ );
+}
+
 
 void OBJ::wlz_true_voxel_size(){
 

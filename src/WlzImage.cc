@@ -867,8 +867,36 @@ WlzDVertex3 WlzImage::getCurrentPointInPlane(){
 */
 WlzDVertex3 WlzImage::getCurrentPointIn3D(){
   WlzDVertex3   result = getCurrentPointInPlane();
-  Wlz3DSectionTransformInvVtx ( &result , wlzViewStr );
+  prepareViewStruct();
+  Wlz3DSectionTransformInvVtx( &result , wlzViewStr );
   return result;
+}
+
+/*!
+* \ingroup      WlzIIPServer
+* \brief        Return the transformed coordinates of the 3D query point
+* \return       WlzDVertex3 object coordinates of the transformed query point in the current section plane
+* \par      Source:
+*                WlzImage.cc
+*/
+WlzDVertex3 WlzImage::getTransformed3DPoint(){
+  WlzErrorNum errNum = WLZ_ERR_NONE;
+  WlzDVertex3   pos;
+  if (viewParams->queryPointType != QUERYPOINTTYPE_3D) {
+        pos.vtX = 0;
+        pos.vtY = 0;
+        pos.vtZ = 0;
+  } else {
+       pos =  viewParams->queryPoint;
+  }
+  prepareViewStruct();
+  Wlz3DSectionTransformVtx( &pos, wlzViewStr );
+
+  pos.vtZ -= viewParams->dist;
+  pos.vtX -= wlzViewStr->minvals.vtX;
+  pos.vtY -= wlzViewStr->minvals.vtY;
+
+  return pos;
 }
 
 /*!
@@ -1033,7 +1061,7 @@ WlzErrorNum WlzImage::convertDomainObjToRGB(unsigned char *cbuffer, WlzObject* o
            cbuffer[lineoff+i*outchannels + 2] = (unsigned char)(b + cbuffer[lineoff+i*outchannels + 2] * (1.0f-fA))  ;
            if (outchannels==4) {
                float a2=cbuffer[lineoff+i*outchannels+3]/255.0f;
-               cbuffer[lineoff+i*outchannels+3] = round((fA + a2 - a2 * fA)*255.0);
+               cbuffer[lineoff+i*outchannels+3] = (unsigned char)round((fA + a2 - a2 * fA)*255.0);
            }
         }
       }

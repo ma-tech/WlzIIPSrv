@@ -203,9 +203,11 @@ class OBJ : public Task {
   /// wlz_3d_bounding_box request handler
   void wlz_3d_bounding_box();
 
-
   /// wlz_coordinate_3d request handler
   void wlz_coordinate_3d();
+
+  /// Wlz-transformed-coordinate-3d request handler
+  void wlz_transform_3d();
 
   /// wlz_true_voxel_size request handler
   void wlz_true_voxel_size();

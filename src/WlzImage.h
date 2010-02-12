@@ -130,6 +130,7 @@ class WlzImage : public IIPImage {
   void getAngles(double& theta, double& phi, double& zeta);
   void get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkol);
   WlzDVertex3 getCurrentPointIn3D();
+  WlzDVertex3 getTransformed3DPoint();
 
   /*!
   * \ingroup      WlzIIPServer
