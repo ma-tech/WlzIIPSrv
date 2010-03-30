@@ -283,7 +283,7 @@ class ViewParameters{
         mode = WLZ_ZETA_MODE;
     else 
     {
-        mode = WLZ_STATUE_MODE;
+        mode = WLZ_UP_IS_UP_MODE;
         return  WLZ_ERR_UNSPECIFIED;  // return an unspecified error, since 
                                       // no special error for mode selection is yet defined
     }
