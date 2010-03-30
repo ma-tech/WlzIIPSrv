@@ -259,9 +259,9 @@ class Cache {
    *  @return string
    */
   std::string getIndex( std::string f, int r, int t, int h, int v, CompressionType c, int q ) {
-    char tmp[1024];
-    snprintf( tmp, 1024, "%s:%d:%d:%d:%d:%d:%d", f.c_str(), r, t, h, v, c, q );
-    return std::string( tmp );
+    char tmp[100];
+    snprintf( tmp, 100, ":%d:%d:%d:%d:%d:%d", r, t, h, v, c, q );
+    return f+std::string( tmp );
   }
 
 
