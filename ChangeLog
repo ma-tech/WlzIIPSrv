@@ -1,3 +1,9 @@
+01/04/2010:
+        - version 0.9.95
+	- added compound object support
+	- added png
+	- 3D to 2D projection queries
+
 16/07/2008:
         - Removed fcgi-2.4.0 source code from WlzIIPSrv. fcgi is available from 
 	http://www.fastcgi.com/dist/.
