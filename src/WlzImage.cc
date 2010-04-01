@@ -379,12 +379,15 @@ void WlzImage::prepareObject() throw(string)
   else if( channels == 1 ) colourspace = GREYSCALE;
   else colourspace = sRGB;
 
+  background[0]=0;    // black background & transparent alpha
+  background[1]=0;
+  background[2]=0;
+  background[3]=0;
+
+
   //set background
-  if (initObj->values.c == NULL)
+  if (initObj && initObj->values.c != NULL)
   {
-      background[0]=0;    // black background
-      background[1]=0;    // alpha 0, transparent
-  } else {
     WlzPixelV pixel=WlzGetBackground(initObj, NULL);
     background[1]=0;  // alpha 0, transparent
     switch( gType ){
@@ -1010,6 +1013,68 @@ int WlzImage::getGreyValue(int *points){
       }
   }
   return 0;
+}
+
+
+/*!
+* \ingroup      WlzIIPServer
+* \brief        Return number of object components
+* \return       the number of compound object or if not compound it returns 1
+* \par      Source:
+*                WlzImage.cc
+*/
+int WlzImage::getCompoundNo() {
+    prepareObject();
+    WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+    return array ?  array->n : 1;
+}
+
+/*!
+* \ingroup      WlzIIPServer
+* \brief        Return number of visible objects at the query point and return these object indexes
+* \param        points pointer to the array where the points should be stored
+* \return       the number visible objects, or -1 for error
+* \par      Source:
+*                WlzImage.cc
+*/
+int WlzImage::getForegroundObjects(int *values){
+
+    WlzErrorNum errNum = WLZ_ERR_NONE;
+    WlzDVertex3   pos;
+
+    switch (viewParams->queryPointType) {
+    case QUERYPOINTTYPE_2D:
+        // use 2D (tile based) relative query
+        pos = getCurrentPointInPlane();
+        Wlz3DSectionTransformInvVtx ( &pos, wlzViewStr );
+        break;
+    case QUERYPOINTTYPE_3D:
+        // use 3D absolute query
+        pos =  viewParams->queryPoint;
+        break;
+    defualt:
+      return -1;  //return -1 for invalid point
+    }
+
+    prepareObject();
+    int counter = 0;
+    WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+    WlzObject *obj;
+    if (array) {
+        int i;
+        for (i=0; i<array->n; i++) {
+            errNum = WLZ_ERR_NONE;
+            obj = array->o[i];
+            if (obj && WlzInsideDomain(obj, pos.vtZ, pos.vtY, pos.vtX, &errNum) && errNum == WLZ_ERR_NONE) {
+               values[counter++]= i;
+            }
+        }
+    } else {
+        if (WlzInsideDomain(wlzObject, pos.vtZ, pos.vtY, pos.vtX, &errNum) && errNum == WLZ_ERR_NONE) {
+           values[counter++]= 0;
+      }
+    }
+    return counter;
 }
 
 

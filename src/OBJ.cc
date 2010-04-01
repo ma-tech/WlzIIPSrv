@@ -64,10 +64,10 @@ void OBJ::run( Session* s, std::string a )
   }
   else if( argument == "iip-server" ) iip_server();
   // IIP optional commands
-  else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SEL SHD WLZ DST FXP MOD PAB PIT PRL ROL SCL UPV YAW");
+  else if( argument == "iip-opt-comm" ) session->response->addResponse( "IIP-opt-comm:CVT CNT QLT JTL JTLS WID HEI RGN SHD WLZ DST FXP MOD PAB PIT PRL ROL SEL SCL UPV YAW");
 
   // IIP optional objects
-  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-3d-bounding-box Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles Wlz-transformed-coordinate-3d");
+  else if( argument == "iip-opt-obj" ) session->response->addResponse( "IIP-opt-obj:Horizontal-views Vertical-views Tile-size Wlz-3d-bounding-box Wlz-foreground-objects Wlz-true-voxel-size Wlz-distance-range Wlz-coordinate-3d Wlz-grey-value Wlz-volume Wlz-sectioning-angles Wlz-transformed-coordinate-3d");
 
   // Resolution-number
   else if( argument == "resolution-number" ) resolution_number();
@@ -135,6 +135,11 @@ void OBJ::run( Session* s, std::string a )
 
   // 3D point transformation
   else if( argument == "wlz-transformed-coordinate-3d" ) wlz_transform_3d();
+
+  //object index of a compund with selected point in the foreground
+  else if( argument == "wlz-foreground-objects" ) wlz_foreground_objects();
+
+
   // Woolz queries end
   //////////////////////////////////
 
@@ -327,9 +332,32 @@ void OBJ::wlz_grey_value(){
       throw string( "Wlz-grey-value: unknow channel number" );
       break;
   }
-
 }
 
+
+void OBJ::wlz_foreground_objects(){
+  checkImage();
+  checkIfWoolz();
+  int objects = ((WlzImage*)(*session->image))->getCompoundNo();
+  int *values = new int [objects];
+  if (values != NULL) {
+      int foregroundNo = ((WlzImage*)(*session->image))->getForegroundObjects(values);
+      int i = 0;
+      if( session->loglevel >= 2 ) {
+          *(session->logfile) << "OBJ :: Wlz-foreground-objects handler returning: ";
+          for (i=0; i<foregroundNo; i++) {
+              *(session->logfile) << values[i]  << ' ';
+          }
+         *(session->logfile) << endl;
+      }
+      session->response->addResponse( "Wlz-foreground-objects", foregroundNo, values );
+      delete values;
+  } else {
+      if( session->loglevel >= 1 ){
+          *(session->logfile) << "OBJ :: Wlz-foreground-objects handler returning cant allocate memory. " << endl;
+      }
+  }
+}
 
 
 void OBJ::tile_size(){

@@ -218,6 +218,9 @@ class OBJ : public Task {
   /// wlz_volume request handler
   void wlz_volume();
 
+  /// wlz_foreground_objects handler
+  void wlz_foreground_objects();
+
 };
 
 

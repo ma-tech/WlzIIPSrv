@@ -469,7 +469,10 @@ void PRL::run( Session* session, std::string argument ){
       return;
       }
     }
-    // Check the value is realistic
+
+    if (t==-1) t=0;  //use display coordinates, same as tile 0 coordinates
+
+    // Check the value is valid
     if( t <= -1){
       if( session->loglevel >= 2 ){
         *(session->logfile) << "PRL :: tile must be greater than -1: " << argument << endl;
@@ -487,12 +490,8 @@ void PAB::run( Session* session, std::string argument ){
 
   if( argument.length() ){
 
-
     WlzDVertex3 point={0,0,-1};
-
-
     int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
-
 
     // Set if the value is valid 
     if(read!=3){
