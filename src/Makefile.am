@@ -34,7 +34,7 @@
 ##
 ## Process this file with automake to produce Makefile.in
 
-noinst_PROGRAMS =	iipsrv.fcgi
+noinst_PROGRAMS =	wlziipsrv.fcgi
 
 INCLUDES =		@LIBWLZ_INCLUDES@ @LIBFCGI_INCLUDES@  @JPEG_INCLUDES@ @TIFF_INCLUDES@ @PNG_INCLUDES@
 LIBS =			@LIBWLZ_LIBS@ @LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ @PNG_LIBS@ -lz -lm
@@ -42,7 +42,7 @@ AM_LDFLAGS =		@LIBWLZ_LDFLAGS@ @LIBFCGI_LDFLAGS@
 
 if ENABLE_MODULES
 
-iipsrv_fcgi_SOURCES = \
+wlziipsrv_fcgi_SOURCES = \
 			Main.cc \
 			IIPImage.h \
 			IIPImage.cc \
@@ -83,7 +83,7 @@ iipsrv_fcgi_SOURCES = \
 
 else
 
-iipsrv_fcgi_SOURCES = \
+wlziipsrv_fcgi_SOURCES = \
 			Main.cc \
 			IIPImage.h \
 			IIPImage.cc \
