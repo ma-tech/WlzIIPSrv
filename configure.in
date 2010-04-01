@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 
 AC_INIT
-AM_INIT_AUTOMAKE(iipsrv,0.9.9)
+AM_INIT_AUTOMAKE(wlziipsrv,0.9.95)
 dnl AM_INIT_AUTOMAKE(IIPImageTest,1.0)
 
 
@@ -149,12 +149,12 @@ dnl	************************************************************
 dnl 	Check for user specified locations for Woolz libraries
 
 AC_ARG_WITH( wlz-incl,
-   [  --with-wlz-incl=DIR          location of the fcgi include files],
+   [  --with-wlz-incl=DIR          location of the Woolz include files],
    wlz_include_path=$withval, wlz_include_path="../../../Core")
 
 
 AC_ARG_WITH( wlz-lib,
-   [  --with-wlz-lib=DIR           location of the fcgi libraries],
+   [  --with-wlz-lib=DIR           location of the Woolz libraries],
    wlz_lib_path=$withval, wlz_lib_path="../../../Core")
 
 LIBWLZ_INCLUDES="-I$wlz_include_path/libAlc -I$wlz_include_path/libAlg -I$wlz_include_path/libWlz -I$wlz_include_path/libWlzExtFF -I$wlz_include_path/libbibfile -I$wlz_include_path";
