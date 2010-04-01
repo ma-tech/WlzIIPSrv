@@ -169,3 +169,14 @@ void IIPResponse::addResponse( const char* g, int a, int b, int c, int d, int e,
   responseBody.append( tmp );
   responseBody.append( eof );
 }
+
+void IIPResponse::addResponse( const char* s, int n, int * values ){
+  char tmp[32];
+  snprintf( tmp, 32, "%s:", s);
+  responseBody.append( tmp );
+  for (int i=0; i<n ; i++)  {
+     snprintf( tmp, 32, " %d", values[i]);
+     responseBody.append( tmp );
+  }
+  responseBody.append( eof );
+}

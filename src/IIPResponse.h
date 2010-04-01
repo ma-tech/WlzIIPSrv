@@ -148,6 +148,13 @@ class IIPResponse{
   void addResponse( const char* d, double a, double b, double c );
 
   /// Add a response string
+  /** \param s response string
+      \param n number of values
+      \param values array of n values
+   */
+  void addResponse( const char* s, int n, int * values );
+
+  /// Add a response string
   /** \param g response string
       \param a first integer value
       \param b second integer value
