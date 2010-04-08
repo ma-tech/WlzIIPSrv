@@ -351,12 +351,9 @@ void CVT::run( Session* session, std::string argument ){
 	      if( v > 255.0 ) v = 255.0;
               bufDest[buffer_index + n] = (unsigned char) v;
 	    }
-	  }
-	  else{
-            memcpy( &bufDest[buffer_index],	&ptr[inx], (basic_tile_width-tile_width_padding)*channels );
-//	    memcpy( &buf[buffer_index],	&ptr[inx], dst_tile_width*channels );
-
-        }
+          } else {
+                memcpy( &bufDest[buffer_index],	&ptr[inx], dst_tile_width*channels );
+          }
 	}
 	current_width += dst_tile_width;
       }
