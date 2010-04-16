@@ -203,7 +203,7 @@ int main( int argc, char *argv[] )
     }
     if (port[0]!=':') 
         port = ':'+ port; // make sure port number starts with :
-    listen_socket = FCGX_OpenSocket( port.c_str(), 10 );
+    listen_socket = FCGX_OpenSocket( port.c_str(), 10000 );
     if( listen_socket < 0 ){
       if( loglevel >= 1 )  
         logfile << "Unable to open port '" << port << "'" << endl << endl;
