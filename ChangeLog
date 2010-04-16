@@ -1,7 +1,13 @@
+16/04/2010:
+        - version 0.9.96
+	- Added compound object queries
+	- Fixed data length, ie apache parsing problem
+	- Increased fcgi queue size
+
 01/04/2010:
         - version 0.9.95
-	- added compound object support
-	- added png
+	- Added compound object support
+	- Added png
 	- 3D to 2D projection queries
 
 16/07/2008:
