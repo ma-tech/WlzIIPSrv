@@ -102,7 +102,7 @@ void PTL::run( Session* session, std::string argument ){
     }
   }
 
-  session->out->printf( "\r\n" );
+//  session->out->printf( "\r\n" ); //causes incorrect packet length, that results in crash, Z Husz 16/04/2010
 
   if( session->out->flush() == -1 ) {
     if( session->loglevel >= 1 ){

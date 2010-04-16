@@ -396,7 +396,7 @@ void CVT::run( Session* session, std::string argument ){
     }
 
     // Finish off the flush the buffer
-    session->out->printf( "\r\n" );
+    //session->out->printf( "\r\n" ); //was possible bug: causes incorrect packet length, that results in crash, Z Husz 16/04/2010
 
     if( session->out->flush()  == -1 ) {
       if( session->loglevel >= 1 ){

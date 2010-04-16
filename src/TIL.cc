@@ -215,8 +215,7 @@ void TIL::run( Session* session, std::string argument ){
 
       /* And finally send the CRLF terminator for each tile
        */
-      session->out->printf( "\r\n" );
-
+      //session->out->printf( "\r\n" ); //causes incorrect packet length, that results in crash, Z Husz 16/04/2010
       if( session->out->flush()  == -1 ) {
 	if( session->loglevel >= 1 ){
 	  *(session->logfile) << "TIL :: Error flushing jpeg tile" << endl;
