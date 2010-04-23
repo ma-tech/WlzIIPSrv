@@ -94,7 +94,11 @@ class WlzObjectContainer {
     if (status || buffer.st_size < 0) {
       throw string( "Size of " + fn + " can not be found.");
     }
-    size = buffer.st_size;
+    if (o->values.core==NULL || WlzGreyTableIsTiled(o->values.core->type)==0) { //not a tiled object
+       size = buffer.st_size;
+    } else { // is a tiled object
+       size = o->values.t->tileOffset;
+    }
     obj       =  WlzAssignObject( o, NULL );
   };
 
