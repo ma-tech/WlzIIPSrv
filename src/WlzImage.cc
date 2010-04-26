@@ -1169,14 +1169,14 @@ WlzErrorNum WlzImage::convertValueObjToRGB(unsigned char *cbuffer, WlzObject* ob
   int iwidth = 0;
   int outchannels = getNumChannels();
   bool copyGreyToRGB = outchannels != channels;
-  int alphaoffset = (outchannels == 2 || outchannels==4) ? (copyGreyToRGB ? 3 :1) : 0;
+  int alphaoffset = (outchannels == 2 || outchannels==4) ? (copyGreyToRGB || outchannels==4 ? 3 :1) : 0;
   float gray;
   int alpha = sel ? sel->a : 255;
   float fA = alpha / 255.0f;
   float fR = sel ? sel->r/255.0f : 1.0f;
   float fG = sel ? sel->g/255.0f : 1.0f;
   float fB = sel ? sel->b/255.0f : 1.0f;
-  float fAlphaPrev = 0;
+  float fAlphaPrev = 0, fANew=0;
 
   gType = WlzGreyTypeFromObj(obj, &errNum);
   //scan the object
@@ -1283,7 +1283,8 @@ WlzErrorNum WlzImage::convertValueObjToRGB(unsigned char *cbuffer, WlzObject* ob
             cbuffer[lineoff+i*outchannels+2] = (unsigned char)(WLZ_RGBA_BLUE_GET(val)  * fA * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
             if (outchannels==4) {
                 fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+                fANew = fA* ((unsigned char)(WLZ_RGBA_ALPHA_GET(val)))/255.0f;
+                cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fANew + fAlphaPrev - fAlphaPrev * fANew)*255.0);
             }
           }
           break;
