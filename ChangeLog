@@ -1,6 +1,7 @@
-19/04/2010:
+26/04/2010:
         - version 0.9.97
 	- Added support for tiled Woolz objects
+	- fixed PNG bug from Woolz RGBA
 
 16/04/2010:
         - version 0.9.96
