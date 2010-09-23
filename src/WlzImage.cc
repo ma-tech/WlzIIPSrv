@@ -42,9 +42,17 @@ static char _WlzImage_cc[] = "MRC HGU $Id$";
 */
 
 #include "WlzImage.h"
+#include "WlzRemoteImage.h"
 #include <WlzProto.h>
 #include <WlzExtFF.h>
 #include "Environment.h"
+
+//#define __PERFORMANCE_DEBUG
+#ifdef __PERFORMANCE_DEBUG
+#include <sys/time.h>
+#endif
+
+//#define __ALLOW_REMOTE_FILE
 
 //#define __EXTENDED_DEBUG
 #ifdef __EXTENDED_DEBUG
@@ -287,6 +295,12 @@ void WlzImage::prepareObject() throw(string)
 
     wlzObject  = WlzAssignObject( cacheWlzObject.get(filename), NULL );
 
+    #ifdef __PERFORMANCE_DEBUG
+  struct timeval tVal;
+  struct timeval tVal2;
+  int time = 0;
+  gettimeofday(&tVal, NULL);
+    #endif
 
     if (wlzObject == NULL)  // cache miss?
     {
@@ -311,6 +325,20 @@ void WlzImage::prepareObject() throw(string)
               fclose(fp);
       }
 
+#ifdef __ALLOW_REMOTE_FILE
+      /////???????????? Yiya added for remote wlz file
+      // no local wlzObject
+	if (NULL == wlzObject) {
+	  char* remoteFile = new char[strlen(filename.c_str()) + 1];
+	  strcpy(remoteFile, filename.c_str());
+	  wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile, (const char*)NULL, -1);
+	}
+      /////???????????? Yiya added for remote wlz file
+#endif
+
+      if (NULL == wlzObject)
+	throw string( "WlzImage :: no such wlz file");
+
       //test object type
       switch (wlzObject->type) {
           case WLZ_3D_DOMAINOBJ:
@@ -328,9 +356,20 @@ void WlzImage::prepareObject() throw(string)
       {
         throw string( "WlzImage :: prepareObject:  Woolz object can not be read: " + filename );
       }
+
+      /////??????????? for opt  images, even if I use memory mapped format for wlz file,
+	////????????? it is still too slow (see screen re-fresh tile-by-tile) so we have to 
+	/////????????? use cache
       cacheWlzObject.insert( wlzObject , filename );
     }
 
+    #ifdef __PERFORMANCE_DEBUG
+  gettimeofday(&tVal2, NULL);
+  time = tVal2.tv_sec - tVal.tv_sec;
+  if (0 < time)
+    printf("wlz object reading takes %d seconds\n", time);
+    #endif
+  
      isSet = false;   //yet object view specific data has to be set
   }
   else

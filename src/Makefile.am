@@ -71,6 +71,7 @@ wlziipsrv_fcgi_SOURCES = \
 			OBJ.cc \
 			FIF.cc \
 			WLZ.cc \
+			WlzRemoteImage.cc \
 			WlzImage.cc \
 			JTL.cc \
 			SEL.cc \
@@ -112,6 +113,7 @@ wlziipsrv_fcgi_SOURCES = \
 			OBJ.cc \
 			FIF.cc \
 			WLZ.cc \
+			WlzRemoteImage.cc \
 			WlzImage.cc \
 			PTL.cc \
 			SEL.cc \

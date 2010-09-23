@@ -118,21 +118,23 @@ const IIPImage& IIPImage::operator = ( const IIPImage& image )
 
 void IIPImage::testImageType()
 {
-
-  ifstream file( imagePath.c_str() );
-
-  if( file ){
-    isFile = true;
-  }
-  file.close();
-  
-
-  if( isFile ){
-    // ie is regular file
     int dot = imagePath.find_last_of( "." );
     type = imagePath.substr( dot + 1, imagePath.length() );
-  }
-  else{
+
+    // wlz may be a remot file
+    if (NULL != type.c_str() &&
+	0 == strcmp(type.c_str(), "wlz"))
+      isFile = true;
+    else {
+      ifstream file( imagePath.c_str() );
+      
+      if( file ){
+	isFile = true;
+      }
+      file.close();
+    }
+
+  if( !isFile ){
 
 #ifdef HAVE_GLOB_H
 
@@ -263,7 +265,6 @@ void IIPImage::Initialise()
     horizontalAnglesList.push_front( 0 );
     verticalAnglesList.push_front( 90 );
   }
-
 }
 
 
