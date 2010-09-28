@@ -21,7 +21,7 @@ int TIMEOUT_SERVER = 10000;
 
 int
 WlzRemoteImage::init_header(int type, int requestId, size_t contentLength,
-            size_t paddingLength, FCGI_Header * header)
+			    size_t paddingLength, FCGI_Header * header)
 {
   if (contentLength > 65535 || paddingLength > 255)
     return 0;
@@ -39,7 +39,7 @@ WlzRemoteImage::init_header(int type, int requestId, size_t contentLength,
 
 void
 WlzRemoteImage::init_begin_request_body(int role,
-                        FCGI_BeginRequestBody * begin_request_body)
+					FCGI_BeginRequestBody * begin_request_body)
 {
   begin_request_body->roleB1 = (unsigned char) (((role >> 8) & 0xff));
   begin_request_body->roleB0 = (unsigned char) (role & 0xff);
@@ -50,10 +50,10 @@ WlzRemoteImage::init_begin_request_body(int role,
 
 size_t
 WlzRemoteImage::init_param_body(char* name,  
-		unsigned long namelen, 
-		char* value, 
-		unsigned long valuelen,
-		char* buf)
+				unsigned long namelen, 
+				char* value, 
+				unsigned long valuelen,
+				char* buf)
 {
   char *cur_buf = buf;
   size_t buffer_size = 0;
@@ -190,7 +190,6 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
   sprintf(value, "WLZ=%s", filename);
   name_length = strlen(name);
   value_length=strlen(value);
-  
   if (ok) {
     param_body_size = init_param_body(name,  name_length, value, value_length, NULL);
     if (NULL != request_body)
@@ -408,12 +407,12 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
   int port = portInput;
   if (NULL == wlzServerName) {
     wlzServerName = new char[256];
-    strcpy(wlzServerName, "bunnahabhain");
+    strcpy(wlzServerName, "caperdonich");
   }
-
+  
   if (0 >= port)
-    port = 80000;
-
+    port = 70000;
+  
   FCGIMessageStack* message = buildConnectionInfo(filename);
   int cnt = -1;
   int sock = -1;
@@ -477,7 +476,6 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
 	if (0 == strcmp(reply, "ok") ||
 	    0 == strcmp(reply, "Ok") ||
 	    0 == strcmp(reply, "OK")) {
-	  
 	  FILE *file = fdopen(sock, "r");
 	  if (NULL == file)
 	    printf("fdopen failed %d\n", sock);
@@ -490,9 +488,10 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
 		printf("error in reading wlz object\n");
 		WlzFreeObj(ret);
 		ret = NULL;
-	      }
+	      } else
+		printf("success in reading wlzObject\n");
 	    }
-	    
+	    fflush(file);
 	    fclose(file);
 	    file = NULL;
 	  }
@@ -537,7 +536,7 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
   sock = -1;
   
   // free memory
-
+  
   if (NULL != messageBody) {
     free(messageBody);
     messageBody = NULL;
@@ -559,134 +558,143 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
       free(message);
       message = stack;
     }
-
+  
   if (NULL == serverInput) {
     delete[] wlzServerName;
     wlzServerName = NULL;
   }
   
-  FILE  *fP = NULL;
   if (NULL == ret)
-    perror("cannot get hold wlz obj \n");
-  else {
-    // make sure the directory exists
-    char str[256];
-    char dir[256];
-    char worker[100];
-    
-    char separate[2];
-    struct stat st;
-    
-    strcpy(dir, "");
-    
-    strcpy(str, filename);
-    strcpy(separate, "/");
-    
-    if (str[0] == '/')
-      strcpy(dir, "/");
-    int i = 0;
-    char* token = NULL;
-    token = strtok(str, separate);
-    while (NULL != token) {
-      if (0 < i) {
-	sprintf(worker, "/%s", token);
-	strcat(dir, worker);
-      } else
-	strcat(dir, token);
-      i++;
-      token = strtok(NULL, separate);
-      if (NULL != token) {
-	if(-1 == lstat(dir,&st)) {
-	  if(mkdir(dir,0766)==-1) {
-	    printf("error in creating dir %s\n", dir);
-	    i = -1;
-	    break;
-	  }
-	} else {
-	  if ((st.st_mode & S_IWUSR && st.st_mode & S_IRUSR) ||
-	      (st.st_mode & S_IWGRP && st.st_mode & S_IRGRP))
-	    ;
-	  else {
-	    printf("unableable read/write dir %s\n", dir);
-	    break;
-	  }
+    return NULL;
+  
+  // make sure the directory exists
+  char str[256];
+  char dir[256];
+  char worker[100];
+  
+  char separate[2];
+  struct stat st;
+  
+  strcpy(dir, "");
+  
+  strcpy(str, filename);
+  strcpy(separate, "/");
+  
+  if (str[0] == '/')
+    strcpy(dir, "/");
+  char* token = NULL;
+  token = strtok(str, separate);
+  
+  i = 0;
+  while (NULL != token) {
+    if (0 < i) {
+      sprintf(worker, "/%s", token);
+      strcat(dir, worker);
+    } else
+      strcat(dir, token);
+    i++;
+    token = strtok(NULL, separate);
+    if (NULL != token) {
+      if(-1 == lstat(dir,&st)) {
+	if(mkdir(dir,0766)==-1) {
+	  printf("error in creating dir %s\n", dir);
+	  i = -1;
+	  break;
 	}
-      }
-    }
-    
-    // create directory if needed
-    if (-1 != i) {
-      fP = fopen(filename, "w");
-      
-      // save to the local machine for non-3D-value wlz object
-      if (NULL == fP) 
-	printf("cannot create/open file %s\n", filename);
-      else {
-	if (NULL == ret->domain.core ||
-	    WLZ_3D_DOMAINOBJ != ret->type) {
-	  WlzWriteObj(fP, ret);
-	  fflush(fP);
-	  fclose(fP);
-	  fP = NULL;
+      } else {
+	if ((st.st_mode & S_IWUSR && st.st_mode & S_IRUSR) ||
+	    (st.st_mode & S_IWGRP && st.st_mode & S_IRGRP))
+	  ;
+	else {
+	  printf("unableable read/write dir %s\n", dir);
+	  break;
 	}
       }
     }
   }
-
-  WlzGreyType	gType = WlzGreyTypeFromObj(ret, &errNum);
-  if (WLZ_GREY_ERROR == gType) {
-    if (NULL != fP) {
-      fclose(fP);
-      fP = NULL;
-    }
+  
+  // create directory failed
+  if (-1 == i)
+    return ret;
+  
+  // save to the local machine for non-3D-value wlz object
+  FILE  *fP = fopen(filename, "w");
+  
+  if (NULL == fP) {
+    printf("cannot create/open file %s\n", filename);
+    return ret;
   }
-
-  // only 3D value wlz object, save  to the local machine as tiled memory format for fast access 
-  if (NULL != fP) {
-
-    WlzObject *domObj = NULL;
-    WlzObject* outObj = NULL;
-    const size_t	tlSz = 4096;
-    WlzPixelV	bgdV = WlzGetBackground(ret, &errNum);
-    WlzIVertex3	offset;
-    int copy = 1;
-
-    if (WLZ_ERR_NONE != errNum) {
-      bgdV.v.dbv = 0.0;
-      bgdV.type = WLZ_GREY_DOUBLE;
-    }
-
-    WLZ_VTX_3_SET(offset, 0, 0, 0);
-
-    domObj = WlzMakeMain(ret->type, ret->domain, ret->values, NULL, NULL, &errNum);
-    if(errNum == WLZ_ERR_NONE && NULL != domObj)
-      outObj = WlzMakeTiledValuesFromObj(domObj, tlSz, copy, gType, bgdV, &errNum);
-
-    if(errNum == WLZ_ERR_NONE && NULL != outObj)
-      WlzWriteObj(fP, outObj);
-    else
-      WlzWriteObj(fP, ret);
-
+  
+  // ret cannot be written as memory mapped format
+  // it has already written as normal wlz format
+  if (NULL == ret->domain.core ||
+      WLZ_3D_DOMAINOBJ != ret->type) {
+    WlzWriteObj(fP, ret);
     fflush(fP);
     fclose(fP);
-
-    // free memory
-    if (NULL != domObj) {
+    fP = NULL;
+    return ret;
+  }
+  
+  
+  // ret has problem with value type
+  // write it as normal wlz format
+  WlzGreyType	gType = WlzGreyTypeFromObj(ret, &errNum);
+  if (WLZ_GREY_ERROR == gType) {
+    WlzWriteObj(fP, ret);
+    fflush(fP);
+    fclose(fP);
+    fP = NULL;
+    return ret;
+  }
+  
+  // only 3D value wlz object, save  to the local machine as tiled memory format for fast access 
+  WlzObject *domObj = NULL;
+  WlzObject* outObj = NULL;
+  const size_t	tlSz = 4096;
+  WlzPixelV	bgdV = WlzGetBackground(ret, &errNum);
+  WlzIVertex3	offset;
+  int copy = 1;
+  
+  if (WLZ_ERR_NONE != errNum) {
+    bgdV.v.dbv = 0.0;
+    bgdV.type = WLZ_GREY_DOUBLE;
+  }
+  
+  WLZ_VTX_3_SET(offset, 0, 0, 0);
+  
+  domObj = WlzMakeMain(ret->type, ret->domain, ret->values, NULL, NULL, &errNum);
+  if(errNum == WLZ_ERR_NONE && NULL != domObj)
+    outObj = WlzMakeTiledValuesFromObj(domObj, tlSz, copy, gType, bgdV, &errNum);
+  
+  if(errNum == WLZ_ERR_NONE && NULL != outObj)
+    WlzWriteObj(fP, outObj);
+  else
+    WlzWriteObj(fP, ret);
+  
+  fflush(fP);
+  fclose(fP);
+  fP = NULL;
+  
+  // free memory
+  if (NULL != domObj) {
     WlzFreeObj(domObj);
     domObj = NULL;
-    }
-    if (NULL != outObj) {
+  }
+  if (NULL != outObj) {
     WlzFreeObj(outObj);
     outObj = NULL;
-    }
-
-    // re-read wlz obj as memory mapped format
-    if (NULL != ret) {
+  }
+  
+  // re-read wlz obj as memory mapped format
+  if (NULL != ret) {
     WlzFreeObj(ret);
     fP = fopen(filename, "r");
     ret = WlzReadObj(fP, NULL);
-    }
+    fflush(fP);
+    fclose(fP);
+    fP = NULL;
   }
-
+  
   return ret;
-  }
+}
