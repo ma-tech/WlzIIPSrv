@@ -42,7 +42,6 @@ static char _WlzImage_cc[] = "MRC HGU $Id$";
  */
 
 #include "WlzImage.h"
-#include "WlzRemoteImage.h"
 #include <WlzProto.h>
 #include <WlzExtFF.h>
 #include "Environment.h"
@@ -53,6 +52,9 @@ static char _WlzImage_cc[] = "MRC HGU $Id$";
 #endif
 
 //#define __ALLOW_REMOTE_FILE
+#ifdef __ALLOW_REMOTE_FILE
+#include "WlzRemoteImage.h"
+#endif
 
 //#define __EXTENDED_DEBUG
 #ifdef __EXTENDED_DEBUG

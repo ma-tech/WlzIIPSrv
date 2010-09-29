@@ -45,10 +45,19 @@ static FCGIMessageStack*
 static int 
   sendConnectionInfo(FCGIMessageStack* message, const char* server, int port);
 
- public:
+static int
+  parse_URL(const char *url, char *hostname, int *port, char *identifier);
+
+public:
 
 static WlzObject*  
   wlzRemoteReadObj(const char* filename, const char* server, int port);
+
+static WlzObject*  
+  wlzFcgiRead(const char* filename, const char* server, int port);
+
+static WlzObject*  
+  wlzHttpRead(const char* url);
 };
 
 #endif

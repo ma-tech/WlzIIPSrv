@@ -18,7 +18,11 @@
 #include <WlzExtFF.h>
 
 int TIMEOUT_SERVER = 10000;
+int MAX_STR_LEN = 512;
+int BUFFER_SIZE = 1024;
+int ERROR = 1;
 
+/////////////////// related to fcgi protocol
 int
 WlzRemoteImage::init_header(int type, int requestId, size_t contentLength,
 			    size_t paddingLength, FCGI_Header * header)
@@ -131,14 +135,14 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
   request_header =(FCGI_Header*)malloc(header_size);
   if (request_header == NULL) {
     ok = 0;
-    printf("Can not allocate memory for request_header!\n");
+    perror("Can not allocate memory for request_header!\n");
   }
   
   if (ok) {
     request_body = (FCGI_BeginRequestBody*)malloc(request_body_size);
     if (request_body == NULL) {
       ok = 0;
-      printf("Can not allocate memory for request_body!\n");
+      perror("Can not allocate memory for request_body!\n");
     }
   }
   
@@ -146,7 +150,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
   if (ok &&
       !init_header(FCGI_BEGIN_REQUEST, 1, request_body_size, 0, request_header)) {
     ok = 0;
-    printf("error in init_header!\n");
+    perror("Error in init_header!\n");
   }
   
   /* Initialize begin request body */
@@ -158,7 +162,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
     stack = (FCGIMessageStack*)malloc(message_size);
     if (stack == NULL) {
       ok = 0;
-      printf("Can not allocate memory for stack!\n");
+      perror("Can not allocate memory for stack!\n");
     }
   }
   
@@ -170,7 +174,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
     
     if (lastOnStack ->buffer == NULL) {
       ok = 0;
-      printf("Can not allocate memory for buffer!\n");
+      perror("Can not allocate memory for buffer!\n");
     }
   }
   
@@ -197,7 +201,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
     request_body = (FCGI_BeginRequestBody*)malloc(param_body_size);
     if (NULL ==  request_body) {
       ok = 0;
-      printf("Can not allocate memory for request body!\n");
+      perror("Can not allocate memory for request body!\n");
     }
   }
   
@@ -205,7 +209,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
   if (ok &&
       !init_header(FCGI_PARAMS, 1, param_body_size, 0, request_header)) {
     ok = 0;
-    printf("error in init param header!\n");
+    perror("Error in init param header!\n");
   }
   
   if (ok) {
@@ -223,7 +227,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
 	
 	if (lastOnStack ->buffer == NULL) {
 	  ok = 0;
-	  printf("Can not allocate memory for buffer!\n");
+	  perror("Can not allocate memory for buffer!\n");
 	}
       }
   }
@@ -238,7 +242,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
     /* Initialize param request header */
     if (!init_header(FCGI_PARAMS, 1, 0, 0, request_header)) {
       ok = 0;
-      printf("error in init param header!\n");
+      perror("Error in init param header!\n");
     }
   }
   
@@ -259,7 +263,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
     
     if (lastOnStack ->buffer == NULL) {
       ok = 0;
-      printf("Can not allocate memory for buffer!\n");
+      perror("Can not allocate memory for buffer!\n");
     }
   }
   
@@ -292,7 +296,7 @@ WlzRemoteImage::buildConnectionInfo(const char* filename)
       
       if (lastOnStack ->buffer == NULL) {
 	ok = 0;
-	printf("Can not allocate memory for buffer!\n");
+	perror("Can not allocate memory for buffer!\n");
       }
     }
   
@@ -399,14 +403,81 @@ WlzRemoteImage::sendConnectionInfo(FCGIMessageStack* message, const char* server
   return sock;
 }
 
+/////////////////// related to fcgi protocol
 
-WlzObject*  
-WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, int portInput)
+/////////////////// related to http protocol
+
+// Parses an url into hostname, port number and resource identifier.
+int
+WlzRemoteImage::parse_URL(const char *url, char *hostname, int *port, char *identifier)
 {
+  char protocol[MAX_STR_LEN], scratch[MAX_STR_LEN], *ptr=0, *nptr=0;
+  
+  strcpy(scratch, url);
+  ptr = (char *)strchr(scratch, ':');
+  if (!ptr)
+    {
+      perror("Wrong url: no protocol specified\n");
+      return 0;
+    }
+  strcpy(ptr, "\0");
+  strcpy(protocol, scratch);
+  
+  if (strcmp(protocol, "http"))
+    {
+      sprintf(scratch, "Wrong protocol: %s\n", protocol);
+      perror(scratch);
+      return 0;
+    }
+  
+  strcpy(scratch, url);
+  ptr = (char *)strstr(scratch, "//");
+  if (!ptr)
+    {
+      perror("Wrong url: no server specified\n");
+      return 0;
+    }
+  ptr += 2;
+  
+  strcpy(hostname, ptr);
+  nptr = (char *)strchr(ptr, ':');
+  if (!nptr)
+    {
+      *port = 80; /* use the default HTTP port number */
+      nptr = (char *)strchr(hostname, '/');
+    }
+  else
+    {	
+      sscanf(nptr, ":%d", port);
+      nptr = (char *)strchr(hostname, ':');
+    }
+  
+  if (nptr)
+    *nptr = '\0';
+  
+  nptr = (char *)strchr(ptr, '/');
+  
+  if (!nptr)
+    {
+      perror("Wrong url: no file specified\n");
+      return 0;
+    }
+  
+  strcpy(identifier, nptr);
+  
+  return 1;
+}
+
+/////////////////// related to http protocol
+
+WlzObject*
+WlzRemoteImage::wlzFcgiRead(const char* filename,
+			    const char* serverInput, int portInput)
+{   
   char* wlzServerName = (char*)serverInput;
   int port = portInput;
   if (NULL == wlzServerName) {
-    wlzServerName = new char[256];
+    wlzServerName = new char[MAX_STR_LEN];
     strcpy(wlzServerName, "caperdonich");
   }
   
@@ -457,7 +528,7 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
 	readSize = recv(sock, messageBody, messageSize, MSG_DONTWAIT);
       
       if (messageSize != readSize) {
-	printf(" Message read: wrong packet size (read: %d; expected: %d)\n", readSize, messageSize);
+	printf(" message read: wrong packet size (read: %d; expected: %d)\n", readSize, messageSize);
 	close(sock);
 	sock = -1;
       }
@@ -482,14 +553,14 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
 	  else {
 	    ret = WlzReadObj(file, &errNum);
 	    if (NULL == ret)
-	      perror("fail to read wlz object\n");
+	      perror("Fail to read wlz object\n");
 	    else {
 	      if (WLZ_ERR_NONE != errNum) {
-		printf("error in reading wlz object\n");
+		perror("Error in reading wlz object\n");
 		WlzFreeObj(ret);
 		ret = NULL;
 	      } else
-		printf("success in reading wlzObject\n");
+		perror("Success in reading wlzObject\n");
 	    }
 	    fflush(file);
 	    fclose(file);
@@ -524,7 +595,7 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
     
     if (NULL != messageBody) {
       if (NULL == reply)
-	perror("no reply but have message\n");
+	perror("No reply but have message\n");
       
       free(messageBody);
       messageBody = NULL;
@@ -568,9 +639,9 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
     return NULL;
   
   // make sure the directory exists
-  char str[256];
-  char dir[256];
-  char worker[100];
+  char str[MAX_STR_LEN];
+  char dir[MAX_STR_LEN];
+  char worker[MAX_STR_LEN];
   
   char separate[2];
   struct stat st;
@@ -697,4 +768,184 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
   }
   
   return ret;
+}
+
+WlzObject*  
+WlzRemoteImage::wlzHttpRead(const char* url)
+{
+  if (NULL == url ||
+      8 > strlen(url))
+    return NULL;
+  
+  char hostname[MAX_STR_LEN];
+  int port;
+  char identifier[MAX_STR_LEN];
+  
+  // the server, construct an HTTP request based on the options specified in the 
+  // command line, send the HTTP request to server, receive an HTTP response
+  if (0 == parse_URL(url, hostname, &port, identifier))
+    return NULL;
+  
+  int cnt = -1;
+  int sock = -1;
+  
+  struct sockaddr_in myname; 
+  
+  struct hostent *hp;
+  
+  
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("WlzIIPProxy client setup \n");
+    return NULL;
+  }
+  
+  // set TCP_NODELAY
+  int flag = 1;
+  int result = setsockopt(sock, 
+                          IPPROTO_TCP,
+                          TCP_NODELAY,
+                          (char *) &flag,
+			  
+                          sizeof(int));   
+  if (result < 0) {
+    perror("WlzRemoteSrv TCP_NODELAY failure \n");
+    shutdown(sock, SHUT_RDWR);
+    sock = -1;
+    return NULL;
+  }
+  
+  myname.sin_port = htons(port);
+  myname.sin_family = AF_INET;   
+  hp = gethostbyname(hostname);
+  if (hp == NULL) {
+    shutdown(sock, SHUT_RDWR);
+    sock = -1;
+    return NULL;
+  }
+  
+  memcpy((void*) &myname.sin_addr.s_addr, (void*) hp -> h_addr_list[0], hp -> h_length);
+  
+  
+  if ((connect(sock, (struct sockaddr *) &myname, sizeof(myname))) < 0) {
+    shutdown(sock, SHUT_RDWR);
+    sock = -1;
+    return NULL;
+  }
+  
+  char GET[1024];
+  sprintf(GET, "GET /%s HTTP/1.0\n\n", identifier);
+  
+  // send our get request for http 
+  if (send(sock, GET, strlen(GET), 0) == -1) {
+    perror("Error sending data.");
+    return NULL;
+  }
+  char buffer[BUFFER_SIZE];
+  memset(buffer,0x0,BUFFER_SIZE);    //  init line 
+  
+  int bufsize = read(sock, buffer, 16);
+  int i = 0;
+  char* worker = NULL;
+  WlzObject* ret = NULL;
+  
+  // has result
+  if (0 < bufsize &&
+      NULL != strstr(buffer, "OK")) {
+    
+    // find a position near Content-Type: image/
+    i = 20;
+    while (1) {
+      memset(buffer,0x0,BUFFER_SIZE);    //  init line 
+      
+      bufsize = recv(sock, buffer, i, MSG_PEEK | MSG_WAITALL);
+      if (0 >= bufsize)
+	break;
+      worker = strstr(buffer, "Content-Length");
+      if (NULL != worker) {
+	i = bufsize - strlen(worker) + 3;
+	read(sock, buffer, i);
+	i = 20;
+	continue;
+      }
+      
+      worker = strstr(buffer, "image");
+      if (NULL != worker) {
+	i = bufsize - strlen(worker) - 10;
+	read(sock, buffer, i);
+	break;
+      } else {
+	i = i + 20;
+	if (i >= BUFFER_SIZE) {
+	  read(sock, buffer, BUFFER_SIZE - 1);
+	  i = 20;
+	}
+      }
+    }
+    
+    //  read the socket until its clear then exit
+    
+    memset(buffer,0x0,BUFFER_SIZE);    //  init line 
+    
+    // normally CRLFCRLF is ending of response header and begining of response data
+    // however some machine may use LFLF for this purpose
+    
+    // find beginning of response data
+    int value = 0;
+    while (10 != value) {
+      bufsize = read(sock, buffer, 1);
+      if (0 >= bufsize) {
+	value = -1;
+	break;
+      }
+      value = (int)buffer[0];
+    }
+    
+    if (-1 == value)
+      return NULL;
+    
+    bufsize = read(sock, buffer, 1);
+    value = (int)buffer[0];
+    if (13 == value) {
+      bufsize = read(sock, buffer, 1);
+      value = (int)buffer[0];
+    }
+    
+    if (10 != value)
+      return NULL;
+    
+    WlzErrorNum  errNum = WLZ_ERR_NONE;
+    
+    // at the begining of response data
+    FILE *file = fdopen(sock, "r");
+    if (NULL == file)
+      printf("fdopen failed %d\n", sock);
+    else {
+      ret = WlzReadObj(file, &errNum);
+      if (NULL == ret)
+	perror("Fail to read wlz object\n");
+      else {
+	if (WLZ_ERR_NONE != errNum) {
+	  perror("Error in reading wlz object\n");
+	  WlzFreeObj(ret);
+	  ret = NULL;
+	}
+      }
+    }
+  }
+  close(sock);
+  return ret;
+}
+
+WlzObject*  
+WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, int portInput)
+{
+  if (NULL == filename)
+    return NULL;
+  
+  char* http = strstr(filename, "http://");
+  
+  if (NULL == http)
+    return wlzFcgiRead(filename, serverInput, portInput);
+  else
+    return wlzHttpRead(filename);
 }
