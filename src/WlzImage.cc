@@ -333,7 +333,12 @@ void WlzImage::prepareObject() throw(string)
 	  if (NULL == wlzObject) {
 	    char* remoteFile = new char[strlen(filename.c_str()) + 1];
 	    strcpy(remoteFile, filename.c_str());
+
 	    wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile, (const char*)NULL, -1);
+
+	    if (NULL == wlzObject) 
+	      perror("WlzImage:: reading remote file returns NULL \n");
+
 	    delete[] remoteFile;
 	    remoteFile = NULL;
 	  }

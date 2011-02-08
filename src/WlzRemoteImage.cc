@@ -275,7 +275,27 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
   // filename is a absolute path such as 
   // /opt/emageDBLocation/webImage/emage/dbImage/segment1/5725/5725_opt.wlz
   char url[MAX_STR_LEN];
-  sprintf(url, "http://caperdonich.hgu.mrc.ac.uk%s", filename);
+  char name[MAX_STR_LEN];
+  char* sToken = NULL;
+
+  strcpy(name, filename);
+  // escape special character in filename
+  strcpy(url, "");
+  if (NULL != strchr(name, ':')) {
+    sToken = strtok(name, ":");
+    strcat(url, sToken);
+    sToken = strtok(NULL, ":");
+    while (NULL != sToken) {
+      strcat(url, "%3A");
+      strcat(url, sToken);
+      sToken = strtok(NULL, ":");
+    }
+
+    strcpy(name, url);
+    strcpy(url, "");
+  }
+
+  sprintf(url, "http://caperdonich.hgu.mrc.ac.uk%s", name);
 
   WlzObject* ret = WlzRemoteImage::wlzHttpRead(url);
 
