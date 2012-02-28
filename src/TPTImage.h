@@ -1,11 +1,9 @@
+#ifndef _TPTIMAGE_H
+#define _TPTIMAGE_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _TPTImage_h[] = "MRC HGU $Id$";
-#endif
+static char _TPTImage_h[] = "University of Edinburgh $Id$";
 #endif
 
 // Tiled Pyramidal Tiff class interface
@@ -28,10 +26,6 @@ static char _TPTImage_h[] = "MRC HGU $Id$";
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-
-#ifndef _TPTIMAGE_H
-#define _TPTIMAGE_H
 
 
 #include "IIPImage.h"

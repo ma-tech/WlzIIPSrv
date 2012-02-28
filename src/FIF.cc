@@ -1,32 +1,58 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _FIF_cc[] = "MRC HGU $Id$";
+static char _FIF_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
+/*!
+* \file         FIF.cc
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2005-2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief
+*/
 
+#include "Log.h"
 #include "Task.h"
 #include "Environment.h"
 
 #include "TPTImage.h"
 #include "Cache.h"
 
-
 using namespace std;
-
-
 
 void FIF::run( Session* session, std::string argument ){
 
-  if( session->loglevel >= 3 ) *(session->logfile) << "FIF handler reached" << endl;
-
-  // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_INFO("FIF handler reached");
+  LOG_COND_INFO(command_timer.start());
   // The argument is a path, which may contain spaces or other characters
   // that will be MIME encoded into a suitable format for the URL.
   // So, first decode this path (following code modified from CommonC++ library)
@@ -88,35 +114,31 @@ void FIF::run( Session* session, std::string argument ){
     // TODO: Try to use a reference to this list, so that we can
     //  keep track of the current sequence between runs
 
-    if( session->imageCache->empty() ){
-
+    if(session->imageCache->empty()){
       test = IIPImage( argument );
       test.setFileNamePattern( filename_pattern );
       test.Initialise();
-
       (*session->imageCache)[argument] = test;
-      if( session->loglevel >= 1 ) *(session->logfile) << "Image cache initialisation" << endl;
+      LOG_INFO("Image cache initialisation");
     }
-
     else{
-
-      if( session->imageCache->find(argument) != session->imageCache->end() ){
+      if(session->imageCache->find(argument) != session->imageCache->end()){
 	test = (*session->imageCache)[ argument ];
-	if( session->loglevel >= 2 ){
-	  *(session->logfile) << "Image cache hit. Number of elements: " << session->imageCache->size() << endl;
-	}
+	LOG_INFO("Image cache hit. Number of elements: " <<
+	          session->imageCache->size());
       }
       else{
 	test = IIPImage( argument );
 	test.setFileNamePattern( filename_pattern );
 	test.Initialise();
-	if( session->loglevel >= 2 ) *(session->logfile) << "Image cache miss" << endl;
-	if( session->imageCache->size() >= 100 ) session->imageCache->erase( session->imageCache->end() );
+	LOG_INFO("Image cache miss");
+	if(session->imageCache->size() >= 100)
+	{
+	  session->imageCache->erase(session->imageCache->end());
+	}
 	(*session->imageCache)[argument] = test;
       }
     }
-
-
 
     /***************************************************************
 	      Test for different image types - only TIFF is native for now
@@ -125,8 +147,8 @@ void FIF::run( Session* session, std::string argument ){
     string imtype = test.getImageType();
 
     if( imtype == "tif" || imtype == "ptif" ){
-      if( session->loglevel >= 2 ) *(session->logfile) << "FIF :: TIFF image requested" << endl;
-      *session->image = new TPTImage( test );
+      LOG_INFO("FIF :: TIFF image requested");
+      *session->image = new TPTImage(test);
     }
     else throw string( "Unsupported image type: " + imtype );
 
@@ -151,10 +173,8 @@ void FIF::run( Session* session, std::string argument ){
 	  session->image = new DSOImage( test );
 	  (*session->image)->Load( (*mod_it).second );
 
-	  if( session->loglevel >= 2 ){
-	    *(session->logfile) << imtype << " image requested ... using handler "
-				<< (*session->image)->getDescription() << endl;
-	  }
+	  LOG_INFO(imtype << " image requested ... using handler " <<
+	            (*session->image)->getDescription());
 	}
       }
 #else
@@ -163,20 +183,11 @@ void FIF::run( Session* session, std::string argument ){
     }
     */
 
-
-    if( session->loglevel >= 3 ){
-      *(session->logfile) << "FIF :: created image" << endl;
-    }
-
+    LOG_INFO("FIF :: created image");
 
     (*session->image)->openImage();
-
-    if( session->loglevel >= 2 ){
-      *(session->logfile) << "image width is " << (*session->image)->getImageWidth()
-			  << " and height is " << (*session->image)->getImageHeight() << endl;
-    }
-
-
+    LOG_INFO("image width is " << (*session->image)->getImageWidth() <<
+	      " and height is " << (*session->image)->getImageHeight());
   }
   catch( const string& error ){
     // Unavailable file error code is 1 3
@@ -189,9 +200,5 @@ void FIF::run( Session* session, std::string argument ){
   session->view->xangle = 0;
   session->view->yangle = 90;
 
-	  
-  if( session->loglevel >= 3 ){
-    *(session->logfile)	<< "FIF :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
-
+  LOG_INFO("FIF :: Total command time " << command_timer.getTime() << "us");
 }

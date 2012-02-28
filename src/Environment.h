@@ -1,53 +1,65 @@
-#if defined(__GNUC__)
-#ident "MRC HGU $Id$"
-#else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Environment_h[] = "MRC HGU $Id$";
-#endif
-#endif
-
-/*
-    IIP Environment Variable Class
-
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
-
 #ifndef _ENVIRONMENT_H
 #define _ENVIRONMENT_H
+#if defined(__GNUC__)
+#ident "University of Edinburgh $Id$"
+#else
+static char _Environment_h[] = "University of Edinburgh $Id$";
+#endif
+/*!
+* \file         Environment.h
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2005-2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	Defines the Environment class for reading WlzIIP
+* 		environment variables.
+*/
 
-
-/* Define some default values
- */
-#define VERBOSITY 1
-#define LOGFILE "/tmp/iipsrv.log"
-#define MAX_IMAGE_CACHE_SIZE 10.0
+// Default values
+#define LOGFILE 		"/tmp/iipsrv.log"
+#define LOGLEVEL 		"WARN"
+#define MAX_IMAGE_CACHE_SIZE 	10.0
+#define MAX_VIEW_STRUCT_CACHE_COUNT 1024
 #define MAX_VIEW_STRUCT_CACHE_SIZE 1024
-#define MAX_WLZOBJ_CACHE_SIZE 1024 /* in MB */
-#define FILENAME_PATTERN "_pyr_"
-#define JPEG_QUALITY 75
-#define MAX_CVT 5000
+#define MAX_WLZOBJ_CACHE_COUNT 	1024
+#define MAX_WLZOBJ_CACHE_SIZE 	1024 /* in MB */
+#define FILENAME_PATTERN 	"_pyr_"
+#define JPEG_QUALITY 		75
+#define MAX_CVT 		5000
 
-#define WLZ_TILE_HEIGHT 100
-#define WLZ_TILE_WIDTH 100
+#define WLZ_TILE_HEIGHT		100
+#define WLZ_TILE_WIDTH 		100
 
 #include <string>
+#include "Log.h"
 
 
 /// Class to obtain environment variables
@@ -55,24 +67,55 @@ class Environment {
 
  public:
 
-  static int getVerbosity(){
-    int loglevel = VERBOSITY;
-    char *envpara = getenv( "VERBOSITY" );
-    if( envpara ){
-      loglevel = atoi( envpara );
-      // If not a realistic level, set to zero
-      if( loglevel < 0 ) loglevel = 0;
-    }
-    return loglevel;
-  }
-
-
   static std::string getLogFile(){
     char* envpara = getenv( "LOGFILE" );
     if( envpara ) return std::string( envpara );
     else return LOGFILE;
   }
 
+  static int getLogLevel()
+  {
+#ifdef WLZ_IIP_LOG
+    int	i;
+    int lev = log4cpp::Priority::WARN;
+    const char *levStr = "ERROR";
+    const char *levTbl[10] = {"EMERG", "FATAL",  "ALERT", "CRIT",  "ERROR",
+                              "WARN",  "NOTICE", "INFO",  "DEBUG", "NOTSET"};
+    int priTbl[10] = {log4cpp::Priority::EMERG,
+		      log4cpp::Priority::FATAL,
+		      log4cpp::Priority::ALERT,
+		      log4cpp::Priority::CRIT,
+		      log4cpp::Priority::ERROR,
+		      log4cpp::Priority::WARN,
+		      log4cpp::Priority::NOTICE,
+		      log4cpp::Priority::INFO,
+		      log4cpp::Priority::DEBUG,
+		      log4cpp::Priority::NOTSET};
+    char *p = getenv("LOGLEVEL");
+    if(p)
+    {
+      for(i = 0; i < 10; ++i)
+      {
+        if(strncmp(p, levTbl[i], 4) == 0)
+	{
+	  levStr = levTbl[i];
+	  break;
+	}
+      }
+      for(i = 0; i < 10; ++i)
+      {
+        if(strncmp(levStr, levTbl[i], 4) == 0)
+	{
+	  lev = priTbl[i];
+	  break;
+	}
+      }
+    }
+#else
+    int lev = 0;
+#endif
+    return(lev);
+  }
 
   static float getMaxImageCacheSize(){
     float max_image_cache_size = MAX_IMAGE_CACHE_SIZE;
@@ -83,6 +126,15 @@ class Environment {
     return max_image_cache_size;
   }
 
+  static int getMaxViewStructCacheCount(){
+    int max_viewstruct_cache_count = MAX_VIEW_STRUCT_CACHE_COUNT;
+    char* envpara = getenv( "MAX_VIEW_STRUCT_CACHE_COUNT" );
+    if( envpara ){
+      max_viewstruct_cache_count = atoi( envpara );
+    }
+    return max_viewstruct_cache_count;
+  }
+
   static int getMaxViewStructCacheSize(){
     int max_viewstruct_cache_size = MAX_VIEW_STRUCT_CACHE_SIZE;
     char* envpara = getenv( "MAX_VIEW_STRUCT_CACHE_SIZE" );
@@ -90,6 +142,15 @@ class Environment {
       max_viewstruct_cache_size = atoi( envpara );
     }
     return max_viewstruct_cache_size;
+  }
+
+  static int getMaxWlzObjCacheCount(){
+    unsigned int max_object_cache_count = MAX_WLZOBJ_CACHE_COUNT;
+    char* envpara = getenv( "MAX_WLZOBJ_CACHE_COUNT" );
+    if( envpara ){
+      max_object_cache_count = atoi( envpara );
+    }
+    return max_object_cache_count;
   }
 
   static int getMaxWlzObjCacheSize(){
@@ -159,6 +220,5 @@ class Environment {
 
 
 };
-
 
 #endif

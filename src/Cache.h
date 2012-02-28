@@ -1,11 +1,9 @@
+#ifndef _CACHE_H
+#define _CACHE_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Cache_h[] = "MRC HGU $Id$";
-#endif
+static char _Cache_h[] = "University of Edinburgh $Id$";
 #endif
 
 // Tile Cache Class
@@ -31,10 +29,6 @@ static char _Cache_h[] = "MRC HGU $Id$";
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-
-
-#ifndef _CACHE_H
-#define _CACHE_H
 
 
 // Use the hashmap extensions if we are using >= gcc 3.1

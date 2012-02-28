@@ -1,57 +1,61 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _JTL_cc[] = "MRC HGU $Id$";
+static char _JTL_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
-/*
-    IIP JTLS Command Handler Class Member Function
-
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+/*!
+* \file         JTL.cc
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP JTLS Command Handler Class Member Function.
+* \ingroup    	WlzIIPServer
 */
 
+#include "Log.h"
 #include "Task.h"
 
 using namespace std;
 
 
-
 void JTL::run( Session* session, std::string argument ){
-
   /* The argument should consist of 2 comma separated values:
      1) resolution
      2) tile number
   */
-
-  if( session->loglevel >= 3 ) (*session->logfile) << "JTL handler reached" << endl;
+  LOG_INFO("JTL handler reached");
   session = session;
-
   int resolution, tile;
-
-
-  // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_COND_INFO(command_timer.start());
   // Parse the argument list
   int delimitter = argument.find( "," );
   resolution = atoi( argument.substr( 0, delimitter ).c_str() );
@@ -60,44 +64,37 @@ void JTL::run( Session* session, std::string argument ){
   tile = atoi( argument.substr( delimitter + 1, argument.length() ).c_str() );
 
 
-  TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
+  TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png);
   RawTile rawtile = tilemanager.getTile( resolution, tile, session->view->xangle,
 					 session->view->yangle, JPEG );
 
   int len = rawtile.dataLength;
 
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "JTL :: Tile size: " << rawtile.width << " x " << rawtile.height << endl
-			<< "JTL :: Channels per sample: " << rawtile.channels << endl
-			<< "JTL :: Bits per channel: " << rawtile.bpc << endl
-			<< "JTL :: Compressed tile size is " << len << endl;
-  }
-
+  LOG_INFO("JTL :: Tile size: " <<
+            rawtile.width << " x " << rawtile.height << endl <<
+	    "JTL :: Channels per sample: " << rawtile.channels << endl <<
+            "JTL :: Bits per channel: " << rawtile.bpc << endl << 
+            "JTL :: Compressed tile size is " << len);
 
 #ifndef DEBUG
   char buf[1024];
-  snprintf( buf, 1024, "Pragma: no-cache\r\n"
-	    "Content-length: %d\r\n"
-	    "Content-type: image/jpeg\r\n"
-	    "Content-disposition: inline;filename=\"jtl.jpg\""
-	    "\r\n\r\n", len );
+  snprintf(buf, 1024, "Pragma: no-cache\r\n"
+	   "Content-length: %d\r\n"
+	   "Content-type: image/jpeg\r\n"
+	   "Content-disposition: inline;filename=\"jtl.jpg\""
+	   "\r\n\r\n", len);
 
-  session->out->printf( (const char*) buf );
+  session->out->printf((const char*) buf);
 #endif
 
-
-  if( session->out->putStr( (const char*) rawtile.data, len ) != len ){
-    if( session->loglevel >= 1 ){
-      *(session->logfile) << "JTL :: Error writing jpeg tile" << endl;
-    }
+  if(session->out->putStr((const char* )rawtile.data, len) != len){
+    LOG_ERROR("JTL :: Error writing jpeg tile");
   }
 
 //  session->out->printf( "\r\n" ); //causes incorrect packet length, that results in crash, Z Husz 16/04/2010
 
   if( session->out->flush() == -1 ) {
-    if( session->loglevel >= 1 ){
-      *(session->logfile) << "JTL :: Error flushing jpeg tile" << endl;
-    }
+    LOG_ERROR("JTL :: Error flushing jpeg tile");
   }
 
 
@@ -105,8 +102,5 @@ void JTL::run( Session* session, std::string argument ){
   session->response->setImageSent();
 
   // Total JTLS response time
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "JTL :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
-
+  LOG_INFO("JTL :: Total command time " << command_timer.getTime() << "us");
 }

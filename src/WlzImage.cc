@@ -1,46 +1,46 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _WlzImage_cc[] = "MRC HGU $Id$";
-#endif
+static char _WlzImage_cc[] = "University of Edinburgh $Id$";
 #endif
 /*!
- * \file         WlzImage.cc
- * \author       Zsolt Husz
- * \date         June 2008
- * \version      $Id$
- * \par
- * Address:
- *               MRC Human Genetics Unit,
- *               Western General Hospital,
- *               Edinburgh, EH4 2XU, UK.
- * \par
- * Copyright (C) 2008 Medical research Council, UK.
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be
- * useful but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA  02110-1301, USA.
- * \brief	The WlzImage class to handle 3D Woolz objects sectioning
- * \ingroup	WlzIIPServer
- * \todo         -
- * \bug          None known.
- */
+* \file         WlzImage.cc
+* \author       Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	The WlzImage class to handle 3D Woolz objects sectioning
+* 		and expression evaluation for the Woolz IIP server.
+* \ingroup	WlzIIPServer
+*/
 
+#include "Log.h"
 #include "WlzImage.h"
 #include <WlzProto.h>
 #include <WlzExtFF.h>
@@ -56,25 +56,15 @@ static char _WlzImage_cc[] = "MRC HGU $Id$";
 #include "WlzRemoteImage.h"
 #endif
 
-//#define __EXTENDED_DEBUG
-#ifdef __EXTENDED_DEBUG
-#include "Task.h"
-extern      Session session;
-#endif
-
 using namespace std;
 
 /*!Interpolation type */
 const WlzInterpolationType WlzImage::interp = WLZ_INTERPOLATION_NEAREST;
 
-/*!View structure cache. Static for all queries. 
+/*!
+ * Woolz object cache. Static for all queries. 
  */
-WlzViewStructCache        WlzImage::cacheViewStruct;
-
-
-/*!Object cache. Static for all queries. 
- */
-WlzObjectCache            WlzImage::cacheWlzObject(&cacheViewStruct);
+WlzObjectCache            WlzImage::wlzObjectCache;
 
 
 /*!
@@ -187,190 +177,203 @@ void WlzImage::openImage()
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Update the view structure used to generate sections either from the 
- *       view structure cache or by recomputing it.
+ * \brief        Update the view structure used to generate sections either
+ * 		 from the view structure cache or by recomputing it.
  *
  * \return       void
  * \par      Source:
  *                WlzImage.cc
  */
-void WlzImage::prepareViewStruct() throw(string)
+void WlzImage::prepareViewStruct()
+throw(string)
 {
+  WlzErrorNum errNum = WLZ_ERR_NONE;
+  
   if (!isViewChanged())
-    {
-      return;
-    }
-  
-  
+  {
+    return;
+  }
   if (!viewParams)
-    {
-      throw string( "WlzImage :: viewParams is NULL.");
-    }
+  {
+    throw string( "WlzImage :: viewParams is NULL.");
+  }
   
   prepareObject();  //make sure object is loaded
-  
-  WlzErrorNum errNum = WLZ_ERR_NONE;
   
   //generate cache hash
   string hash = generateHash(viewParams);
   
-#ifdef __EXTENDED_DEBUG
-  *(session.logfile) << "WlzImage :: prepareViewStruct: hash:" << hash << endl;
-#endif
+  LOG_DEBUG("WlzImage :: prepareViewStruct: hash:" << hash);
   
-  if( wlzViewStr != NULL )
-    WlzFree3DViewStruct( wlzViewStr );
+  if(wlzViewStr != NULL)
+  {
+    WlzFree3DViewStruct(wlzViewStr);
+  }
   
-  wlzViewStr  = WlzAssign3DViewStruct( cacheViewStruct.get(hash), NULL );
+  wlzViewStr = WlzAssign3DViewStruct(wlzObjectCache.getVS(hash), NULL);
   
   if (wlzViewStr == NULL)  // cache miss?
+  {
+    
+    if((wlzViewStr = WlzAssign3DViewStruct(
+                     WlzMake3DViewStruct(WLZ_3D_VIEW_STRUCT, &errNum),
+		                          NULL )) != NULL)
     {
-      
-      if((wlzViewStr = WlzAssign3DViewStruct( WlzMake3DViewStruct(WLZ_3D_VIEW_STRUCT, &errNum), NULL )) != NULL){
-	wlzViewStr->theta           = viewParams->yaw   * WLZ_M_PI / 180.0;
-	wlzViewStr->phi             = viewParams->pitch * WLZ_M_PI / 180.0;
-	wlzViewStr->zeta            = viewParams->roll  * WLZ_M_PI / 180.0;
-	wlzViewStr->dist            = viewParams->dist;
-	wlzViewStr->fixed           = viewParams->fixed;
-	wlzViewStr->fixed_2         = viewParams->fixed2;
-	wlzViewStr->up              = viewParams->up;
-	wlzViewStr->view_mode       = viewParams->mode;
-	wlzViewStr->scale           = viewParams->scale ;
-	wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
-      } else {
-	throw string( "WlzImage :: prepareViewStruct creation failed.");
-      }
-      if (wlzObject->type == WLZ_COMPOUND_ARR_2) {
-        WlzCompoundArray *array = (WlzCompoundArray *)wlzObject;
-        WlzObject *obj = array->o[0];
-        if (array && array->n>0 && obj) {
-	  if (obj->domain.p) {
-	    wlzViewStr->voxelSize[0]    = obj->domain.p->voxel_size[0];
-	    wlzViewStr->voxelSize[1]    = obj->domain.p->voxel_size[1];
-	    wlzViewStr->voxelSize[2]    = obj->domain.p->voxel_size[2];
-	  }
-	  errNum = WlzInit3DViewStruct(wlzViewStr, array->o[0]);
-        } else
-	  throw string( "WlzImage :: can't find object to prepare ViewStruct.");
-      } else {
-        if (wlzObject && wlzObject->domain.p) {
-          wlzViewStr->voxelSize[0]    = wlzObject->domain.p->voxel_size[0];
-          wlzViewStr->voxelSize[1]    = wlzObject->domain.p->voxel_size[1];
-          wlzViewStr->voxelSize[2]    = wlzObject->domain.p->voxel_size[2];
-	}
-        errNum = WlzInit3DViewStruct(wlzViewStr, wlzObject);
-      }
-      
-      if (errNum != WLZ_ERR_NONE)
-	throw string( "WlzImage :: WlzInit3DViewStruct failed.");
-      
-      cacheViewStruct.insert(wlzViewStr , hash);
+      wlzViewStr->theta           = viewParams->yaw   * WLZ_M_PI / 180.0;
+      wlzViewStr->phi             = viewParams->pitch * WLZ_M_PI / 180.0;
+      wlzViewStr->zeta            = viewParams->roll  * WLZ_M_PI / 180.0;
+      wlzViewStr->dist            = viewParams->dist;
+      wlzViewStr->fixed           = viewParams->fixed;
+      wlzViewStr->fixed_2         = viewParams->fixed2;
+      wlzViewStr->up              = viewParams->up;
+      wlzViewStr->view_mode       = viewParams->mode;
+      wlzViewStr->scale           = viewParams->scale ;
+      wlzViewStr->voxelRescaleFlg = 0x01 | 0x02;  // set if voxel size correciton is needed
     }
+    else
+    {
+      throw string( "WlzImage :: prepareViewStruct creation failed.");
+    }
+    if(wlzObject->type == WLZ_COMPOUND_ARR_2)
+    {
+      WlzCompoundArray *array = (WlzCompoundArray *)wlzObject;
+      WlzObject *obj = array->o[0];
+      if(array && array->n>0 && obj)
+      {
+	if(obj->domain.p)
+	{
+	  wlzViewStr->voxelSize[0]    = obj->domain.p->voxel_size[0];
+	  wlzViewStr->voxelSize[1]    = obj->domain.p->voxel_size[1];
+	  wlzViewStr->voxelSize[2]    = obj->domain.p->voxel_size[2];
+	}
+	errNum = WlzInit3DViewStruct(wlzViewStr, array->o[0]);
+      }
+      else
+      {
+	throw string( "WlzImage :: can't find object to prepare ViewStruct.");
+      }
+    }
+    else
+    {
+      if(wlzObject && wlzObject->domain.p)
+      {
+	wlzViewStr->voxelSize[0]    = wlzObject->domain.p->voxel_size[0];
+	wlzViewStr->voxelSize[1]    = wlzObject->domain.p->voxel_size[1];
+	wlzViewStr->voxelSize[2]    = wlzObject->domain.p->voxel_size[2];
+      }
+      errNum = WlzInit3DViewStruct(wlzViewStr, wlzObject);
+    }
+    if(errNum != WLZ_ERR_NONE)
+    {
+      throw string( "WlzImage :: WlzInit3DViewStruct failed.");
+    }
+
+    wlzObjectCache.insert(wlzViewStr , hash);
+  }
   return ;
 }
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Prepare the 3D Woolz object either by looking it up from the object cache or
- *               by reading it from disk
+ * \brief        Prepare the 3D Woolz object either by looking it up from the
+ * 		 object cache or by reading it from disk
  *
- * \return       void
  * \par      Source:
  *                WlzImage.cc
  */
-void WlzImage::prepareObject() throw(string)
+void WlzImage::prepareObject()
+throw(string)
 {
   WlzGreyType   gType;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
   
-  if( !wlzObject ) {
-    
+  if(!wlzObject)
+  {
     string filename;
     int usepipe = 0;
-    
-#ifdef __EXTENDED_DEBUG
-    *(session.logfile) << "WlzImage :: prepareObject: reloading" << endl;
-#endif
-    
+    LOG_DEBUG("WlzImage :: prepareObject: reloading");
     //check cache first
     filename = getFileName( );
-    
-    wlzObject  = WlzAssignObject( cacheWlzObject.get(filename), NULL );
-    
+    wlzObject  = WlzAssignObject(wlzObjectCache.get(filename), NULL);
 #ifdef __PERFORMANCE_DEBUG
     struct timeval tVal;
     struct timeval tVal2;
     int time = 0;
     gettimeofday(&tVal, NULL);
 #endif
-    
+    LOG_DEBUG("WlzImage :: prepareObject: cache " <<
+              (wlzObject != NULL)? "hit": "miss");
     if (wlzObject == NULL)  // cache miss?
-      {
-	// if not in cache then load
-	
-	FILE *fp = NULL;
-	if (filename.substr(filename.length()-3, 3) == ".gz") {
-	  string command = "gunzip -c ";
-	  command += filename;
-	  fp = popen( command.c_str(), "r");
-	  usepipe = 1;
-	} else
-	  fp = fopen(filename.c_str(), "r");
-	
-	if (fp)
-	  wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ, 0, &errNum );
-	
-	if (fp) {
-          if (usepipe)
-	    pclose(fp);
-          else
-	    fclose(fp);
-	}
-	
-#ifdef __ALLOW_REMOTE_FILE
-	/////???????????? Yiya added for remote wlz file
-	  // no local wlzObject
-	  if (NULL == wlzObject) {
-	    char* remoteFile = new char[strlen(filename.c_str()) + 1];
-	    strcpy(remoteFile, filename.c_str());
-
-	    wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile, (const char*)NULL, -1);
-
-	    if (NULL == wlzObject) 
-	      perror("WlzImage:: reading remote file returns NULL \n");
-
-	    delete[] remoteFile;
-	    remoteFile = NULL;
-	  }
-	  /////???????????? Yiya added for remote wlz file
-#endif
-	    
-	    if (NULL == wlzObject) 
-	      throw string( "WlzImage :: no such wlz file ") + string(filename.c_str());
-	    
-	    //test object type
-	    switch (wlzObject->type) {
-	    case WLZ_3D_DOMAINOBJ:
-              break;
-	    case WLZ_COMPOUND_ARR_2:
-              break;
-	    default:
-              throw string( "WlzImage :: prepareObject:  Incorrect object type. Currently supported: WLZ_3D_DOMAINOBJ, and WLZ_COMPOUND_ARR_2 with WLZ_3D_DOMAINOBJ.");
-	    }
-	    
-	    
-	    wlzObject = WlzAssignObject( wlzObject, &errNum );
-	    
-	    if (wlzObject == NULL || errNum != WLZ_ERR_NONE)
-	      {
-		throw string( "WlzImage :: prepareObject:  Woolz object can not be read: " + filename );
-	      }
-	    
-	    /////??????????? for opt  images, even if I use memory mapped format for wlz file,
-	      ////????????? it is still too slow (see screen re-fresh tile-by-tile) so we have to 
-	      /////????????? use cache
-	      cacheWlzObject.insert( wlzObject , filename );
+    {
+      // if not in cache then load
+      FILE *fp = NULL;
+      if (filename.substr(filename.length()-3, 3) == ".gz") {
+	string command = "gunzip -c ";
+	command += filename;
+	fp = popen( command.c_str(), "r");
+	usepipe = 1;
+      } else
+	fp = fopen(filename.c_str(), "r");
+      
+      if (fp)
+	wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ, 0, &errNum );
+      
+      if (fp) {
+	if (usepipe)
+	  pclose(fp);
+	else
+	  fclose(fp);
       }
+      
+#ifdef __ALLOW_REMOTE_FILE
+      /////???????????? Yiya added for remote wlz file
+	// no local wlzObject
+	if (NULL == wlzObject) {
+	  char* remoteFile = new char[strlen(filename.c_str()) + 1];
+	  strcpy(remoteFile, filename.c_str());
+
+	  wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile, (const char*)NULL, -1);
+
+	  if (NULL == wlzObject) 
+	    perror("WlzImage:: reading remote file returns NULL \n");
+
+	  delete[] remoteFile;
+	  remoteFile = NULL;
+	}
+	/////???????????? Yiya added for remote wlz file
+#endif
+	  
+	  if (NULL == wlzObject) 
+	    throw string("WlzImage :: no such wlz file ") +
+			 string(filename.c_str());
+	  
+	  //test object type
+	  switch (wlzObject->type) {
+	  case WLZ_3D_DOMAINOBJ:
+	    break;
+	  case WLZ_COMPOUND_ARR_2:
+	    break;
+	  default:
+	    throw string("WlzImage :: prepareObject:  Incorrect object type."
+			 "Currently supported are: "
+			 "WLZ_3D_DOMAINOBJ, and WLZ_COMPOUND_ARR_2 with "
+			 "WLZ_3D_DOMAINOBJ.");
+	  }
+	  
+	  
+	  wlzObject = WlzAssignObject( wlzObject, &errNum );
+	  
+	  if (wlzObject == NULL || errNum != WLZ_ERR_NONE)
+	    {
+	      throw string("WlzImage :: prepareObject:  Woolz object can not"
+			   "be read: " + filename );
+	    }
+	  
+	  /////??????????? for opt  images, even if I use memory mapped format for wlz file,
+	    ////????????? it is still too slow (see screen re-fresh tile-by-tile) so we have to 
+	    /////????????? use cache
+	    wlzObjectCache.insert(wlzObject , filename);
+    }
     
 #ifdef __PERFORMANCE_DEBUG
     gettimeofday(&tVal2, NULL);
@@ -382,17 +385,17 @@ void WlzImage::prepareObject() throw(string)
     isSet = false;   //yet object view specific data has to be set
   }
   else
-    {
-#ifdef __EXTENDED_DEBUG
-      *(session.logfile) << "WlzImage :: prepareObject: not reloaded: already initialised" << endl;
-#endif
-    }
+  {
+    LOG_DEBUG("WlzImage :: prepareObject: not reloaded, already initialised");
+  }
   
   WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
   WlzObject *initObj = array?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
   
   if (!initObj)
-    throw string( "WlzImage :: prepareObject:  unsuported objet.");
+  {
+    throw string("WlzImage :: prepareObject: unsuported object.");
+  }
   
   //set global parameters
   if (initObj->values.c == NULL) // no values
@@ -401,7 +404,8 @@ void WlzImage::prepareObject() throw(string)
     gType = WlzGreyTypeFromObj(initObj, &errNum);
   
   if (errNum != WLZ_ERR_NONE) {
-    throw string( "WlzImage :: prepareObject:  Error while WrlGreyTypeFromObj.");
+    throw string("WlzImage :: prepareObject: "
+                 "Error while WrlGreyTypeFromObj.");
   }
   
   switch( gType ){
@@ -417,7 +421,11 @@ void WlzImage::prepareObject() throw(string)
     channels = viewParams->alpha ? (unsigned int) 4 :(unsigned int) 3;
     break;
   default:
-    throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
+    throw string("WlzImage :: prepareObject:  Unsuported GreyType. "
+                 "Currently supported are: "
+		 "WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, "
+		 "WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and "
+		 "WLZ_GREY_RGBA.");
   }
   
   bpp = (unsigned int) 8;  //bits per channel
@@ -435,44 +443,48 @@ void WlzImage::prepareObject() throw(string)
   
   //set background
   if (initObj && initObj->values.c != NULL)
-    {
-      WlzPixelV pixel=WlzGetBackground(initObj, NULL);
-      background[1]=0;  // alpha 0, transparent
-      switch( gType ){
-      case WLZ_GREY_LONG:
-        background[0] = pixel.v.lnv%255;
-        break;
-      case WLZ_GREY_INT:
-        background[0] = pixel.v.inv%255;
-        break;
-      case WLZ_GREY_SHORT:
-        background[0] = pixel.v.shv%255;
-        break;
-      case WLZ_GREY_FLOAT:
-        background[0] = ((int)round(pixel.v.flv))%255;
-        break;
-      case WLZ_GREY_DOUBLE:
-        background[0] = ((int)round(pixel.v.dbv))%255;
-        break;
-      case WLZ_GREY_UBYTE:
-        background[0] = pixel.v.ubv;
-	break;
-      case WLZ_GREY_RGBA:
-	background[0] = WLZ_RGBA_RED_GET(pixel.v.rgbv);
-	background[1] = WLZ_RGBA_GREEN_GET(pixel.v.rgbv);
-	background[2] = WLZ_RGBA_BLUE_GET(pixel.v.rgbv);
-	background[3] = WLZ_RGBA_ALPHA_GET(pixel.v.rgbv);
-        break;
-      default:
-	throw string( "WlzImage :: prepareObject:  Unsuported GreyType. Currently supported: WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and WLZ_GREY_RGBA.");
-      }
+  {
+    WlzPixelV pixel=WlzGetBackground(initObj, NULL);
+    background[1]=0;  // alpha 0, transparent
+    switch( gType ){
+    case WLZ_GREY_LONG:
+      background[0] = pixel.v.lnv%255;
+      break;
+    case WLZ_GREY_INT:
+      background[0] = pixel.v.inv%255;
+      break;
+    case WLZ_GREY_SHORT:
+      background[0] = pixel.v.shv%255;
+      break;
+    case WLZ_GREY_FLOAT:
+      background[0] = ((int)round(pixel.v.flv))%255;
+      break;
+    case WLZ_GREY_DOUBLE:
+      background[0] = ((int)round(pixel.v.dbv))%255;
+      break;
+    case WLZ_GREY_UBYTE:
+      background[0] = pixel.v.ubv;
+      break;
+    case WLZ_GREY_RGBA:
+      background[0] = WLZ_RGBA_RED_GET(pixel.v.rgbv);
+      background[1] = WLZ_RGBA_GREEN_GET(pixel.v.rgbv);
+      background[2] = WLZ_RGBA_BLUE_GET(pixel.v.rgbv);
+      background[3] = WLZ_RGBA_ALPHA_GET(pixel.v.rgbv);
+      break;
+    default:
+      throw string("WlzImage :: prepareObject: "
+		   "Unsuported GreyType. Currently supported are: "
+		   "WLZ_GREY_LONG, WLZ_GREY_INT, WLZ_GREY_SHORT, "
+		   "WLZ_GREY_UBYTE, WLZ_GREY_FLOAT, WLZ_GREY_DOUBLE and "
+		   "WLZ_GREY_RGBA.");
     }
+  }
 }
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Checks if current view structure of WlzImage is up to date with the parameters
- passed to the server
+ * \brief        Checks if current view structure of WlzImage is up to date
+ * 		 with the parameters passed to the server
  *
  * \return       true if up to date, false if reload required
  * \par      Source:
@@ -486,14 +498,15 @@ bool WlzImage::isViewChanged()
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Load object specific info: image and tile size, number of tiles, metadata. 
- * 
+ * \brief        Load object specific info: image and tile size, number of
+ * 		 tiles, metadata. 
  * \return       void
  * \par      Source:
  *                WlzImage.cc
  * \par           Pramaters are not used, required by the base class definition.
  */
-void WlzImage::loadImageInfo( int , int ) throw(string)
+void WlzImage::loadImageInfo( int , int )
+throw(string)
 {
   
   WlzErrorNum errNum = WLZ_ERR_NONE;
@@ -538,7 +551,7 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
     }
     
     if( errNum == WLZ_ERR_NONE ){
-      throw string( "WlzImage :: loadImageInfo: wlzViewStr creation failed" );
+      throw string("WlzImage :: loadImageInfo: wlzViewStr creation failed");
     }
 #else
     prepareViewStruct();
@@ -547,9 +560,8 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
     image_width  = (unsigned int)(wlzViewStr->maxvals.vtX-wlzViewStr->minvals.vtX) + 1;
     image_height = (unsigned int)(wlzViewStr->maxvals.vtY-wlzViewStr->minvals.vtY) + 1;
     
-#ifdef __EXTENDED_DEBUG
-    *(session.logfile) << "WlzImage :: loadImageInfo: image size : "<< image_width << " x " << image_height << endl;
-#endif
+    LOG_INFO("WlzImage :: loadImageInfo: image size : "<<
+	     image_width << " x " << image_height);
     
     // Get the width and height for last row and column tiles
     lastTileWidth = image_width % tile_width  ;
@@ -561,9 +573,8 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
     
     number_of_tiles = ntlx * ntly;
     
-#ifdef __EXTENDED_DEBUG
-    *(session.logfile) << "WlzImage :: loadImageInfo: number of tiles: "<< number_of_tiles << endl;
-#endif
+    LOG_DEBUG("WlzImage :: loadImageInfo: number of tiles: " <<
+              number_of_tiles);
     
     
     numResolutions = 1; // resoltions. currently only one resolution is used.
@@ -575,7 +586,7 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
       }
     *curViewParams = *viewParams;
     
-    // No metadata is stored in the Woolz object, therefer set them to unknosn
+    // No metadata is stored in the Woolz object, therefer set them to unknown
     metadata["author"] = "author unknown";
     metadata["copyright"] = "copyright unknown";
     metadata["create-dtm"] = "create-dtm unknown";
@@ -583,9 +594,7 @@ void WlzImage::loadImageInfo( int , int ) throw(string)
     metadata["app-name"] = "app-name unknown";
     
   }
-#ifdef __EXTENDED_DEBUG
-  *(session.logfile) << "WlzImage :: loadImageInfo: done" << endl;
-#endif
+  LOG_INFO("WlzImage :: loadImageInfo: done");
 }
 
 /*!
@@ -624,7 +633,8 @@ void WlzImage::closeImage() {
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Sections a 3D object wlzObject to generate a single tile in tile_buf for the tileing given by tileObject
+ * \brief        Sections a 3D object wlzObject to generate a single tile in
+ * 		 tile_buf for the tileing given by tileObject
  * \param        tile_buf   allocated memmory location for the tile
  * \param        wlzObject  3D woolz object to section
  * \param        tileObject sectioning object set up result the tile requested
@@ -648,12 +658,8 @@ WlzErrorNum WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObjec
 				NULL);
   
   if (wlzSection == NULL || errNum != WLZ_ERR_NONE) {
-    throw string( "WlzImage : Sectioning failed.");
+    throw string("WlzImage : Sectioning failed.");
   }
-  
-#ifdef __EXTENDED_DEBUG
-  //  *(session.logfile) << "WlzImage :: closeImage: malloc " << size.vtX << size.vtY << endl;
-#endif
   
   if (wlzObject->values.i == NULL)  { // no values
     errNum = convertDomainObjToRGB(tile_buf,  wlzSection,  pos, size, sel);
@@ -664,7 +670,7 @@ WlzErrorNum WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObjec
   if (errNum!=WLZ_ERR_NONE) {
     char temp[20];
     snprintf(temp, 20, " no %d" ,errNum);
-    throw string( "WlzImage :: conversion to array" + (string)temp);
+    throw string("WlzImage :: conversion to array" + (string)temp);
   }
   WlzFreeObj(wlzSection);
 }
@@ -680,13 +686,13 @@ WlzErrorNum WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObjec
  * \par      Source:
  *                WlzImage.cc
  */
-RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile) throw (string)
+RawTile		WlzImage::getTile(int seq, int ang, unsigned int res,
+				  unsigned int tile)
+throw(string)
 {
   int tw=0, th=0; //real tile width and height
   WlzErrorNum errNum=WLZ_ERR_NONE;
-  
-  string filename;
-  
+  string 	filename;
   WlzObject     *tmpObj;
   WlzIVertex3   pos;
   WlzObject     *wlzSection = NULL;
@@ -695,46 +701,43 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   loadImageInfo( 0, 0);
   
   // Check that a valid tile number was given
-  if( tile >= number_of_tiles)  {
+  if( tile >= number_of_tiles)
+  {
     char tile_no[64];
     snprintf( tile_no, 64, "%d", tile );
     string tile_n = string( tile_no );
-    throw string( "Asked for non-existant tile: " + tile_n );
+    throw string("Asked for non-existant tile: " + tile_n);
   }
-  
-  tw= tile_width;
-  th= tile_height;
-  
+  tw = tile_width;
+  th = tile_height;
   // Alter the tile size if it's in the last column
-  if( ( tile % ntlx == ntlx - 1 ) && ( lastTileWidth != 0 ) ) {
+  if((tile % ntlx == ntlx - 1) && (lastTileWidth != 0))
+  {
     tw = lastTileWidth;
   }
-  
   // Alter the tile size if it's in the bottom row
-  if( ( tile / ntlx == ntly - 1 ) && ( lastTileHeight != 0 ) ) {
+  if((tile / ntlx == ntly - 1) && (lastTileHeight != 0))
+  {
     th = lastTileHeight;
   }
-  
-  
-  if( errNum == WLZ_ERR_NONE ){
-    /* create maximum sized rectangular object */
+  if(errNum == WLZ_ERR_NONE)
+  {
+    /* Create maximum sized rectangular object */
     WlzDomain     domain;
     WlzValues     values;
     
-    pos.vtX = (tile % ntlx) * tile_width + WLZ_NINT(wlzViewStr->minvals.vtX);
+    pos.vtX = (tile % ntlx) * tile_width +  WLZ_NINT(wlzViewStr->minvals.vtX);
     pos.vtY = (tile / ntlx) * tile_height + WLZ_NINT(wlzViewStr->minvals.vtY);
-    
     if((domain.i = WlzMakeIntervalDomain(WLZ_INTERVALDOMAIN_RECT,
 					 WLZ_NINT(pos.vtY),
 					 WLZ_NINT(pos.vtY + th - 1),
 					 WLZ_NINT(pos.vtX),
 					 WLZ_NINT(pos.vtX + tw - 1),
-					 &errNum))){
-      
-#ifdef __EXTENDED_DEBUG
-      *(session.logfile) << "WlzImage :: domain size "<< pos.vtX<<","<< pos.vtY<<","<<tw<<","<< th<<" ---" <<wlzObject->domain.core->type<<endl;
-#endif
-      
+					 &errNum)))
+    {
+      LOG_DEBUG("WlzImage :: domain size " << pos.vtX <<"," << pos.vtY <<
+                "," << tw << "," << th << " --- " <<
+		wlzObject->domain.core->type);
       values.core = NULL;
       tmpObj = WlzAssignObject(WlzMakeMain(WLZ_2D_DOMAINOBJ, domain,
 					   values, NULL, NULL, &errNum), NULL);
@@ -756,66 +759,114 @@ RawTile WlzImage::getTile( int seq, int ang, unsigned int res, unsigned int tile
   size.vtY= th;
   
   //recompute out channels
-  int outchannels=getNumChannels();
-  WlzCompoundArray *array = (wlzObject->type == WLZ_COMPOUND_ARR_2) ? (WlzCompoundArray*) wlzObject : NULL;
-  
-  if (!tile_buf) {
-    tile_buf = (unsigned char*)malloc ( tile_width * tile_height * outchannels);
+  int outchannels = getNumChannels();
+  WlzCompoundArray *array = (wlzObject->type == WLZ_COMPOUND_ARR_2)?
+                            (WlzCompoundArray* )wlzObject: NULL;
+  if(!tile_buf)
+  {
+    tile_buf = (unsigned char* )malloc(tile_width * tile_height * outchannels);
   }
-  
   //init tile buffer
-  for (int i=0;i<size.vtX*size.vtY;i++)
-    memcpy(tile_buf +i*outchannels, background, outchannels);
-  
-  if (viewParams->selector) {
+  for (int i = 0; i < size.vtX * size.vtY; i++)
+  {
+    memcpy(tile_buf + i * outchannels, background, outchannels);
+  }
+  if(viewParams->selector)
+  {
     //if selector existis
     CompoundSelector *iter = viewParams->selector;
-    WlzObject *obj= NULL;
-    while (iter) {
-      if (array) {
-	if (array->n>iter->index) {
-	  obj = array->o[iter->index];
-	  if (obj)
+    while (iter)
+    {
+      if (array)
+      {
+	if(iter->expression)
+	{
+          WlzObject *obj= NULL;
+
+          obj = WlzImageExpEval(iter->expression); // Assigns obj.
+	  if(obj)
+	  {
 	    sectionObject(tile_buf, obj, tmpObj, pos2D, size, iter);
+	  }
+	  (void )WlzFreeObj(obj);
 	}
-      } else {
+      }
+      else
+      {
 	// use selector with lowest index
 	sectionObject(tile_buf, wlzObject, tmpObj, pos2D, size, iter);
 	break;
       }
       iter = iter->next;
     }
-  } else {
+  }
+  else
+  {
     //use default selector
     CompoundSelector sel;
-    sel.index = 0;
     sel.a=255;
     sel.r=255;
     sel.g=255;
     sel.b=255;
-    if (array) {
-      if (array->n >0 && array->o[0])
+    sel.expression = NULL;
+    if(array)
+    {
+      if((array->n > 0) && array->o[0])
+      {
 	sectionObject(tile_buf, array->o[0], tmpObj, pos2D, size, &sel);
-    } else
+      }
+    }
+    else
+    {
       sectionObject(tile_buf, wlzObject , tmpObj, pos2D, size, &sel);
+    }
   }
-  
   //free tileing object
-  WlzFreeObj(tmpObj);
+  (void *)WlzFreeObj(tmpObj);
   
-#ifdef __EXTENDED_DEBUG
-  *(session.logfile) << "WlzImage :: getTile : Raw creation "<< endl;
-#endif
+  LOG_DEBUG("WlzImage :: getTile : Raw creation");
   
-  RawTile rawtile( tile, res, seq, ang, tw, th, outchannels, bpp );
+  RawTile rawtile(tile, res, seq, ang, tw, th, outchannels, bpp);
   rawtile.data = tile_buf;
-  rawtile.dataLength = tw*th*outchannels;
-  rawtile.width_padding = tile_width-tw;
-  
+  rawtile.dataLength = tw * th * outchannels;
+  rawtile.width_padding = tile_width - tw;
   //get hash of the tile
   rawtile.filename = getHash();
-  return( rawtile );
-  
+  return(rawtile);
+}
+
+/*!
+* \return       Woolz object or NULL on error.
+* \ingroup      WlzIIPServer
+* \brief        Evaluates a morphological expression with reference to the
+*               given object but first tries to retrieve it from the Woolz
+*               object cache.
+* \param        exp                     Morphological expression to be
+*                                       evaluated using the current object.
+*/
+WlzObject      *WlzImage::WlzImageExpEval(WlzExp *exp)
+{
+  char          *eS;
+  string   	cS;
+  WlzObject	*cObj = NULL;
+
+  eS = WlzExpStr(exp, NULL, NULL);
+  if(eS)
+  {
+    cS = getFileName() + string("&SEL=") + string(eS);
+    AlcFree(eS);
+    cObj = getObjectFromCache(cS);
+  }
+  if(cObj == NULL)
+  {
+    cObj = WlzExpEval(wlzObject, exp, NULL);
+    if(cObj)
+    {
+      WlzAssignObject(cObj, NULL);
+      addObjectToCache(cObj, cS);
+    }
+  }
+  return(cObj);
 }
 
 /*!
@@ -866,7 +917,8 @@ void WlzImage::getAngles(double& theta, double& phi, double& zeta){
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Return section coordinates of the quieried point with tile or display coordinates
+ * \brief        Return section coordinates of the quieried point with tile or
+ * 		 display coordinates
  * \return       WlzDVertex3 section coordinates of the queried point
  * \par      Source:
  *                WlzImage.cc
@@ -890,7 +942,7 @@ WlzDVertex3 WlzImage::getCurrentPointInPlane(){
       char tile_no[64];
       snprintf( tile_no, 64, "%d", curViewParams->tile );
       string tile_n = string( tile_no );
-      throw string( "Asked for non-existant tile: " + tile_n );
+      throw string("Asked for non-existant tile: " + tile_n);
     }
     
     // Alter the tile size if it's in the last column
@@ -910,94 +962,167 @@ WlzDVertex3 WlzImage::getCurrentPointInPlane(){
 }
 
 /*!
- * \ingroup      WlzIIPServer
- * \brief        Return object coordinates of the quieried point with tile or display coordinates
- * \return       WlzDVertex3 object coordinates of the queried point
- * \par      Source:
- *                WlzImage.cc
+ * \return      The object coordinates of the queried point.
+ * \ingroup     WlzIIPServer
+ * \brief 	Gets object coordinates of the quieried point with tile or
+ * 		display coordinates
  */
-WlzDVertex3 WlzImage::getCurrentPointIn3D(){
+WlzDVertex3
+WlzImage::getCurrentPointIn3D()
+{
   WlzDVertex3   result = getCurrentPointInPlane();
   prepareViewStruct();
-  Wlz3DSectionTransformInvVtx( &result , wlzViewStr );
-  return result;
+  Wlz3DSectionTransformInvVtx(&result , wlzViewStr );
+  return(result);
 }
 
 /*!
- * \ingroup      WlzIIPServer
- * \brief        Return the transformed coordinates of the 3D query point
- * \return       WlzDVertex3 object coordinates of the transformed query point in the current section plane
- * \par      Source:
- *                WlzImage.cc
+ * \return      Object coordinates of the transformed query point in the
+ * 		current section plane.
+ * \ingroup     WlzIIPServer
+ * \brief       Gets the transformed coordinates of the 3D query point.
  */
-WlzDVertex3 WlzImage::getTransformed3DPoint(){
-  WlzErrorNum errNum = WLZ_ERR_NONE;
-  WlzDVertex3   pos;
-  if (viewParams->queryPointType != QUERYPOINTTYPE_3D) {
-    pos.vtX = 0;
-    pos.vtY = 0;
-    pos.vtZ = 0;
-  } else {
+WlzDVertex3
+WlzImage::getTransformed3DPoint()
+{
+  WlzDVertex3   pos = {0};
+  if(viewParams->queryPointType == QUERYPOINTTYPE_3D)
+  {
     pos =  viewParams->queryPoint;
   }
   prepareViewStruct();
-  Wlz3DSectionTransformVtx( &pos, wlzViewStr );
-  
+  Wlz3DSectionTransformVtx(&pos, wlzViewStr);
   pos.vtZ -= viewParams->dist;
   pos.vtX -= wlzViewStr->minvals.vtX;
   pos.vtY -= wlzViewStr->minvals.vtY;
-  
-  return pos;
+  return(pos);
 }
 
 /*!
+ * \return       Pointer to a 1x3 float array of the voxel size.
  * \ingroup      WlzIIPServer
- * \brief        Return object voxel size
- * \return       float * pointer to a 1x3 float array of the voxel size
- * \par      Source:
- *                WlzImage.cc
+ * \brief        Gets the object's voxel size.
  */
-float* WlzImage::getTrueVoxelSize(){
+float
+*WlzImage::getTrueVoxelSize()
+throw(std::string)
+{
+  float	*voxSz = NULL;
   prepareObject();
-  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
-  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
-  return obj->domain.p->voxel_size;
+  WlzObject *obj = getObj();
+  if(obj == NULL)
+  {
+    throw(makeWlzErrorMessage("WlzImage::get3DBoundingBox",
+                              WLZ_ERR_OBJECT_NULL));
+  }
+  else
+  {
+    voxSz = obj->domain.p->voxel_size;
+  }
+  return(voxSz);
 }
 
 /*!
- * \ingroup      WlzIIPServer
- * \brief        Return 3D bounding box
- * \return       void
- * \par      Source:
- *                WlzImage.cc
+ * \ingroup     WlzIIPServer
+ * \brief       Gets the 3D bounding box of the current object.
+ * \param 	box		Destination for the bounding box.
  */
-void WlzImage::get3DBoundingBox(int &plane1, int &lastpl, int &line1, int &lastln, int &kol1, int &lastkl){
+void
+WlzImage::get3DBoundingBox(WlzIBox3 &box)
+throw(std::string)
+{
   prepareObject();
-  
-  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
-  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
-  
-  plane1 = obj->domain.p->plane1;
-  lastpl = obj->domain.p->lastpl;
-  line1  = obj->domain.p->line1;
-  lastln = obj->domain.p->lastln;
-  kol1   = obj->domain.p->kol1;
-  lastkl = obj->domain.p->lastkl;
-  return ;
+  WlzObject *obj = getObj();
+  if(obj == NULL)
+  {
+    throw(makeWlzErrorMessage("WlzImage::get3DBoundingBox",
+                              WLZ_ERR_OBJECT_NULL));
+  }
+  else
+  {
+    box.zMin = obj->domain.p->plane1;
+    box.zMax = obj->domain.p->lastpl;
+    box.yMin = obj->domain.p->line1;
+    box.yMax = obj->domain.p->lastln;
+    box.xMin = obj->domain.p->kol1;
+    box.xMax = obj->domain.p->lastkl;
+  }
+}
+
+/*!
+* \ingroup	WlzIIPServer
+* \brief	Gets simple grey value statistics for the current object.
+* \param	n		Destination for the object's volume.
+* \param	t		Destination for the object's type.
+* \param	gl		Destination for minimum grey value.
+* \param	gu		Destination for maximum grey value.
+* \param	sum		Destination for sum of grey values.
+* \param	ss		Destination for sum of squares of grey values.
+* \param	mean		Destination for mean grey values.
+* \param	sdev		Destination for standard deviation of grey
+* 				values.
+*/
+void
+WlzImage::getGreyStats(int &n, WlzGreyType &t, double &gl, double &gu,
+                       double &sum, double &ss, double &mean, double &sdev)
+throw(std::string)
+{
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+  prepareObject();
+  WlzObject *obj = getObj();
+  n = WlzGreyStats(obj, &t, &gl, &gu, &sum, &ss, &mean, &sdev, &errNum);
+  if(errNum != WLZ_ERR_NONE)
+  {
+    throw(makeWlzErrorMessage("WlzImage::getGreyStats ", errNum));
+  }
+}
+
+/*!
+ * \ingroup     WlzIIPServer
+ * \brief       Return transformed 3D bounding box
+ * \param 	box		Destination for the bounding box.
+ */
+void
+WlzImage::getTransformed3DBBox(WlzIBox3 &box)
+throw(std::string)
+{
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+  prepareObject();
+  prepareViewStruct();
+  errNum = Wlz3DViewStructTransformBB(getObj(), wlzViewStr);
+  if(errNum == WLZ_ERR_NONE)
+  {
+    box.zMin = WLZ_NINT(wlzViewStr->minvals.vtZ);
+    box.zMax = WLZ_NINT(wlzViewStr->maxvals.vtZ);
+    box.yMin = WLZ_NINT(wlzViewStr->minvals.vtY);
+    box.yMax = WLZ_NINT(wlzViewStr->maxvals.vtY);
+    box.xMin = WLZ_NINT(wlzViewStr->minvals.vtX);
+    box.xMax = WLZ_NINT(wlzViewStr->maxvals.vtX);
+  }
+  else
+  {
+    throw(makeWlzErrorMessage("WlzImage::getTransformed3DBBox", errNum));
+  }
 }
 
 /*!
  * \ingroup      WlzIIPServer
  * \brief        Return object volume
  * \return       the object volume
- * \par      Source:
- *                WlzImage.cc
  */
-int WlzImage::getVolume(){
+int WlzImage::getVolume()
+throw(std::string)
+{
+  int		vol = 0;
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
   prepareObject();
-  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
-  WlzObject *obj = array ?  ( array->n>0 ? array->o[0] : NULL) : wlzObject;
-  return WlzVolume(obj,  NULL);
+  vol = WlzVolume(getObj(), &errNum);
+  if(errNum != WLZ_ERR_NONE)
+  {
+    throw(makeWlzErrorMessage("WlzImage::getVolume", errNum));
+  }
+  return(vol);
 }
 
 /*!
@@ -1128,8 +1253,8 @@ int WlzImage::getForegroundObjects(int *values){
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Converts a Woolz of type WLZ_2D_DOMAINOBJ with WLZ_GREY_RGBA grey values 
- *               into a 3 channel raw bitmap
+ * \brief        Converts a Woolz of type WLZ_2D_DOMAINOBJ with WLZ_GREY_RGBA
+ * 		 grey values into a 3 channel raw bitmap
  * \param        buffer to store converted image. the buffer has to be correctly preallocated
  * \param        obj object to be converted
  * \param        pos the origin of the tile
@@ -1409,23 +1534,33 @@ const std::string WlzImage::getHash() {
  * \par      Source:
  *                WlzImage.cc
  */
-const std::string WlzImage::selString(const ViewParameters* view ) {
-  if ( view == NULL)
+const std::string WlzImage::selString(const ViewParameters* view )
+{
+  char		*eStr;
+  WlzErrorNum errNum = WLZ_ERR_NONE;
+
+  if( view == NULL)
+  {
     return "";
-  char temp[25];
-  std::string selstr;
-  CompoundSelector *iter = view->selector;
-  if (iter) {
-    snprintf(temp, 25, "%d,%d,%d,%d,%d",iter->index,iter->r,iter->g,iter->b,iter->a);
-    selstr = temp;
-    iter=iter->next;
-    while (iter) {
-      snprintf(temp, 25, ";%d,%d,%d,%d,%d",iter->index,iter->r,iter->g,iter->b,iter->a);
-      selstr += temp;
-      iter=iter->next;
-    }
   }
-  return "S="+selstr;
+  std::string selStr = "";
+  CompoundSelector *iter = view->selector;
+  while(iter)
+  {
+    char	*tStr;
+    char 	buf[25];
+
+    tStr = WlzExpStr(iter->expression, NULL, NULL);
+    if(tStr)
+    {
+      selStr += tStr;
+    }
+    snprintf(buf, 25, ",%d,%d,%d,%d",iter->r,iter->g,iter->b,iter->a);
+    selStr += buf;
+    iter=iter->next;
+    AlcFree(tStr);
+  }
+  return("S=" + selStr);
 }
 
 /*!
@@ -1442,7 +1577,8 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
   prepareObject();  // needs to have set channel number
   
   char temp[256];
-  snprintf(temp, 256, "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
+  snprintf(temp, 256,
+           "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
 	   view->dist,
 	   view->scale,
 	   view->yaw,
@@ -1456,5 +1592,5 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
 	   view->fixed2.vtX,
 	   view->fixed2.vtY,
 	   view->fixed2.vtZ);
-  return getImagePath() + temp ;
+  return(getImagePath() + temp);
 };

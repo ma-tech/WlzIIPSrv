@@ -1,21 +1,39 @@
 dnl Process this file with autoconf to produce a configure script.
 
-
 AC_INIT
 AM_INIT_AUTOMAKE(wlziipsrv,0.9.97)
 dnl AM_INIT_AUTOMAKE(IIPImageTest,1.0)
 
-
 AC_PREFIX_DEFAULT( `pwd` )
 
 
-dnl Checks for programs.
+dnl Checks for programs, but watch out for automake lex/yacc crazyness.
+dnl I've named the variables MYLEX and MYYACC to try and avoid these
+dnl problems, but some still persist.  Don't use AC_PROG_YACC it causes
+dnl yywrap to be used and yywrap doesn't support the command line options
+dnl needed.
+MYLEX=flex
+YACC=bison
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+AC_CHECK_PROG(MYLEX,flex,flex,noflex)
+AC_CHECK_PROG(MYYACC,bison,bison,nobison)
+if test "$MYYACC" != "bison"
+then
+  AC_MSG_ERROR("wlziipsrv requires the GNU bison to build");
+fi
+if test "$MYLEX" != "flex"
+then
+  AC_MSG_ERROR("wlziipsrv requires GNU flex to build");
+else
+  MYLEX_LIBS=-lfl
+  AC_SUBST(MYLEX_LIBS)
+fi
 
+dnl   AC_MSG_ERROR(unable to find libjpeg),
 
 dnl Checks for header files.
 AC_CHECK_HEADERS(glob.h)
@@ -133,7 +151,7 @@ AC_ARG_WITH( fcgi-lib,
 AC_ARG_ENABLE(static-fcgi,
  [  --enable-static-fcgi    enable staticaly linked libfcgi],
 	echo "Using static fcgi library"; LIBFCGI_INCLUDES="$fcgi_include_path"; LIBFCGI_LIBS="$fcgi_lib_path_only/libfcgi.a",
-	AC_CHECK_LIB( fcgi, FCGI_Accept,echo "fcgi found";
+	AC_CHECK_LIB( fcgi, main,echo "fcgi found";
 		LIBFCGI_INCLUDES="$fcgi_include_path";
 		LIBFCGI_LDFLAGS="$fcgi_lib_path";
 		LIBFCGI_LIBS="-lfcgi",
@@ -145,16 +163,46 @@ AC_SUBST(LIBFCGI_LDFLAGS)
 AC_SUBST(LIBFCGI_LIBS)
 
 dnl	************************************************************ 
+dnl 	Check for user specified locations for log4cpp library
+
+
+AC_ARG_WITH( log4cpp-incl,
+  [  --with-log4cpp-incl=DIR       location of the log4cpp include files],
+log4cpp_include_path=-I$withval)
+
+AC_ARG_WITH( log4cpp-lib,
+  [  --with-log4cpp-lib=DIR        location of the log4cpp libraries],
+  log4cpp_lib_path=-L$withval;
+  log4cpp_lib_path_only=$withval)
+
+AC_ARG_ENABLE(static-log4cpp,
+ [  --enable-static-log4cpp    enable staticaly linked liblog4cpp],
+	echo "Using static log4cpp library"; LIBLOG4CPP_INCLUDES="$log4cpp_include_path"; LIBLOG4CPP_LIBS="$log4cpp_lib_path_only/liblog4cpp.a",
+	AC_CHECK_LIB( log4cpp, main, echo "log4cpp found";
+		LIBLOG4CPP_INCLUDES="$log4cpp_include_path";
+		LIBLOG4CPP_LDFLAGS="$log4cpp_lib_path";
+		LIBLOG4CPP_LIBS="-llog4cpp",
+	echo "Using log4cpp library from $log4cpp_lib_path and includes from $log4cpp_include_path .";
+		LIBLOG4CPP_LDFLAGS="$log4cpp_lib_path";
+		LIBLOG4CPP_INCLUDES="$log4cpp_include_path";
+		LIBLOG4CPP_LIBS="-llog4cpp" ;
+		[AC_DEFINE(HAVE_LOG4CPP,1,[Define if log4cpp library used.])]))
+
+AC_SUBST(LIBLOG4CPP_INCLUDES)
+AC_SUBST(LIBLOG4CPP_LDFLAGS)
+AC_SUBST(LIBLOG4CPP_LIBS)
+
+dnl	************************************************************ 
 
 dnl 	Check for user specified locations for Woolz libraries
 
 AC_ARG_WITH( wlz-incl,
-   [  --with-wlz-incl=DIR          location of the Woolz include files],
+   [  --with-wlz-incl=DIR           location of the Woolz include files],
    wlz_include_path=$withval, wlz_include_path="../../../Core")
 
 
 AC_ARG_WITH( wlz-lib,
-   [  --with-wlz-lib=DIR           location of the Woolz libraries],
+   [  --with-wlz-lib=DIR            location of the Woolz libraries],
    wlz_lib_path=$withval, wlz_lib_path="../../../Core")
 
 LIBWLZ_INCLUDES="-I$wlz_include_path/libAlc -I$wlz_include_path/libAlg -I$wlz_include_path/libWlz -I$wlz_include_path/libWlzExtFF -I$wlz_include_path/libbibfile -I$wlz_include_path";
@@ -262,8 +310,4 @@ AC_PROG_CC_WARNINGS
 AC_PROG_MAKE_SET
 AC_OUTPUT(Makefile \
 	src/Makefile )
-#	src/Makefile \
-#	fcgi/Makefile \
-#	fcgi/include/Makefile \
-#	fcgi/libfcgi/Makefile)
 

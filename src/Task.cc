@@ -1,51 +1,60 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Task_cc[] = "MRC HGU $Id$";
+static char _Task_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
-/*
-    IIP Command Handler Member Functions
-
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+/*!
+* \file         Task.cc
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         February 2012
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP Command Handler Member Functions
+* \ingroup	WlzIIPServer
 */
 
-
+#include "Log.h"
 #include "Task.h"
 #include "Tokenizer.h"
 #include <iostream>
 #include <algorithm>
 
-
 using namespace std;
 
-
-
-Task* Task::factory( std::string type ){
-
+Task* Task::factory(std::string type)
+{
   // Convert the command string to lower case to handle incorrect
   // viewer implementations
 
-  transform( type.begin(), type.end(), type.begin(), ::tolower );
+  transform(type.begin(), type.end(), type.begin(), ::tolower);
 
   if( type == "obj" ) return new OBJ;
   else if( type == "fif" ) return new FIF;
@@ -105,29 +114,24 @@ void Task::openIfWoolz(){
 }
 
 void QLT::run( Session* session, std::string argument ){
-
   if( argument.length() ){
 
     int factor = atoi( argument.c_str() );
 
     // Check the value is realistic
-    if( factor < 0 || factor > 100 ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "QLT :: JPEG Quality factor of " << argument
-			    << " out of bounds. Must be 0-100" << endl;
-      }
+    if((factor < 0) || (factor > 100))
+    {
+      LOG_WARN("QLT :: JPEG Quality factor of " << argument <<
+	       " out of bounds. Must be 0-100");
     }
-
-    session->jpeg->setQuality( factor );
+    session->jpeg->setQuality(factor);
   }
-
 }
 
 
 void SDS::run( Session* session, std::string argument ){
 
-  if( session->loglevel >= 3 ) *(session->logfile) << "SDS handler reached" << endl;
-
+  LOG_INFO("SDS handler reached");
   // Parse the argument list
   int delimitter = argument.find( "," );
   string tmp = argument.substr( 0, delimitter );
@@ -138,65 +142,46 @@ void SDS::run( Session* session, std::string argument ){
   tmp = argument.substr( 0, delimitter );
   session->view->yangle = atoi( tmp.c_str() );
   argument = argument.substr( delimitter + 1, argument.length() );
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "SDS :: set to " << session->view->xangle << ", "
-						   << session->view->yangle << endl;
-
+  LOG_INFO("SDS :: set to " <<
+            session->view->xangle << ", " << session->view->yangle);
 }
 
 
 void CNT::run( Session* session, std::string argument ){
-
   float contrast = atof( argument.c_str() );
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "CNT handler reached" << endl;
-  if( session->loglevel >= 3 ) *(session->logfile) << "CNT :: requested contrast adjustment is " << contrast << endl;
-
+  LOG_INFO("CNT handler reached, requested contrast adjustment is " <<
+            contrast);
   session->view->setContrast( contrast );
 }
 
 
 void WID::run( Session* session, std::string argument ){
-
   int requested_width = atoi( argument.c_str() );
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "WID handler reached" << endl;
-  if( session->loglevel >= 3 ) *(session->logfile) << "WID :: requested width is " << requested_width << endl;
-
+  LOG_INFO("WID handler reached, requested width is " << requested_width);
   session->view->setRequestWidth( requested_width );
-
 }
 
 
 void HEI::run( Session* session, std::string argument ){
-
   int requested_height = atoi( argument.c_str() );
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "HEI handler reached" << endl;
-  if( session->loglevel >= 3 ) *(session->logfile) << "HEI :: requested width is " << requested_height << endl;
-
+  LOG_INFO("HEI handler reached, requested height is " << requested_height);
   session->view->setRequestHeight( requested_height );
-
 }
 
 
 void RGN::run( Session* session, std::string argument ){
-
   Tokenizer izer( argument, "," );
   int i = 0;
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "RGN handler reached" << endl;
-
+  LOG_INFO("RGN handler reached");
   float region[4];
   while( izer.hasMoreTokens() ){
     try{
       region[i++] = atof( izer.nextToken().c_str() );
     }
     catch( const string& error ){
-      if( session->loglevel >= 1 ) *(session->logfile) << error << endl;
+      LOG_ERROR("RGN " << error);
     }
   }
-
   // Only load this information if our argument was correctly parsed to
   // give 4 values
   if( i == 4 ){
@@ -205,41 +190,35 @@ void RGN::run( Session* session, std::string argument ){
     session->view->setViewWidth( region[2] );
     session->view->setViewHeight( region[3] );
   }
-
-  if( session->loglevel >= 3 ){
-    *(session->logfile) << "RGN :: requested region is " << region[0] << ", "
-			<< region[1] << ", " << region[2] << ", " << region[3] << endl;
-  }
-
+  LOG_INFO("RGN :: requested region is " <<
+            region[0] << ", " << region[1] << ", " << region[2] << ", " <<
+	    region[3]);
 }
 
 
 void JTLS::run( Session* session, std::string argument ){
-
   /* The argument is comma separated into 4:
      1) xangle
      2) resolution
      3) tile number
      4) yangle
-     This is a legacy command. Clients should use SDS to specity the x,y angle and JTL
-     for the resolution and tile number.
+     This is a legacy command. Clients should use SDS to specity the x,y angle
+     and JTL for the resolution and tile number.
   */
 
   Tokenizer izer( argument, "," );
   int i = 0;
 
-  if( session->loglevel >= 2 ) *(session->logfile) << "JTLS handler reached" << endl;
-
+  LOG_INFO("JTLS handler reached");
   int values[4];
   while( izer.hasMoreTokens() ){
     try{
       values[i++] = atoi( izer.nextToken().c_str() );
     }
-    catch( const string& error ){
-      if( session->loglevel >= 1 ) *(session->logfile) << error << endl;
+    catch(const string& error){
+      LOG_ERROR("JTLS Error " << error);
     }
   }
-
   if( i == 4 ){
     session->view->xangle = values[0];
     session->view->yangle = values[3];
@@ -248,8 +227,6 @@ void JTLS::run( Session* session, std::string argument ){
     JTL jtl;
     jtl.run( session, tmp );
   }
-    
-
 }
 
 
@@ -263,269 +240,243 @@ void SHD::run( Session* session, std::string argument ){
 
   Tokenizer izer( argument, "," );
   int i = 0;
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "SHD handler reached" << endl;
-
+  LOG_INFO("SHD handler reached");
   int values[2];
   while( izer.hasMoreTokens() ){
     try{
       values[i++] = atoi( izer.nextToken().c_str() );
     }
-    catch( const string& error ){
-      if( session->loglevel >= 1 ) *(session->logfile) << error << endl;
+    catch(const string& error){
+      LOG_ERROR("SHD Error " << error);
     }
   }
-
   if( i == 2 ){
     session->view->shaded = true;
     session->view->shade[0] = values[0];
     session->view->shade[1] = values[1];
   }
-
-  if( session->loglevel >= 3 ) *(session->logfile) << "SHD :: requested shade incidence angle is "
-						   << values[0] << "," << values[1]  << endl;
+  LOG_INFO("SHD :: requested shade incidence angle is " <<
+            values[0] << "," << values[1]);
 }
 
 // Woolz extension commands
 void DST::run( Session* session, std::string argument ){
-
   if( argument.length() ){
-
     double distance = atof( argument.c_str() );
-
     session->viewParams->setDistance( distance );
-    if( session->loglevel >= 3 ) *(session->logfile) << "DST :: requested Woolz sectioning distance is "
-						   << session->viewParams->dist  << endl;
+    LOG_INFO("DST :: requested Woolz sectioning distance is " <<
+	      session->viewParams->dist);
   }
 }
 
 void YAW::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
-    double value = atof( argument.c_str() );
-
+  if(argument.length())
+  {
+    double value = atof( argument.c_str());
     // Check the value is realistic
-    if( value < 0 || value > 360 ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "YAW :: Yaw of" << argument
-			    << " out of bounds. Must be 0-360 degrees." << endl;
-        return;
-      }
+    if((value < 0) || (value > 360)){
+      LOG_WARN("YAW :: Yaw of" << argument << 
+	       " out of bounds. Must be 0-360 degrees.");
+      value = (value < 0)? 0: 360;
     }
-
-    session->viewParams->setYaw( value );
-    if( session->loglevel >= 3 ) *(session->logfile) << "YAW :: requested Woolz sectioning yaw angle is "
-						   << session->viewParams->yaw  << endl;
+    session->viewParams->setYaw(value);
+    LOG_INFO("YAW :: Woolz sectioning yaw angle set to " <<
+              session->viewParams->yaw);
   }
 }
 
 void PIT::run( Session* session, std::string argument ){
-
   if( argument.length() ){
-
     double value = atof( argument.c_str() );
-
     // Check the value is realistic
-    if( value < 0 || value > 180 ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "PIT :: Pitch of" << argument
-			    << " out of bounds. Must be 0-180 degrees." << endl;
-        return;
-      }
+    if((value < 0) || (value > 180)){
+      LOG_WARN("PIT :: Pitch of" << argument <<
+	       " out of bounds. Must be 0-180 degrees.");
+      value = (value < 0)? 0: 180;
     }
-
-    session->viewParams->setPitch( value );
-    if( session->loglevel >= 3 ) *(session->logfile) << "PIT :: requested Woolz sectioning pitch angle is "
-						   << session->viewParams->pitch  << endl;
+    session->viewParams->setPitch(value);
+    LOG_INFO("PIT :: Woolz sectioning pitch angle set to " <<
+	      session->viewParams->pitch);
   }
 }
 
 void ROL::run( Session* session, std::string argument ){
-
   if( argument.length() ){
-
     double value = atof( argument.c_str() );
-
     // Check the value is realistic
-    if( value < 0 || value > 360 ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "ROL :: Roll of" << argument
-			    << " out of bounds. Must be 0-360 degrees." << endl;
-        return;
-      }
+    if((value < 0) || (value > 360)){
+      LOG_WARN("ROL :: Roll of" << argument <<
+	       " out of bounds. Must be 0-360 degrees.");
+      value = (value < 0)? 0: 360;
     }
-
-    session->viewParams->setRoll( value );
-    if( session->loglevel >= 3 ) *(session->logfile) << "ROL :: requested Woolz sectioning roll angle is "
-						   << session->viewParams->roll  << endl;
+    session->viewParams->setRoll(value);
+    LOG_INFO("ROL :: Woolz sectioning roll angle set to " <<
+	      session->viewParams->roll);
   }
 }
 
-void MOD::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void MOD::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     // Set if the value is valid 
-    if( session->viewParams->setMode( argument) != WLZ_ERR_NONE ){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "MOD :: Unknown mode " << argument
-			    << ". The mode must be STATUE, UP_IS_UP, FIXED_LINE ZERO_ZETA or ZETA." << endl;
-        return;
-      }
+    if(session->viewParams->setMode( argument) != WLZ_ERR_NONE)
+    {
+      LOG_WARN("MOD :: Unknown mode " << argument <<
+	  ". The mode must be one of STATUE, UP_IS_UP, FIXED_LINE ZERO_ZETA" <<
+	  " or ZETA.");
     }
-
-    if( session->loglevel >= 3 ) *(session->logfile) << "MOD :: sectioning mode is "
-						   << session->viewParams->mode  << endl;
+    else
+    {
+      LOG_INFO("MOD :: Woolz sectioning mode set to " <<
+                session->viewParams->mode);
+    }
   }
 }
 
-
-
-void FXP::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void FXP::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     WlzDVertex3 point={0,0,0};
-
-    int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
-
+    int read=sscanf(argument.c_str(), "%lf,%lf,%lf",
+                    &point.vtX, &point.vtY, &point.vtZ);
     // Set if the value is valid 
-    if(read!=3){
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "FXP :: Incorrect fixed point format " << argument
-                            << endl;
-        return;
-      }
+    if(read != 3){
+      LOG_WARN("FXP :: Incorrect fixed point format " << argument);
     }
-
-    session->viewParams->setFixedPoint( point );
-    if( session->loglevel >= 3 ) *(session->logfile) << "FXP :: requested Woolz sectioning fixed point is " << argument << ':' <<'(' << session->viewParams->fixed.vtX  << ',' << session->viewParams->fixed.vtY << ',' << session->viewParams->fixed.vtZ << ')'  << endl;
+    else
+    {
+      session->viewParams->setFixedPoint(point);
+      LOG_INFO("FXP :: Woolz sectioning fixed point set to " << argument <<
+		':' <<'(' << session->viewParams->fixed.vtX  << ',' <<
+		session->viewParams->fixed.vtY << ',' <<
+		session->viewParams->fixed.vtZ << ')');
+    }
   }
 }
 
-void FXT::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void FXT::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     WlzDVertex3 point={0,0,0};
-
-    int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
-
+    int read = sscanf(argument.c_str(),
+                      "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
     // Set if the value is valid 
-    if(read!=3){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "FXT :: Incorrect fixed point format " << argument
-                            << endl;
-        return;
-      }
+    if(read != 3)
+    {
+      LOG_WARN("FXT :: Incorrect fixed point format " << argument);
     }
-
-    session->viewParams->setFixedPoint2( point );
-    if( session->loglevel >= 3 ) *(session->logfile) << "FXT :: requested second Woolz sectioning fixed point is " << argument << ':' <<'(' << session->viewParams->fixed2.vtX  << ',' << session->viewParams->fixed2.vtY << ',' << session->viewParams->fixed2.vtZ << ')'  << endl;
+    else
+    {
+      session->viewParams->setFixedPoint2(point);
+      LOG_INFO("FXT :: Woolz second sectioning fixed point set to " <<
+                argument << ':' <<'(' << session->viewParams->fixed2.vtX  <<
+		',' << session->viewParams->fixed2.vtY << ',' <<
+	        session->viewParams->fixed2.vtZ << ')');
+    }
   }
 }
 
 
-void UPV::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void UPV::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     WlzDVertex3 point={0,0,-1};
-
-
-    int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
-
-
+    int read = sscanf(argument.c_str(), "%lf,%lf,%lf",
+                      &point.vtX, &point.vtY, &point.vtZ);
     // Set if the value is valid 
-    if(read!=3){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "UPV :: Incorrect fixed point format " << argument
-                            << endl;
-      return;
-      }
+    if(read != 3)
+    {
+      LOG_WARN("UPV :: Incorrect fixed point format " << argument);
     }
-
-    session->viewParams->setUpVector( point );
-    if( session->loglevel >= 3 ) 
-        *(session->logfile) << "UPV :: requested Woolz up vector is " << argument << ':' <<'(' << session->viewParams->up.vtX  << ',' << session->viewParams->up.vtY << ',' << session->viewParams->up.vtZ << ')'  << endl;
+    else
+    {
+      session->viewParams->setUpVector(point);
+      LOG_INFO("UPV :: Woolz up vector set to " << argument << ':' <<'(' <<
+	        session->viewParams->up.vtX  << ',' <<
+	        session->viewParams->up.vtY << ',' <<
+	        session->viewParams->up.vtZ << ')');
+    }
   }
 }
 
-void PRL::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void PRL::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     int x,y,t;
-
-    int read=sscanf( argument.c_str(), "%d,%d,%d", &t, &x, &y);
-
-
+    int read = sscanf( argument.c_str(), "%d,%d,%d", &t, &x, &y);
     // Set if the value is valid 
-    if(read!=3){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "PRL :: Incorrect point of interest format " << argument
-                            << endl;
-      return;
+    if(read != 3)
+    {
+      LOG_WARN("PRL :: Incorrect point of interest format " << argument);
+    }
+    else
+    {
+      if(t == -1)
+      {
+        t=0;  //use display coordinates, same as tile 0 coordinates
+      }
+      // Check the value is valid
+      if(t <= -1)
+      {
+        LOG_WARN("PRL :: tile must be greater than -1: " << argument);
+      }
+      else
+      {
+        session->viewParams->setPoint(x, y, t);
+        LOG_INFO("PRL :: requested Woolz query point is " << argument <<
+	          " (tile,x,y): " <<'(' << session->viewParams->tile  << ',' <<
+	          session->viewParams->x << ',' << session->viewParams->y <<
+	          ") / " <<  session->viewParams->queryPointType);
       }
     }
-
-    if (t==-1) t=0;  //use display coordinates, same as tile 0 coordinates
-
-    // Check the value is valid
-    if( t <= -1){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "PRL :: tile must be greater than -1: " << argument << endl;
-      return;
-      }
-    }
-
-    session->viewParams->setPoint( x, y, t );
-    if( session->loglevel >= 3 ) 
-          *(session->logfile) << "PRL :: requested Woolz query point is " << argument << " (tile,x,y): " <<'(' << session->viewParams->tile  << ',' << session->viewParams->x << ',' << session->viewParams->y << ") / " <<  session->viewParams->queryPointType   << endl;
   }
 }
 
-void PAB::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
+void PAB::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
     WlzDVertex3 point={0,0,-1};
-    int read=sscanf( argument.c_str(), "%lf,%lf,%lf", &point.vtX, &point.vtY, &point.vtZ);
-
+    int read = sscanf(argument.c_str(), "%lf,%lf,%lf",
+                      &point.vtX, &point.vtY, &point.vtZ);
     // Set if the value is valid 
-    if(read!=3){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "PAB :: Incorrect query point format " << argument
-                            << endl;
-        return;
-      }
+    if(read != 3)
+    {
+      LOG_WARN("PAB :: Incorrect query point format " << argument);
     }
-
-    session->viewParams->set3DPoint( point );
-    if( session->loglevel >= 3 ) 
-        *(session->logfile) << "PAB :: requested Woolz query point  is " << argument << ':' <<'(' << session->viewParams->queryPoint.vtX  << ',' << session->viewParams->queryPoint.vtY << ',' << session->viewParams->queryPoint.vtZ << ") / " <<  session->viewParams->queryPointType   << endl;
+    else
+    {
+      session->viewParams->set3DPoint(point);
+      LOG_INFO("PAB :: Woolz query point  set to " << argument <<
+	  ':' <<'(' << session->viewParams->queryPoint.vtX  << ',' <<
+	  session->viewParams->queryPoint.vtY <<
+	  ',' << session->viewParams->queryPoint.vtZ << ") / " <<
+	  session->viewParams->queryPointType);
+    }
   }
 }
 
 
-void SCL::run( Session* session, std::string argument ){
-
-  if( argument.length() ){
-
-    double value = atof( argument.c_str() );
-
+void SCL::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
+    double value = atof(argument.c_str());
     // Check the value is realistic
-    if( value  <= 0){
-      if( session->loglevel >= 2 ){
-        *(session->logfile) << "SCL :: Scale must be positive: " << argument << endl;
-      }
-      return;
+    if(value  <= 0)
+    {
+      LOG_WARN("SCL :: Scale must be positive: " << argument);
     }
-
-    session->viewParams->setScale( value );
-    if( session->loglevel >= 3 ) 
-      *(session->logfile) << "SCL :: requested Woolz scale is " << session->viewParams->scale  << endl;
+    else
+    {
+      session->viewParams->setScale(value);
+      LOG_INFO("SCL :: Woolz scale set to " << session->viewParams->scale);
+    }
   }
 }
 

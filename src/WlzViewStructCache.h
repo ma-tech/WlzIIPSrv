@@ -1,24 +1,26 @@
+#ifndef _WLZVIEWSTRUCTCACHE_H
+#define _WLZVIEWSTRUCTCACHE_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _WlzViewStructCache_h[] = "MRC HGU $Id$";
-#endif
+static char _WlzViewStructCache_h[] = "University of Edinburgh $Id$";
 #endif
 /*!
 * \file         WlzViewStructCache.h
-* \author       Zsolt Husz
+* \author       Zsolt Husz, Bill Hill
 * \date         June 2008
 * \version      $Id$
 * \par
 * Address:
 *               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
 *               Western General Hospital,
 *               Edinburgh, EH4 2XU, UK.
 * \par
-* Copyright (C) 2008 Medical research Council, UK.
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
 * 
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -37,13 +39,7 @@ static char _WlzViewStructCache_h[] = "MRC HGU $Id$";
 * Boston, MA  02110-1301, USA.
 * \brief	The caching mechanism for Woolz 3D view structures.
 * \ingroup	WlzIIPServer
-* \todo         Prioritise removal with an access count. Curently FIFO is in place.
-* \bug          None known.
 */
-
-
-#ifndef _WLZVIEWSTRUCTCACHE_H
-#define _WLZVIEWSTRUCTCACHE_H
 
 #include "WlzViewStructCache.h"
 #include "Environment.h"

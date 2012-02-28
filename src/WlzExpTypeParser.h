@@ -1,14 +1,14 @@
-#ifndef WLZ_REMOTE_IMAGE_H
-#define WLZ_REMOTE_IMAGE_H
+#ifndef WLZ_EXP_TYPE_PARSER_H
+#define WLZ_EXP_TYPE_PARSER_H
 #if defined(__GNUC__)
 #ident "University of Edinburgh $Id$"
 #else
-static char _WlzRemoteImage_h[] = "University of Edinburgh $Id$";
+static char _WlzExpTypeParser_h[] = "University of Edinburgh $Id$";
 #endif
 /*!
-* \file         WlzRemoteImage.h
-* \author       Yiya Yang
-* \date         September 2010
+* \file         WlzExpTypeParser.h
+* \author       Bill Hill
+* \date         October 2011
 * \version      $Id$
 * \par
 * Address:
@@ -37,28 +37,30 @@ static char _WlzRemoteImage_h[] = "University of Edinburgh $Id$";
 * License along with this program; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 * Boston, MA  02110-1301, USA.
-* \brief	Reads Woolz objects from a remote server socket for the
-* 		Woolz IIP server.
+* \brief	A union and type definition for flex and bison in
+* 		parsing Woolz expressions for the Woolz IIP server.
 * \ingroup	WlzIIPServer
 */
 
-#include "Wlz.h"
-
-class WlzRemoteImage {
-/// buffer size for reading and parsing files
-
- protected:
-  
-  static int
-    parse_URL(const char *url, char *hostname, int *port, char *identifier);
-  
-  static WlzObject*  
-    wlzHttpRead(char const* url);
-  
- public:
-  
-  static WlzObject*  
-    wlzRemoteReadObj(const char* filename, const char* server, int port);
-};
-
+#ifdef __cplusplus
+extern "C"
+{
 #endif
+
+#include "WlzExpression.h"
+
+typedef union _WlzExpTypeParser
+{
+  WlzExp 	*exp;
+  unsigned int 	u;
+  WlzExpCmpType	cmp;
+  WlzObject	*obj;
+}WlzExpTypeParser;
+
+#define YYSTYPE WlzExpTypeParser
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* WLZ_EXP_TYPE_PARSER_H */

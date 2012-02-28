@@ -1,24 +1,24 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _PTL_cc[] = "MRC HGU $Id$";
-#endif
+static char _PTL_cc[] = "University of Edinburgh $Id$";
 #endif
 /*!
 * \file         PTL.cc
-* \author       Zsolt Husz
+* \author       Zsolt Husz, Bill Hill
 * \date         June 2008
 * \version      $Id$
 * \par
 * Address:
 *               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
 *               Western General Hospital,
 *               Edinburgh, EH4 2XU, UK.
 * \par
-* Copyright (C) 2008 Medical research Council, UK.
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
 * 
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -39,84 +39,58 @@ static char _PTL_cc[] = "MRC HGU $Id$";
 * \ingroup	WlzIIPServer
 */
 
+#include "Log.h"
 #include "Task.h"
 
 using namespace std;
 
-
-void PTL::run( Session* session, std::string argument ){
-
+void PTL::run( Session* session, std::string argument)
+{
   /* The argument should consist of 2 comma separated values:
      1) resolution
      2) tile number
   */
-
-  if( session->loglevel >= 3 ) (*session->logfile) << "PTL handler reached" << endl;
+  LOG_INFO("PTL handler reached");
   session = session;
-
   int resolution, tile;
-
-
   // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_COND_INFO(command_timer.start());
   // Parse the argument list
   int delimitter = argument.find( "," );
   resolution = atoi( argument.substr( 0, delimitter ).c_str() );
-
   delimitter = argument.find( "," );
   tile = atoi( argument.substr( delimitter + 1, argument.length() ).c_str() );
-
   session->viewParams->setAlpha(true);
-
-  TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
-  RawTile rawtile = tilemanager.getTile( resolution, tile, session->view->xangle,
-					 session->view->yangle, PNG );
-
+  TileManager tilemanager(session->tileCache, *session->image, session->jpeg,
+                          session->png);
+  RawTile rawtile = tilemanager.getTile(resolution, tile,
+                                        session->view->xangle,
+					session->view->yangle, PNG );
   int len = rawtile.dataLength;
+  LOG_INFO("PTL :: Tile size: " << rawtile.width << " x " << rawtile.height);
+  LOG_INFO("PTL :: Channels per sample: " << rawtile.channels);
+  LOG_INFO("PTL :: Bits per channel: " << rawtile.bpc);
+  LOG_INFO("PTL :: Compressed tile size is " << len);
 
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "PTL :: Tile size: " << rawtile.width << " x " << rawtile.height << endl
-			<< "PTL :: Channels per sample: " << rawtile.channels << endl
-			<< "PTL :: Bits per channel: " << rawtile.bpc << endl
-			<< "PTL :: Compressed tile size is " << len << endl;
-  }
-
-
-#ifndef DEBUG
+#ifndef INFO
   char buf[1024];
   snprintf( buf, 1024, "Pragma: no-cache\r\n"
 	    "Content-length: %d\r\n"
 	    "Content-type: image/png\r\n"
 	    "Content-disposition: inline;filename=\"ptl.png\""
 	    "\r\n\r\n", len );
-
   session->out->printf( (const char*) buf );
 #endif
-
-
-  if( session->out->putStr( (const char*) rawtile.data, len ) != len ){
-    if( session->loglevel >= 1 ){
-      *(session->logfile) << "PNG :: Error writing png tile" << endl;
-    }
+  if(session->out->putStr((const char* )rawtile.data, len) != len){
+    LOG_ERROR("PNG :: Error writing png tile");
   }
-
-//  session->out->printf( "\r\n" ); //causes incorrect packet length, that results in crash, Z Husz 16/04/2010
-
+  //  session->out->printf( "\r\n" );
+  //  causes incorrect packet length, that results in crash, Z Husz 16/04/2010
   if( session->out->flush() == -1 ) {
-    if( session->loglevel >= 1 ){
-      *(session->logfile) << "PNG :: Error flushing png tile" << endl;
-    }
+    LOG_ERROR("PNG :: Error flushing png tile");
   }
-
-
   // Inform our response object that we have sent something to the client
   session->response->setImageSent();
-
   // Total JTLS response time
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "PNG :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
-
+  LOG_INFO("PNG :: Total command time " << command_timer.getTime() << "us");
 }

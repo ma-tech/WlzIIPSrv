@@ -1,11 +1,7 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _ICC_cc[] = "MRC HGU $Id$";
-#endif
+static char _ICC_cc[] = "University of Edinburgh $Id$";
 #endif
 
 /*

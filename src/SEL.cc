@@ -1,24 +1,24 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _SEL_cc[] = "MRC HGU $Id$";
-#endif
+static char _SEL_cc[] = "University of Edinburgh $Id$";
 #endif
 /*!
 * \file         SEL.cc
-* \author       Zsolt Husz
+* \author       Zsolt Husz, Bill Hill
 * \date         February 2010
 * \version      $Id$
 * \par
 * Address:
 *               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
 *               Western General Hospital,
 *               Edinburgh, EH4 2XU, UK.
 * \par
-* Copyright (C) 2010 Medical research Council, UK.
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
 * 
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -39,86 +39,91 @@ static char _SEL_cc[] = "MRC HGU $Id$";
 * \ingroup	WlzIIPServer
 */
 
+#include "Log.h"
 #include "Task.h"
 
 using namespace std;
 
-void SEL::run( Session* session, std::string argument ){
+/*!
+* \ingroup	WlzIIPServer
+* \brief	Parses a selection command and then stores the parsed
+* 		command for later evaluation.
+*
+* 		The arguments of the selection command are 1, 2, 4 or 5 comma
+* 		separated parameters:
+*	  	<ul>
+*	  	  <li> \verbatim expression \endverbatim
+*	  	  <li> \verbatim expression,alpha \endverbatim
+*	  	  <li> \verbatim expression,red,green,blue \endverbatim
+*	          <li> \verbatim expression,red,green,blue,alpha \endverbatim
+*  	  	</ul>
+*		With the expression being a Woolz morphological expression.
+* \param	session			The session.
+* \param	argument		String to parse for the selection
+* 					arguments.
+*/
+void SEL::run(Session* session, std::string argument)
+{
 
-  /* The argument should consist of 1,2, 4 or 5 comma separated values:
-     index
-     index, alpha
-     index, r, g, b
-     index, r, g, b, alpha
-  */
-
-  if( session->loglevel >= 3 ) (*session->logfile) << "SEL handler reached" << endl;
-
-  // Parse the argument list
-  int count = 0;
-  int values[5];
-  int delimitter = argument.find( "," );
-  int pdelimitter = 0;
-  while (delimitter >=0 && count < 5) {
-     values[count] = atoi( argument.substr( pdelimitter, (delimitter-pdelimitter)).c_str() );
-     pdelimitter = delimitter + 1;
-     delimitter = argument.find( ",", delimitter + 1);
-     count++;
-  }
-  if (count > 4) {
-      throw string( "SEL : Too many parameters.");
-  }
-  values[count] = atoi( argument.substr( pdelimitter, argument.length()-pdelimitter + 1).c_str() );
-
+  unsigned int	nPar;
+  unsigned int	par[4];
+  WlzExp	*exp = NULL;
   CompoundSelector *selector = new CompoundSelector;
-  int index = values[0];
-  selector->index = index;
-  switch (count) {
-      case 0:
-          selector->r=255;
-          selector->g=255;
-          selector->b=255;
-          selector->a=255;
-          break;
-      case 1:
-          selector->r=255;
-          selector->g=255;
-          selector->b=255;
-          selector->a=values[1];
-          break;
-      case 3:
-          selector->r=values[1];
-          selector->g=values[2];
-          selector->b=values[3];
-          selector->a=255;
-          break;
-      case 4:
-          selector->r=values[1];
-          selector->g=values[2];
-          selector->b=values[3];
-          selector->a=values[4];
-          break;
-      default:
-          throw string( "SEL : Incorrect SEL syntax. Number of acccepted parameters are 1, 2, 4 or 5.");
-   }
 
-   //insert to the end of the list
-   if (!session->viewParams->selector) { //first element
-       selector->next = session->viewParams->selector;
-       session->viewParams->selector = selector;
-       if (!session->viewParams->lastsel)
-           session->viewParams->lastsel= selector;
-   } else {
-       session->viewParams->lastsel->next =  selector;
-       session->viewParams->lastsel =  selector;
-   }
-
-  if ( session->loglevel >= 3 ) {
-    int i;
-    *(session->logfile) << "SEL :: Selection for index  : " << (int)selector->index << endl;
-    *(session->logfile) << "SEL :: Selection for r      : " << (int)selector->r << endl;
-    *(session->logfile) << "SEL :: Selection for g      : " << (int)selector->g << endl;
-    *(session->logfile) << "SEL :: Selection for b      : " << (int)selector->b << endl;
-    *(session->logfile) << "SEL :: Selection for alpha  : " << (int)selector->a << endl;
+  LOG_INFO("SEL handler reached");
+  if((exp = WlzExpParse(argument.c_str(), &nPar, par)) == NULL)
+  {
+    throw string("SEL : Failed to parse expression.");
   }
+  switch(nPar)
+  {
+    case 0:
+      selector->r = 255;
+      selector->g = 255;
+      selector->b = 255;
+      selector->a = 255;
+      break;
+    case 1:
+      selector->r = 255;
+      selector->g = 255;
+      selector->b = 255;
+      selector->a = par[0];
+      break;
+    case 3:
+      selector->r = par[0];
+      selector->g = par[1];
+      selector->b = par[2];
+      selector->a = 255;
+      break;
+    case 4:
+      selector->r = par[0];
+      selector->g = par[1];
+      selector->b = par[2];
+      selector->a = par[3];
+      break;
+    default:
+      throw string("SEL : Invalid number of parameters.");
+      break;
+  }
+  selector->expression = WlzExpAssign(exp);
+  // Insert at the end of the list
+  if (!session->viewParams->selector)
+  { //first element
+    selector->next = session->viewParams->selector;
+    session->viewParams->selector = selector;
+    if (!session->viewParams->lastsel)
+    {
+      session->viewParams->lastsel= selector;
+    }
+  }
+  else
+  {
+    session->viewParams->lastsel->next = selector;
+    session->viewParams->lastsel = selector;
+  }
+  LOG_INFO("SEL :: Selection argument  : " << argument);
+  LOG_INFO("SEL :: Selection for r     : " << (int)selector->r);
+  LOG_INFO("SEL :: Selection for g     : " << (int)selector->g);
+  LOG_INFO("SEL :: Selection for b     : " << (int)selector->b);
+  LOG_INFO("SEL :: Selection for alpha : " << (int)selector->a);
 }

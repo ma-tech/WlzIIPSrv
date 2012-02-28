@@ -1,13 +1,10 @@
+#ifndef _TOKENIZER_H
+#define _TOKENIZER_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Tokenizer_h[] = "MRC HGU $Id$";
+static char _Tokenizer_h[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
 /*
     Simple String Tokenizer Class
 
@@ -27,10 +24,6 @@ static char _Tokenizer_h[] = "MRC HGU $Id$";
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-
-#ifndef _TOKENIZER_H
-#define _TOKENIZER_H
 
 #include <string>
 
@@ -60,15 +53,11 @@ class Tokenizer{
 
 };
 
-
-
 inline Tokenizer::Tokenizer( const std::string& s, const std::string& t )
 {
   arg = s;
   delim = t;
 }
-
-
 
 inline std::string Tokenizer::_nextToken()
 {
@@ -90,8 +79,6 @@ inline std::string Tokenizer::_nextToken()
   return result;
 }
 
-
-
 inline std::string Tokenizer::nextToken()
 {
   std::string result;
@@ -104,14 +91,11 @@ inline std::string Tokenizer::nextToken()
 
 }
 
-
 inline int Tokenizer::hasMoreTokens()
 {
   int n = arg.find_first_not_of( delim, 0 );
   if( n >= 0 ) return 1;
   else return 0;
 }
-
-
 
 #endif

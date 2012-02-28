@@ -1,35 +1,47 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _CVT_cc[] = "MRC HGU $Id$";
+static char _CVT_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
-/*
-    IIP CVT Command Handler Class Member Function
-
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+/*!
+* \file         CVT.cc
+* \author       Ruven Pillay, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP CVT Command Handler Class Member Function.
+* \ingroup	WlzIIPServer
 */
 
-
-
+#include "Log.h"
 #include "Task.h"
 #include "ColourTransforms.h"
 
@@ -47,16 +59,9 @@ void CVT::run( Session* session, std::string argument ){
 
   Timer tile_timer;
   this->session = session;
-
-  if( session->loglevel >= 2 ) *(session->logfile) << "CVT handler reached" << endl;
-
+  LOG_INFO("CVT handler reached");
   checkImage();
-
-
-  // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_COND_INFO(command_timer.start());
   // Put the argument into lower case
   transform( argument.begin(), argument.end(), argument.begin(), ::tolower );
 
@@ -64,7 +69,8 @@ void CVT::run( Session* session, std::string argument ){
   // For the moment, only deal with JPEG and PNG. If we have specified something else, give a warning
   // and send JPEG anyway
   if( argument != "jpeg" && argument != "png"){ // png added by Zsolt Husz, 8/05/2009
-    if( session->loglevel >= 1 ) *(session->logfile) << "CVT :: Unsupported request: '" << argument << "'. Sending JPEG." << endl;
+    LOG_WARN("CVT :: Unsupported request: '" << argument <<
+             "'. Sending JPEG.");
     argument = "jpeg";
   }
 
@@ -78,8 +84,7 @@ void CVT::run( Session* session, std::string argument ){
     unsigned int n;
     int cielab = 0;
 
-    if( session->loglevel >= 3 ) *(session->logfile) << "CVT :: JPEG/PNG output handler reached" << endl;
-
+    LOG_INFO("CVT :: JPEG/PNG output handler reached");
 
     // Get a fake tile in case we are dealing with a sequence
     (*session->image)->loadImageInfo( session->view->xangle, session->view->yangle );
@@ -99,10 +104,8 @@ void CVT::run( Session* session, std::string argument ){
     im_width = session->view->getImageWidth();
     im_height = session->view->getImageHeight();
 
-    if( session->loglevel >= 3 ){
-      *(session->logfile) << "CVT :: image set to " << im_width << " x " << im_height
-			  << " using resolution " << requested_res << endl;
-    }
+    LOG_INFO("CVT :: image set to " << im_width << " x " << im_height <<
+	      " using resolution " << requested_res);
 
     // The tile size of the source tile
     unsigned int src_tile_width = (*session->image)->getTileWidth();
@@ -147,17 +150,14 @@ void CVT::run( Session* session, std::string argument ){
       endx = (unsigned int) ( (view_width + view_left) / src_tile_width ) + 1;
       endy = (unsigned int) ( (view_height + view_top) / src_tile_height ) + 1;
 
-      if( session->loglevel >= 3 ){
-	*(session->logfile) << "CVT :: view port is set: image: " << im_width << "x" << im_height
-			    << ". View Port: " << view_left << "," << view_top
-			    << "," << view_width << "," << view_height << endl
-			    << "CVT :: Pixel Offsets: " << startx << "," << starty << ","
-			    << xoffset << "," << yoffset << endl
-			    << "CVT :: End Tiles: " << endx << "," << endy << endl;
-		
-      }
+      LOG_INFO("CVT :: view port is set: image: " <<
+                im_width << "x" << im_height << ". View Port: " <<
+		view_left << "," << view_top << "," << view_width << "," <<
+		view_height << endl << "CVT :: Pixel Offsets: " << startx <<
+		"," << starty << "," << xoffset << "," << yoffset << endl <<
+		"CVT :: End Tiles: " << endx << "," << endy);
     } else {
-      if( session->loglevel >= 4 ) *(session->logfile) << "CVT :: No view port set" << endl;
+      LOG_INFO("CVT :: No view port set");
       view_left = 0;
       view_top = 0;
       view_width = im_width;
@@ -201,9 +201,7 @@ void CVT::run( Session* session, std::string argument ){
 #endif
       // Send the PNG header to the client
       if( session->out->putStr( (const char*) complete_image.data, len ) != len ){
-        if( session->loglevel >= 1 ){
-	 *(session->logfile) << "CVT :: Error writing png header" << endl;
-        }
+	LOG_ERROR("CVT :: Error writing png header");
       }
     } else { //JPEG
       // Initialise our JPEG compression object
@@ -220,9 +218,7 @@ void CVT::run( Session* session, std::string argument ){
     // Send the JPEG header to the client
       len = session->jpeg->getHeaderSize();
       if( session->out->putStr( (const char*) session->jpeg->getHeader(), len ) != len ){
-        if( session->loglevel >= 1 ){
-	 *(session->logfile) << "CVT :: Error writing jpeg header" << endl;
-        }
+	LOG_ERROR("CVT :: Error writing jpeg header");
       }
     }
 
@@ -235,32 +231,29 @@ void CVT::run( Session* session, std::string argument ){
       int current_width = 0;
 
       for( unsigned int j=startx; j<endx; j++ ){
-
-	// Time the tile retrieval
-	if( session->loglevel >= 2 ) tile_timer.start();
-
+        LOG_COND_INFO(tile_timer.start());
 	// Get an uncompressed tile from our TileManager
-	TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
+	TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png);
 	RawTile rawtile = tilemanager.getTile( requested_res, (i*ntlx) + j, session->view->xangle, session->view->yangle, UNCOMPRESSED );
 
-	if( session->loglevel >= 2 ){
-	  *(session->logfile) << "CVT :: Tile access time " << tile_timer.getTime() << " microseconds" << endl;
-	}
+	LOG_INFO("CVT :: Tile access time " << tile_timer.getTime() << "us");
 
 	// Check the colour space - CIELAB images will need to be converted
 	if( (*session->image)->getColourSpace() == CIELAB ){
 	  cielab = 1;
-	  if( session->loglevel >= 3 ){
-	    *(session->logfile) << "CVT :: Converting from CIELAB->sRGB" << endl;
-	  }
+	  LOG_INFO("CVT :: Converting from CIELAB->sRGB");
 	}
 
-	// Only print this out once per image
-	if( (session->loglevel >= 4) && (i==starty) && (j==starty) ){
-	  *(session->logfile) << "CVT :: Tile data is " << rawtile.channels << " channels, "
-			      << rawtile.bpc << " bits per channel" << endl;
+#ifdef WLZ_IIP_LOG
+	// Only log this out once per image
+        if((logCat != NULL) &&
+	   (logCat->getPriority() >= log4cpp::Priority::INFO) &&
+	   (i==starty) && (j==starty))
+	{
+	  LOG_INFO("CVT :: Tile data is " << rawtile.channels <<
+	            " channels, " << rawtile.bpc << " bits per channel");
 	}
-
+#endif
 	// Set the tile width and height to be that of the source tile
 	// - Use the rawtile data because if we take a tile from cache
 	//   the image pointer will not necessarily be pointing to the
@@ -303,11 +296,8 @@ void CVT::run( Session* session, std::string argument ){
 	  else if( i == endy-1 ){
 	    dst_tile_height = (view_height+view_top) % basic_tile_width;
   	  }
-
-	  if( session->loglevel >= 4 ){
-	    *(session->logfile) << "CVT :: destination tile height: " << dst_tile_height
-				<< ", tile width: " << dst_tile_width << endl;
-	  }
+	  LOG_INFO("CVT :: destination tile height: " << dst_tile_height <<
+	            ", tile width: " << dst_tile_width);
 	}
 
 
@@ -364,22 +354,15 @@ void CVT::run( Session* session, std::string argument ){
       else
         len = session->jpeg->CompressStrip( bufDest, dst_tile_height );  // bug fix 15/05/2009
 
-      if( session->loglevel >= 3 ){
-	*(session->logfile) << "CVT :: Compressed data strip length is " << len << endl;
-      }
-
+      LOG_INFO("CVT :: Compressed data strip length is " << len);
 
       // Send this strip out to the client
-      if( len != session->out->putStr( (const char*) complete_image.data, len ) ){
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "CVT :: Error writing jpeg strip data: " << len << endl;
-	}
+      if(len != session->out->putStr((const char* )complete_image.data, len)){
+	LOG_ERROR("CVT :: Error writing jpeg strip data: " << len);
       }
 
       if( session->out->flush() == -1 ) {
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "CVT :: Error flushing jpeg tile" << endl;
-	}
+	LOG_ERROR("CVT :: Error flushing jpeg tile");
       }
     }
 
@@ -389,19 +372,15 @@ void CVT::run( Session* session, std::string argument ){
     else
       len = session->jpeg->Finish();
 
-    if( session->out->putStr( (const char*) complete_image.data, len ) != len ){
-      if( session->loglevel >= 1 ){
-	*(session->logfile) << "CVT :: Error writing jpeg EOI markers" << endl;
-      }
+    if(session->out->putStr((const char* )complete_image.data, len) != len){
+      LOG_ERROR("CVT :: Error writing jpeg EOI markers");
     }
 
     // Finish off the flush the buffer
     //session->out->printf( "\r\n" ); //was possible bug: causes incorrect packet length, that results in crash, Z Husz 16/04/2010
 
     if( session->out->flush()  == -1 ) {
-      if( session->loglevel >= 1 ){
-	*(session->logfile) << "CVT :: Error flushing image" << endl;
-      }
+      LOG_ERROR("CVT :: Error flushing image");
     }
 
     // Inform our response object that we have sent something to the client
@@ -416,7 +395,5 @@ void CVT::run( Session* session, std::string argument ){
   } // End of if( argument == "jpeg" || argument == "png")
 
   // Total CVT response time
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "CVT :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
+  LOG_INFO("CVT :: Total command time " << command_timer.getTime() << "us");
 }

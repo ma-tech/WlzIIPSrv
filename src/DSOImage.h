@@ -1,13 +1,10 @@
+#ifndef _DSOIMAGE_H
+#define _DSOIMAGE_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _DSOImage_h[] = "MRC HGU $Id$";
+static char _DSOImage_h[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
 /*  IIP fcgi server module
 
     Copyright (C) 2000-2003 Ruven Pillay.
@@ -29,9 +26,6 @@ static char _DSOImage_h[] = "MRC HGU $Id$";
 
 
 #ifdef ENABLE_DL
-
-#ifndef _DSOIMAGE_H
-#define _DSOIMAGE_H
 
 
 #include <string>

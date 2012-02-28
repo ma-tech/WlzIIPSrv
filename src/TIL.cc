@@ -1,34 +1,47 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _TIL_cc[] = "MRC HGU $Id$";
+static char _TIL_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
-/*
-    IIP TIL Command Handler Class Member Function
-
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+/*!
+* \file         TIL.cc
+* \author       Ruven Pillay, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP TIL Command Handler Class Member Function.
+* \ingroup	WlzIIPServer
 */
 
-
+#include "Log.h"
 #include "Task.h"
 
 using namespace std;
@@ -39,17 +52,10 @@ void TIL::run( Session* session, std::string argument ){
 
   int resolution, start_tile, end_tile;
   this->session = session;
-
-  if( session->loglevel >= 3 ) *(session->logfile) << "TIL handler reached" << endl;
-
+  LOG_INFO("TIL handler reached");
   checkImage();
   openIfWoolz();
-
-
-  // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_COND_INFO(command_timer.start());
   /* Parse the argument list of the form 'resolution,range'
    */
   int delimitter = argument.find( "," );
@@ -109,17 +115,12 @@ void TIL::run( Session* session, std::string argument ){
     startx = endx;
     endx = tmp;
   }
-
-  if( session->loglevel >= 3 ){
-    *(session->logfile) << "TIL :: resolution requested: " << resolution << endl
-			<< "total tiles horizontally: " << ntlx
-			<< ", vertically: " << ntly << endl
-			<< "TIL :: start tile: " << start_tile
-			<< ", end tile: " << end_tile << endl
-			<< "TIL :: Rectangle: " << startx << "," << starty
-			<< " - " << endx << "," << endy << endl;
-  }
-
+  LOG_INFO("TIL :: resolution requested: " << resolution);
+  LOG_INFO("TIL :: total tiles horizontally: " << ntlx <<
+            ", vertically: " << ntly);
+  LOG_INFO("TIL :: start tile: " << start_tile << ", end tile: " << end_tile);
+  LOG_INFO("TIL :: Rectangle: " << startx << "," << starty << " - " <<
+            endx << "," << endy);
 
   /* Only send our MIME type once
    */
@@ -134,20 +135,18 @@ void TIL::run( Session* session, std::string argument ){
       int n = i + (j*ntlx);
 
       // Get our tile using our tile manager
-      TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png, session->logfile, session->loglevel );
+      TileManager tilemanager( session->tileCache, *session->image, session->jpeg, session->png);
       RawTile rawtile = tilemanager.getTile( resolution, n, session->view->xangle,
 					     session->view->yangle, JPEG );
 
       int len = rawtile.dataLength;
 
 
-      if( session->loglevel >= 2 ){
-	*(session->logfile) << "TIL :: Sending tile " << n << " at: " << i << "," << j << endl
-			    << "TIL :: Number of channels per sample is " << rawtile.channels << endl
-			    << "TIL :: Raw data bits per channel is " << rawtile.bpc << endl
-			    << "TIL :: Raw data length is " << len << endl;
-      }
-
+      LOG_INFO("TIL :: Sending tile " << n << " at: " << i << "," << j);
+      LOG_INFO("TIL :: Number of channels per sample is " <<
+                rawtile.channels);
+      LOG_INFO("TIL :: Raw data bits per channel is " << rawtile.bpc);
+      LOG_INFO("TIL :: Raw data length is " << len);
 
       /* The IIP compression type. Set a default no compression type
 
@@ -166,7 +165,7 @@ void TIL::run( Session* session, std::string argument ){
       if( rawtile.bpc == 8 ) compType[0] = 0x02;
       else if( rawtile.bpc == 16 ) compType[0] = 0x03;
 
-      if( session->loglevel >= 2 )* (session->logfile) << "TIL :: Compressed tile size is " << len << endl;
+      LOG_INFO("TIL :: Compressed tile size is " << len);
 
 
       /* Send the tile prefix, indicating which resolution,
@@ -179,9 +178,7 @@ void TIL::run( Session* session, std::string argument ){
       /* Send out the IIP compression type
        */
       if( session->out->putStr( (const char*) compType, 4 ) != 4 ){
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "TIL :: Error writing compression type " << endl;
-	}
+	LOG_ERROR("TIL :: Error writing compression type");
       }
 
       /* Send the compression subtype defined within the FlashPix specification
@@ -200,36 +197,27 @@ void TIL::run( Session* session, std::string argument ){
 
       unsigned char compSubType[4] = { 0x00,0x11,0x00,0x00 };
       if( session->out->putStr( (const char*) compSubType, 4 ) != 4 ){
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "TIL :: Error writing compression sub-type " << endl;
-	}
+	LOG_ERROR("TIL :: Error writing compression sub-type ");
       }
 
       /* Send the actual tile data
        */
       if( session->out->putStr( (const char*) rawtile.data, len ) != len ){
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "TIL :: Error writing jpeg tile" << endl;
-	}
+        LOG_ERROR("TIL :: Error writing jpeg tile");
       }
 
       /* And finally send the CRLF terminator for each tile
        */
       //session->out->printf( "\r\n" ); //causes incorrect packet length, that results in crash, Z Husz 16/04/2010
       if( session->out->flush()  == -1 ) {
-	if( session->loglevel >= 1 ){
-	  *(session->logfile) << "TIL :: Error flushing jpeg tile" << endl;
-	}
+	LOG_ERROR("TIL :: Error flushing jpeg tile");
       }
-
     } // End of for( starty, endy )
   } // End of for( startx, endx )
 
 
   if( session->out->flush()  == -1 ) {
-    if( session->loglevel >= 1 ){
-      *(session->logfile) << "TIL :: Error flushing jpeg tile" << endl;
-    }
+    LOG_ERROR("TIL :: Error flushing jpeg tile");
   }
 
 
@@ -239,10 +227,5 @@ void TIL::run( Session* session, std::string argument ){
 
 
   // Total TIL response time
-  if( session->loglevel >= 2 ){
-    *(session->logfile) << "TIL :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
-
-
+  LOG_INFO("TIL :: Total command time " << command_timer.getTime() << "us");
 }
-

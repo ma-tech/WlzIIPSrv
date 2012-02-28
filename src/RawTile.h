@@ -1,13 +1,10 @@
+#ifndef _RAWTILE_H
+#define _RAWTILE_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _RawTile_cc[] = "MRC HGU $Id$";
+static char _RawTile_h[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
 // RawTile class
 
 /*  IIP Image Server
@@ -29,9 +26,6 @@ static char _RawTile_cc[] = "MRC HGU $Id$";
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-
-#ifndef _RAWTILE_H
-#define _RAWTILE_H
 
 #include <cstring>
 #include <string>

@@ -1,39 +1,47 @@
-#if defined(__GNUC__)
-#ident "MRC HGU $Id$"
-#else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Task_h[] = "MRC HGU $Id$";
-#endif
-#endif
-
-/*
-    IIP Generic Task Class
-
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
-    Copyright (C) 2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
-
-
 #ifndef _TASK_H
 #define _TASK_H
-
-
+#if defined(__GNUC__)
+#ident "University of Edinburgh $Id$"
+#else
+static char _Task_h[] = "University of Edinburgh $Id$";
+#endif
+/*!
+* \file         Task.h
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C) 2006 Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP Generic Task Class.
+* \ingroup	WlzIIPServer
+*/
 
 #include <string>
 #include <fstream>
@@ -94,8 +102,6 @@ struct Session {
   PNGCompressor* png;
   View* view;
   IIPResponse* response;
-  int loglevel;
-  std::ofstream* logfile;
 
   imageCacheMapType *imageCache;
   Cache* tileCache;
@@ -203,6 +209,9 @@ class OBJ : public Task {
   /// wlz_3d_bounding_box request handler
   void wlz_3d_bounding_box();
 
+  /// wlz-transformed-3d-bounding-box request handler
+  void wlz_transformed_3d_bounding_box();
+
   /// wlz_coordinate_3d request handler
   void wlz_coordinate_3d();
 
@@ -212,11 +221,17 @@ class OBJ : public Task {
   /// wlz_true_voxel_size request handler
   void wlz_true_voxel_size();
 
+  /// wlz_grey_stats request handler
+  void wlz_grey_stats();
+
   /// wlz_grey_value request handler
   void wlz_grey_value();
 
   /// wlz_volume request handler
   void wlz_volume();
+
+  /// wlz_n_components request handler
+  void wlz_n_components();
 
   /// wlz_foreground_objects handler
   void wlz_foreground_objects();

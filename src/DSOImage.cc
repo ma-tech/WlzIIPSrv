@@ -1,13 +1,8 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _DSOImage_cc[] = "MRC HGU $Id$";
+static char _DSOImage_cc[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
 /*  DSO module loader for external image types
 
     Copyright (C) 2000-2003 Ruven Pillay.

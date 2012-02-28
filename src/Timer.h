@@ -1,13 +1,10 @@
+#ifndef _TIMER_H
+#define _TIMER_H
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _Timer_h[] = "MRC HGU $Id$";
+static char _Timer_h[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
 // Timer class
 
 /*  IIP fcgi server module
@@ -28,12 +25,6 @@ static char _Timer_h[] = "MRC HGU $Id$";
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-
-
-#ifndef _TIMER_H
-#define _TIMER_H
-
 
 #ifdef HAVE_SYS_TIME_H
 

@@ -1,42 +1,51 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _IIPResponse_cc[] = "MRC HGU $Id$";
+static char _IIPImage_h[] = "University of Edinburgh $Id$";
 #endif
-#endif
-
-/*
-    IIP Response Handler Class
-
-    Copyright (C) 2008 Zsolt Husz, Medical research Council, UK.
-    Copyright (C) 2003-2006 Ruven Pillay.
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+/*!
+* \file         IPResponse.cc
+* \author       Ruven Pillay, Zsolt Husz, Bill Hill
+* \date         June 2008
+* \version      $Id$
+* \par
+* Address:
+*               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
+*               Western General Hospital,
+*               Edinburgh, EH4 2XU, UK.
+* \par
+* Copyright (C), [2000-2006] Ruven Pillay.
+* \par
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be
+* useful but WITHOUT ANY WARRANTY; without even the implied
+* warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+* PURPOSE.  See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU General Public
+* License along with this program; if not, write to the Free
+* Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+* Boston, MA  02110-1301, USA.
+* \brief	IIP Response Handler Class.
+* \ingroup    	WlzIIPServer
 */
 
 #include "IIPResponse.h"
 #include <cstdio>
 #include <string.h>
 
-
 using namespace std;
-
-
 
 IIPResponse::IIPResponse(){
 
@@ -106,6 +115,16 @@ void IIPResponse::addResponse( const char* c, int a, int b ){
   responseBody.append( eof );
 }
 
+void IIPResponse::addResponse( const char *c0, int i0, const char *c1, 
+                               double d0, double d1, double d2, double d3, 
+			       double d4, double d5)
+{
+  char	tmp[256];
+  snprintf(tmp, 256, "%s:%d %s %g %g %g %g %g %g",
+           c0, i0, c1, d0, d1, d2, d3, d4, d5);
+  responseBody.append(tmp);
+  responseBody.append(eof);
+}
 
 void IIPResponse::setError( const std::string& code, const std::string& arg ){
 

@@ -1,24 +1,24 @@
 #if defined(__GNUC__)
-#ident "MRC HGU $Id$"
+#ident "University of Edinburgh $Id$"
 #else
-#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma ident "MRC HGU $Id$"
-#else
-static char _WLZ_cc[] = "MRC HGU $Id$";
-#endif
+static char _WLZ_cc[] = "University of Edinburgh $Id$";
 #endif
 /*!
 * \file         WLZ.cc
-* \author       Zsolt Husz
+* \author       Zsolt Husz, Bill Hill
 * \date         June 2008
 * \version      $Id$
 * \par
 * Address:
 *               MRC Human Genetics Unit,
+*               MRC Institute of Genetics and Molecular Medicine,
+*               University of Edinburgh,
 *               Western General Hospital,
 *               Edinburgh, EH4 2XU, UK.
 * \par
-* Copyright (C) 2008 Medical research Council, UK.
+* Copyright (C), [2012],
+* The University Court of the University of Edinburgh,
+* Old College, Edinburgh, UK.
 * 
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -35,10 +35,14 @@ static char _WLZ_cc[] = "MRC HGU $Id$";
 * License along with this program; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 * Boston, MA  02110-1301, USA.
-* \brief	Provides the WLZ command of the WlzIIPServer. Implementation is based on TPTImage class
+* \brief	Provides the WLZ command of the WlzIIPServer.
+*               Implementation is based on TPTImage class
 * \ingroup	WlzIIPServer
 */
 
+#include <limits.h>
+
+#include "Log.h"
 #include "Task.h"
 #include "Environment.h"
 
@@ -61,19 +65,13 @@ using namespace std;
 */
 void WLZ::run( Session* session, std::string argument ){
 
-  if( session->loglevel >= 3 ) *(session->logfile) << "WLZ handler reached" << endl;
-
-  // Time this command
-  if( session->loglevel >= 2 ) command_timer.start();
-
-
+  LOG_INFO("WLZ handler reached");
+  LOG_COND_INFO(command_timer.start());
   // The argument is a path, which may contain spaces or other characters
   // that will be MIME encoded into a suitable format for the URL.
   // So, first decode this path (following code modified from CommonC++ library)
-
   const char* source = argument.c_str();
-
-  char destination[ 256 ];  // Hopefully we won't get any paths longer than 256 chars!
+  char destination[PATH_MAX];
   char *dest = destination;
   char* ret = dest;
   char hex[3];
@@ -134,7 +132,7 @@ void WLZ::run( Session* session, std::string argument ){
     string imtype = test->getImageType();
 
     if( imtype == "wlz"){
-      if( session->loglevel >= 2 ) *(session->logfile) << "WLZ :: Woolz image requested" << endl;
+      LOG_INFO("WLZ :: Woolz image requested");
 
       //set current view parameters
       test->setView( session->viewParams );
@@ -142,7 +140,7 @@ void WLZ::run( Session* session, std::string argument ){
       *session->image = test;
     }
     else if( imtype == "gz"){
-      if( session->loglevel >= 2 ) *(session->logfile) << "WLZ :: Gziped Woolz image requested" << endl;
+      LOG_INFO("WLZ :: Gziped Woolz image requested");
 
       //set current view parameters
       test->setView( session->viewParams );
@@ -151,9 +149,7 @@ void WLZ::run( Session* session, std::string argument ){
     }
     else throw string( "WLZ: Unsupported image type: " + imtype );
 
-    if( session->loglevel >= 3 ){
-      *(session->logfile) << "WLZ :: created image" << endl;
-    }
+    LOG_INFO("WLZ :: created image");
   }
   catch( const string& error ){
     // Unavailable file error code is 1 3
@@ -167,8 +163,5 @@ void WLZ::run( Session* session, std::string argument ){
   session->view->yangle = 90;
 
 	  
-  if( session->loglevel >= 3 ){
-    *(session->logfile)	<< "WLZ :: Total command time " << command_timer.getTime() << " microseconds" << endl;
-  }
-
+  LOG_INFO("WLZ :: Total command time " << command_timer.getTime() << "us");
 }
