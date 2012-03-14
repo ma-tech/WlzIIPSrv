@@ -150,17 +150,49 @@ AC_ARG_WITH( fcgi-lib,
 
 AC_ARG_ENABLE(static-fcgi,
  [  --enable-static-fcgi    enable staticaly linked libfcgi],
-	echo "Using static fcgi library"; LIBFCGI_INCLUDES="$fcgi_include_path"; LIBFCGI_LIBS="$fcgi_lib_path_only/libfcgi.a",
+	echo "Using static fcgi library";
+	LIBFCGI_INCLUDES="$fcgi_include_path";
+	LIBFCGI_LIBS="$fcgi_lib_path_only/libfcgi.a",
 	AC_CHECK_LIB( fcgi, main,echo "fcgi found";
 		LIBFCGI_INCLUDES="$fcgi_include_path";
 		LIBFCGI_LDFLAGS="$fcgi_lib_path";
 		LIBFCGI_LIBS="-lfcgi",
-	echo "Using fcgi library from $fcgi_lib_path and includes from $fcgi_include_path .";
-		LIBFCGI_LDFLAGS="$fcgi_lib_path"; LIBFCGI_INCLUDES="$fcgi_include_path"; LIBFCGI_LIBS="-lfcgi" ))
+	echo "Using fcgi library from $fcgi_lib_path and includes from";
+	echo "$fcgi_include_path .";
+	LIBFCGI_LDFLAGS="$fcgi_lib_path";
+	LIBFCGI_INCLUDES="$fcgi_include_path";
+	LIBFCGI_LIBS="-lfcgi" ))
 
 AC_SUBST(LIBFCGI_INCLUDES)
 AC_SUBST(LIBFCGI_LDFLAGS)
 AC_SUBST(LIBFCGI_LIBS)
+
+dnl	************************************************************ 
+dnl 	Check for user specified locations for the NIfTI library
+
+nifti_include_path=""
+nifti_lib_path=""
+
+AC_ARG_WITH( nifti-incl,
+   [  --with-nifti-incl=DIR         location of the NIfTI include files],
+   nifti_include_path=$withval)
+
+
+AC_ARG_WITH( nifti-lib,
+   [  --with-nifti-lib=DIR          location of the NIfTI libraries],
+   nifti_lib_path=$withval)
+
+if test x$nifti_lib_path != x -a x$nifti_lib_path != x
+then
+  LIBNIFTI_INCLUDES="-I$nifti_include_path";
+  LIBNIFTI_LDFLAGS="-L$nifti_lib_path";
+  LIBNIFTI_LIBS="-lniftiio -lznz";
+  AC_DEFINE(HAVE_NIFTI, 1, [Define if NIfTI library used.])
+
+  AC_SUBST(LIBNIFTI_INCLUDES)
+  AC_SUBST(LIBNIFTI_LDFLAGS)
+  AC_SUBST(LIBNIFTI_LIBS)
+fi
 
 dnl	************************************************************ 
 dnl 	Check for user specified locations for log4cpp library
@@ -175,38 +207,36 @@ AC_ARG_WITH( log4cpp-lib,
   log4cpp_lib_path=-L$withval;
   log4cpp_lib_path_only=$withval)
 
-AC_ARG_ENABLE(static-log4cpp,
- [  --enable-static-log4cpp    enable staticaly linked liblog4cpp],
-	echo "Using static log4cpp library"; LIBLOG4CPP_INCLUDES="$log4cpp_include_path"; LIBLOG4CPP_LIBS="$log4cpp_lib_path_only/liblog4cpp.a",
-	AC_CHECK_LIB( log4cpp, main, echo "log4cpp found";
-		LIBLOG4CPP_INCLUDES="$log4cpp_include_path";
-		LIBLOG4CPP_LDFLAGS="$log4cpp_lib_path";
-		LIBLOG4CPP_LIBS="-llog4cpp",
-	echo "Using log4cpp library from $log4cpp_lib_path and includes from $log4cpp_include_path .";
-		LIBLOG4CPP_LDFLAGS="$log4cpp_lib_path";
-		LIBLOG4CPP_INCLUDES="$log4cpp_include_path";
-		LIBLOG4CPP_LIBS="-llog4cpp" ;
-		[AC_DEFINE(HAVE_LOG4CPP,1,[Define if log4cpp library used.])]))
+if test x$log4cpp_lib_path != x -a x$log4cpp_lib_path != x
+then
+  LIBLOG4CPP_INCLUDES="-I$log4cpp_include_path";
+  LIBLOG4CPP_LDFLAGS="-L$log4cpp_lib_path";
+  LIBLOG4CPP_LIBS="-llog4cpp";
+  AC_DEFINE(HAVE_LOG4CPP, 1, [Define if log4cpp library used.])
+
+  AC_SUBST(LIBLOG4CPP_INCLUDES)
+  AC_SUBST(LIBLOG4CPP_LDFLAGS)
+  AC_SUBST(LIBLOG4CPP_LIBS)
+fi
 
 AC_SUBST(LIBLOG4CPP_INCLUDES)
 AC_SUBST(LIBLOG4CPP_LDFLAGS)
 AC_SUBST(LIBLOG4CPP_LIBS)
 
 dnl	************************************************************ 
-
 dnl 	Check for user specified locations for Woolz libraries
 
 AC_ARG_WITH( wlz-incl,
    [  --with-wlz-incl=DIR           location of the Woolz include files],
-   wlz_include_path=$withval, wlz_include_path="../../../Core")
+   wlz_include_path=$withval)
 
 
 AC_ARG_WITH( wlz-lib,
    [  --with-wlz-lib=DIR            location of the Woolz libraries],
-   wlz_lib_path=$withval, wlz_lib_path="../../../Core")
+   wlz_lib_path=$withval)
 
-LIBWLZ_INCLUDES="-I$wlz_include_path/libAlc -I$wlz_include_path/libAlg -I$wlz_include_path/libWlz -I$wlz_include_path/libWlzExtFF -I$wlz_include_path/libbibfile -I$wlz_include_path";
-LIBWLZ_LDFLAGS="-L$wlz_lib_path/libAlc -L$wlz_lib_path/libAlg -L$wlz_lib_path/libWlz -L$wlz_lib_path/libWlzExtFF -L$wlz_lib_path/libbibfile -L$wlz_lib_path";
+LIBWLZ_INCLUDES="-I$wlz_include_path";
+LIBWLZ_LDFLAGS="-L$wlz_lib_path";
 LIBWLZ_LIBS="-lWlzExtFF -lWlz -lAlc -lAlg "
 
 AC_SUBST(LIBWLZ_INCLUDES)
@@ -215,12 +245,36 @@ AC_SUBST(LIBWLZ_LIBS)
 
 
 dnl	************************************************************ 
+dnl 	Check for openmp used
 
+AC_ARG_ENABLE(openmp,
+    [  --enable-openmp         build and link with openmp] )
 
-dnl Check for libdl for dynamic library loading
+if test "$enable_openmp" = "yes"
+then
+	openmp=true
+	# GNU CC
+	if test "$CC" = "gcc"
+	then
+	  CFLAGS="${CFLAGS} -fopenmp"
+	  CXXFLAGS="${CXXFLAGS} -fopenmp"
+	fi
+	# Intel CC
+	if test "$CC" = "icc"
+	then
+	  CFLAGS="${CFLAGS} -openmp"
+	  CXXFLAGS="${CXXFLAGS} -openmp"
+	fi
+
+fi
+
+AM_CONDITIONAL( ENABLE_OPENMP, test x$openmp = xtrue )
+
+dnl	************************************************************ 
+dnl 	Check for libdl for dynamic library loading
 
 AC_ARG_ENABLE(modules,
-    [  --enable-modules       enable dynamic module loading] )
+    [  --enable-modules        enable dynamic module loading] )
 
 if test "$enable_modules" = "yes"; then
 
@@ -311,3 +365,18 @@ AC_PROG_MAKE_SET
 AC_OUTPUT(Makefile \
 	src/Makefile )
 
+AC_MSG_RESULT([
+The Woolz IIP server has been configured on ${host} with
+
+  Source directory:                 ${srcdir}
+  Installation directory:           ${prefix}
+  Target CPU:                       ${target_cpu}
+  C compiler:                       ${CC}
+  Linker:                           ${LD}
+  Archiver:                         ${AR}
+  CFLAGS:                           ${CFLAGS}
+  CXXFLAGS:                         ${CXXFLAGS}
+  LDFLAGS:                          ${LDFLAGS}
+
+To build:                          make
+])
