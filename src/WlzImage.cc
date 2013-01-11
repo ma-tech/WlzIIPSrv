@@ -316,7 +316,8 @@ throw(string)
 	fp = fopen(filename.c_str(), "r");
       
       if (fp)
-	wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ, 0, &errNum );
+	wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ,
+	                           0, 0, 0, &errNum );
       
       if (fp) {
 	if (usepipe)
@@ -398,7 +399,7 @@ throw(string)
   }
   
   //set global parameters
-  if (initObj->values.c == NULL) // no values
+  if (initObj->values.core == NULL) // no values
     gType = WLZ_GREY_UBYTE; // consider it UBYTE
   else
     gType = WlzGreyTypeFromObj(initObj, &errNum);
@@ -632,6 +633,7 @@ void WlzImage::closeImage() {
 }
 
 /*!
+ * \return       WLZ_ERR_NONE if success
  * \ingroup      WlzIIPServer
  * \brief        Sections a 3D object wlzObject to generate a single tile in
  * 		 tile_buf for the tileing given by tileObject
@@ -641,38 +643,96 @@ void WlzImage::closeImage() {
  * \param        pos        section bounding box origin
  * \param        size       section bounding box size
  * \param        sel        selector with the colour to be used for the section
- * \return       WLZ_ERR_NONE if success
  * \par      Source:
  *                WlzImage.cc
  */
-WlzErrorNum WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObject, WlzObject *tileObject, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel) {
-  WlzObject *wlzSection = NULL;
-  WlzErrorNum errNum = WLZ_ERR_NONE;
+WlzErrorNum
+WlzImage::sectionObject(unsigned char* tile_buf, WlzObject *wlzObject,
+                        WlzObject *tileObject, WlzIVertex2  pos,
+			WlzIVertex2  size, CompoundSelector *sel)
+{
+  WlzObject 	*wlzSection = NULL;
+  WlzErrorNum 	errNum = WLZ_ERR_NONE;
+  const int	dither = 0;
+
   wlzSection =  WlzAssignObject(
-				WlzGetSubSectionFromObject(wlzObject,
-							   tileObject,
-							   wlzViewStr,
-							   interp,
-							   NULL,
-							   &errNum ) ,
-				NULL);
-  
-  if (wlzSection == NULL || errNum != WLZ_ERR_NONE) {
+		WlzGetSubSectionFromObject(wlzObject, tileObject,
+					   wlzViewStr, interp,
+					   NULL, &errNum ), NULL);
+  if(wlzSection == NULL || errNum != WLZ_ERR_NONE) {
     throw string("WlzImage : Sectioning failed.");
   }
-  
-  if (wlzObject->values.i == NULL)  { // no values
-    errNum = convertDomainObjToRGB(tile_buf,  wlzSection,  pos, size, sel);
-  } else {  // wit values
-    errNum = convertValueObjToRGB(tile_buf,  wlzSection,  pos, size, sel);
+  if(wlzObject->values.core == NULL)  {
+    errNum = convertDomainObjToRGB(tile_buf, wlzSection,  pos, size, sel);
+  } else {
+    int nChan = viewParams->map.getNChan();
+    if(nChan > 0) {
+      WlzObject *lutObj = NULL,
+      		*mapObj = NULL;
+
+      lutObj = getMapLUTObj(&errNum);
+      if(errNum == WLZ_ERR_NONE) {
+        WlzGreyType gType,
+		    mGType;
+	gType = WlzGreyTypeFromObj(wlzSection, NULL);
+	mGType = ((nChan > 1) || (gType == WLZ_GREY_RGBA))?
+	         WLZ_GREY_RGBA: WLZ_GREY_UBYTE;
+        mapObj = WlzAssignObject(
+	         WlzLUTTransformObj(wlzSection, lutObj, mGType,
+	                            0, dither, &errNum), NULL);
+      }
+      (void )WlzFreeObj(lutObj);
+      if(errNum == WLZ_ERR_NONE) {
+        errNum = convertValueObjToRGB(tile_buf, mapObj, pos, size, sel);
+      }
+      (void )WlzFreeObj(mapObj);
+    }
+    else {
+      errNum = convertValueObjToRGB(tile_buf, wlzSection, pos, size, sel);
+    }
   }
-  
-  if (errNum!=WLZ_ERR_NONE) {
+  if(errNum != WLZ_ERR_NONE) {
     char temp[20];
     snprintf(temp, 20, " no %d" ,errNum);
     throw string("WlzImage :: conversion to array" + (string)temp);
   }
   WlzFreeObj(wlzSection);
+  return(errNum);
+}
+
+/*!
+* \return	Look up table object.
+* \ingroup	WlzIIPServer
+* \brief	Gets the value map look up table object using the object cache.
+* \param	iObj			Given object which must have
+* 					image values.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+WlzObject
+*WlzImage::getMapLUTObj(WlzErrorNum *dstErr)
+{
+  WlzObject	*lutObj = NULL;
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+  const ImageMap &map = viewParams->map;
+  if(map.getNChan() > 0)
+  {
+    const string mapS = map.toString();
+    lutObj = getObjectFromCache(mapS);     // Increments the objects linkcount.
+    if(lutObj == NULL)
+    {
+      lutObj = WlzAssignObject(map.createLUT(&errNum), NULL);
+      if(errNum == WLZ_ERR_NONE)
+      {
+	addObjectToCache(lutObj, mapS);
+      }
+    }
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(lutObj);
 }
 
 /*!
@@ -697,7 +757,8 @@ throw(string)
   WlzIVertex3   pos;
   WlzObject     *wlzSection = NULL;
   
-  //seq = ang =  res  = 0; // force unused parameters to zero to, facilitate cache match
+  //seq = ang =  res  = 0;
+  // force unused parameters to zero to, facilitate cache match
   loadImageInfo( 0, 0);
   
   // Check that a valid tile number was given
@@ -1311,40 +1372,50 @@ WlzErrorNum WlzImage::convertDomainObjToRGB(unsigned char *cbuffer, WlzObject* o
 }
 
 /*!
- * \ingroup      WlzIIPServer
- * \brief        Converts a 2D value object to a linearised 2D array
- * \param        cbuffer    allocated memmory location for the output
- *  \param        obj        input object
- * \param        pos        section bounding box origin
- * \param        size       section bounding box size
- * \param        sel        selector with the colour to be used for the section
- * \return       WLZ_ERR_NONE if success
+ * \return      Woolz error code.
+ * \ingroup     WlzIIPServer
+ * \brief       Converts a 2D value object to a linearised 2D array
+ * \param       cbuf    	Allocated memmory location for the output.
+ * \param	obj        	Input object.
+ * \param       pos        	Section bounding box origin.
+ * \param       size       	Section bounding box size.
+ * \param       sel        	Selector with the colour to be used for the
+ * 				section.
  * \par      Source:
  *                WlzImage.cc
  */
-WlzErrorNum WlzImage::convertValueObjToRGB(unsigned char *cbuffer, WlzObject* obj, WlzIVertex2  pos, WlzIVertex2  size, CompoundSelector *sel) {
+WlzErrorNum
+WlzImage::convertValueObjToRGB(unsigned char *cbuf,
+			       WlzObject* obj,
+                               WlzIVertex2  pos, WlzIVertex2  size,
+			       CompoundSelector *sel)
+{
   WlzIntervalWSpace     iwsp;
   WlzGreyWSpace         gwsp;
-  int           i, j;
+  int           i,
+  		j;
   WlzGreyType   gType;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
   
-  if (!cbuffer || !obj)
+  if(!cbuf || !obj)
+  {
     return WLZ_ERR_OBJECT_NULL;
-  
-  if (obj->values.i == NULL)  {
+  }
+  if(obj->values.i == NULL)
+  {
     return WLZ_ERR_DOMAIN_NULL;
   }
   
-  int col1= pos.vtX;
-  int line1= pos.vtY;
+  int col1 = pos.vtX;
+  int line1 = pos.vtY;
   int lineoff = 0;
   int iwidth = 0;
   int outchannels = getNumChannels();
   bool copyGreyToRGB = outchannels != channels;
-  int alphaoffset = (outchannels == 2 || outchannels==4) ? (copyGreyToRGB || outchannels==4 ? 3 :1) : 0;
+  int alphaoffset = (outchannels == 2 || outchannels==4)?
+                    ((copyGreyToRGB || outchannels==4)? 3 :1): 0;
   float gray;
-  int alpha = sel ? sel->a : 255;
+  int   alpha = sel ? sel->a : 255;
   float fA = alpha / 255.0f;
   float fR = sel ? sel->r/255.0f : 1.0f;
   float fG = sel ? sel->g/255.0f : 1.0f;
@@ -1353,124 +1424,141 @@ WlzErrorNum WlzImage::convertValueObjToRGB(unsigned char *cbuffer, WlzObject* ob
   
   gType = WlzGreyTypeFromObj(obj, &errNum);
   //scan the object
-  if((errNum = WlzInitGreyScan(obj, &iwsp, &gwsp)) == WLZ_ERR_NONE){
+  if(errNum == WLZ_ERR_NONE)
+  {
+    errNum = WlzInitGreyScan(obj, &iwsp, &gwsp);
+  }
+  if(errNum == WLZ_ERR_NONE)
+  {
     j = 0;
-    while((errNum = WlzNextGreyInterval(&iwsp)) == WLZ_ERR_NONE){
-      lineoff = (size.vtX*(iwsp.linpos-line1)+(iwsp.colpos-col1))*outchannels;
+    while((errNum == WLZ_ERR_NONE) &&
+          ((errNum = WlzNextGreyInterval(&iwsp)) == WLZ_ERR_NONE))
+    {
+      lineoff = (size.vtX * (iwsp.linpos - line1) + (iwsp.colpos - col1)) *
+                outchannels;
       iwidth = iwsp.rgtpos-iwsp.lftpos;
-      WlzUInt val;
       switch( gType ){
-	
       case WLZ_GREY_LONG:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray = gwsp.u_grintptr.lnp[i] * fA;
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
+	  if (copyGreyToRGB)
+	  {
+	    cbuf[boff + 1] = (unsigned char)(gray * fG + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB + cbuf[boff + 2] * (1 - fA));
 	  }
-	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+	  if(alphaoffset > 0)
+	  {
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
 	  }
 	}
 	break;
       case WLZ_GREY_INT:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray = gwsp.u_grintptr.inp[i] * fA;
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
 	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	    cbuf[boff + 1] = (unsigned char)(gray * fG + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB + cbuf[boff + 2] * (1 - fA));
 	  }
 	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
 	  }
 	}
 	break;
       case WLZ_GREY_SHORT:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray= gwsp.u_grintptr.shp[i] * fA;
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
 	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	    cbuf[boff + 1] = (unsigned char)(gray * fR + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB + cbuf[boff + 2] * (1 - fA));
 	  }
 	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
 	  }
 	}
 	break;
       case WLZ_GREY_FLOAT:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray= gwsp.u_grintptr.flp[i] * fA;
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
 	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB+ cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	    cbuf[boff + 1] = (unsigned char)(gray * fG + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB+ cbuf[boff + 2] * (1 - fA));
 	  }
 	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
 	  }
 	}
 	break;
       case WLZ_GREY_DOUBLE:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray= gwsp.u_grintptr.dbp[i] * fA;
 	  
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
 	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	    cbuf[boff + 1] = (unsigned char)(gray * fG + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB + cbuf[boff + 2] * (1 - fA));
 	  }
 	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
 	  }
 	}
 	break;
 	
       case WLZ_GREY_UBYTE:
 	for(i=0; i <= iwidth; i++){
+	  int boff = lineoff + (i * outchannels);
 	  gray= gwsp.u_grintptr.ubp[i] * fA;
-	  cbuffer[lineoff+i*outchannels] = (unsigned char)(gray * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
+	  cbuf[boff] = (unsigned char)(gray * fR + cbuf[boff] * (1 - fA));
 	  if (copyGreyToRGB) {
-	    cbuffer[lineoff+i*outchannels+1] = (unsigned char)(gray * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	    cbuffer[lineoff+i*outchannels+2] = (unsigned char)(gray * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	    cbuf[boff + 1] = (unsigned char)(gray * fG + cbuf[boff + 1] * (1 - fA));
+	    cbuf[boff + 2] = (unsigned char)(gray * fB + cbuf[boff + 2] * (1 - fA));
 	  }
 	  if (outchannels==2 || outchannels==4) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
+	    cbuf[boff + alphaoffset] = (unsigned char)round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
 	  }
 	}
 	break;
 	
       case WLZ_GREY_RGBA:
 	for(i=0; i <= iwidth; i++){
+          WlzUInt val;
+	  int boff = lineoff + (i * outchannels);
 	  val = gwsp.u_grintptr.rgbp[i];
-	  cbuffer[lineoff+i*outchannels]   = (unsigned char)(WLZ_RGBA_RED_GET(val)   * fA * fR + cbuffer[lineoff+i*outchannels] * (1 - fA));
-	  cbuffer[lineoff+i*outchannels+1] = (unsigned char)(WLZ_RGBA_GREEN_GET(val) * fA * fG + cbuffer[lineoff+i*outchannels+1] * (1 - fA));
-	  cbuffer[lineoff+i*outchannels+2] = (unsigned char)(WLZ_RGBA_BLUE_GET(val)  * fA * fB + cbuffer[lineoff+i*outchannels+2] * (1 - fA));
+	  cbuf[boff]   = (unsigned char)(WLZ_RGBA_RED_GET(val)   * fA * fR + cbuf[boff] * (1 - fA));
+	  cbuf[boff + 1] = (unsigned char)(WLZ_RGBA_GREEN_GET(val) * fA * fG + cbuf[boff + 1] * (1 - fA));
+	  cbuf[boff + 2] = (unsigned char)(WLZ_RGBA_BLUE_GET(val)  * fA * fB + cbuf[boff + 2] * (1 - fA));
 	  if (outchannels==4) {
-	    fAlphaPrev=cbuffer[lineoff+i*outchannels+alphaoffset]/255.0f;
+	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
 	    fANew = fA* ((unsigned char)(WLZ_RGBA_ALPHA_GET(val)))/255.0f;
-	    cbuffer[lineoff+i*outchannels+alphaoffset] = (unsigned char)round((fANew + fAlphaPrev - fAlphaPrev * fANew)*255.0);
+	    cbuf[boff + alphaoffset] = (unsigned char)round((fANew + fAlphaPrev - fAlphaPrev * fANew)*255.0);
 	  }
 	}
 	break;
       default:
-	return WLZ_ERR_GREY_TYPE;
+	errNum = WLZ_ERR_GREY_TYPE;
+	break;
       }
     }
   }
-  
-  if( errNum == WLZ_ERR_EOO ){
+  if(errNum == WLZ_ERR_EOO)
+  {
     errNum = WLZ_ERR_NONE;
   }
-  return errNum ;
+  return(errNum);
 }
 
 /*!
@@ -1506,9 +1594,9 @@ WlzErrorNum WlzImage::convertObjToRGB(unsigned char * cbuffer, WlzObject* obj, W
   
   WlzErrorNum   errNum;
   
-  if (obj->values.i == NULL)  { // no values
+  if (obj->values.core == NULL)  {
     errNum = convertDomainObjToRGB(cbuffer,  obj,  pos, size, NULL);
-  } else {  // wit values
+  } else {
     errNum = convertValueObjToRGB(cbuffer,  obj,  pos, size, NULL);
   }
   
@@ -1592,5 +1680,5 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
 	   view->fixed2.vtX,
 	   view->fixed2.vtY,
 	   view->fixed2.vtZ);
-  return(getImagePath() + temp);
+  return(getImagePath() + temp + view->map.toString());
 };
