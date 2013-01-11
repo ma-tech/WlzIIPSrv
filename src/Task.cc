@@ -85,7 +85,8 @@ Task* Task::factory(std::string type)
   else if( type == "pab" ) return new PAB; // Sets a 3D point
   else if( type == "scl" ) return new SCL; // Sets scale
   else if( type == "ptl" ) return new PTL; // PNG tile request, equivalent to JTL
-  else if( type == "sel" ) return new SEL; // selection command for compound objects
+  else if( type == "sel" ) return new SEL; // Selection command for compound objects
+  else if( type == "map" ) return new MAP; // Map image values
   else return NULL;
 }
 
