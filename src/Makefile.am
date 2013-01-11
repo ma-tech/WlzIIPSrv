@@ -99,6 +99,7 @@ wlziipsrv_fcgi_SOURCES 	= \
 			Tokenizer.h \
 			IIPResponse.h \
 			IIPResponse.cc \
+			ImageMap.cc \
 			View.h \
 			View.cc \
 			ColourTransforms.h \
@@ -114,6 +115,7 @@ wlziipsrv_fcgi_SOURCES 	= \
 			WlzImage.cc \
 			JTL.cc \
 			SEL.cc \
+			MAP.cc \
 			PTL.cc \
 			TIL.cc \
 			ICC.cc \
