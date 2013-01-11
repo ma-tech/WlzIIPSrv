@@ -14,6 +14,7 @@ dnl yywrap to be used and yywrap doesn't support the command line options
 dnl needed.
 MYLEX=flex
 YACC=bison
+NIFTI_DIR="no"
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_CXX
@@ -105,9 +106,7 @@ dnl   LIBTIFF_INCL=$tiff_incl; LIBTIFF_LIB="$tiff_lib -ltiff -ljpeg -lm",
 dnl   AC_MSG_ERROR(unable to find libtiff),
 dnl   $tiff_lib -ljpeg -lm)
 
-
 FIND_TIFF(,[AC_MSG_ERROR([libtiff not found])])
-
 
 dnl     ************************************************************
 
