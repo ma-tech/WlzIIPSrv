@@ -90,6 +90,7 @@ void OBJ::run(Session* s, std::string a)
       "WLZ "
       "DST "
       "FXP "
+      "MAP "
       "MOD "
       "PAB "
       "PIT "
