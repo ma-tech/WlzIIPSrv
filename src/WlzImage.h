@@ -194,17 +194,20 @@ class WlzImage : public IIPImage
 
     // Internal functions
     protected:
-    WlzErrorNum convertObjToRGB(unsigned char * cbuffer, WlzObject* obj,
+    WlzErrorNum convertObjToRGB(unsigned char * cbuf, WlzObject* obj,
                                 WlzIVertex2  pos, WlzIVertex2  size);
-    WlzErrorNum convertDomainObjToRGB(unsigned char *cbuffer, WlzObject* obj,
+    WlzErrorNum convertDomainObjToRGB(unsigned char *cbuf, WlzObject* obj,
                                       WlzIVertex2  pos, WlzIVertex2  size,
 				      CompoundSelector *sel);
-    WlzErrorNum convertValueObjToRGB(unsigned char *cbuffer, WlzObject* obj,
-    			             WlzIVertex2  pos, WlzIVertex2  size,
+    WlzErrorNum convertValueObjToRGB(unsigned char *cbuf, WlzObject *obj,
+				     WlzIVertex2  pos, WlzIVertex2  size,
 				     CompoundSelector *sel);
     WlzErrorNum sectionObject(unsigned char* tile_buf, WlzObject *wlzObject,
                               WlzObject *tileObject, WlzIVertex2  pos,
 			      WlzIVertex2  size, CompoundSelector *sel);
+    WlzObject *getMapLUTObj(WlzErrorNum *dstErr);
+    WlzObject *mapValueObj(WlzObject *iObj, WlzObject *lutObj,
+    			   WlzErrorNum *dstErr);
     WlzDVertex3 getCurrentPointInPlane();
     const std::string generateHash(const ViewParameters *view);
     const std::string selString(const ViewParameters* view );
