@@ -421,5 +421,10 @@ class SEL : public Task {
   void run( Session* session, std::string argument );
 };
 
+/// MAP Command for maping image values
+class MAP : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
 
 #endif
