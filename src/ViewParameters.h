@@ -41,6 +41,8 @@ static char _ViewParameters_h[] = "University of Edinburgh $Id$";
 * \ingroup	WlzIIPServer
 */
 
+#include <string.h>
+
 #include <Wlz.h>
 #include <WlzExpression.h>
 
@@ -61,6 +63,44 @@ typedef enum _QueryPointType
   QUERYPOINTTYPE_3D   = 2,		/*!< 3D point was set */
 } QueryPointType ;
 
+/*!
+* \struct	_ImageMapChan
+* \ingroup	WlzIIPServer
+* \brief	Image value mapping parameters for a single channel.
+*/
+typedef struct _ImageMapChan
+{
+  WlzGreyTransformType	type;		/*!< Mapping function. */
+  int			il;		/*!< Input lower value. */
+  int			iu;		/*!< Input upper value. */
+  int			ol;		/*!< Output lower value. */
+  int			ou;		/*!< Output upper value. */
+  double		p0;		/*!< Gamma (\f$\gamma\f$) or
+                                             sigmoid (\f$\mu\f$). */
+  double		p1;		/*!< Sigmoid (\f$\sigma\f$). */
+} ImageMapChan;
+
+/*!
+* \struct	ImageMap
+* \ingroup	WlzIIPServer
+* \brief	Image value mapping.
+*/
+typedef struct ImageMap
+{
+  public:
+    ImageMap() {nChan = 0; memset(chan, 0, 4 * sizeof(ImageMapChan));}
+    ~ImageMap() {}
+    int			parse(const char *str);
+    std::string		toString(void) const;
+    static std::string  mapTypeToString(WlzGreyTransformType type);
+    int			getNChan() const {return(nChan);}
+    const ImageMapChan	*getChan(int i)  const  {return(&(chan[i]));}
+    WlzObject		*createLUT(WlzErrorNum *dstErr) const;
+  private:
+    int			nChan;		/*!< Number of channels the map is
+					     defined for . */
+    ImageMapChan	chan[4];	/*!< Maps for the image channels. */
+} ImageMap;
 
 /*!
     Storage class for compound object selection
@@ -121,6 +161,7 @@ class ViewParameters
     QueryPointType    queryPointType;   /*!< Type of point to be used for
 					      GreyValue enquery */
 
+    ImageMap	      map;              /*!< Image value map. */
     CompoundSelector  *selector;        /*!< list of compound object
                                              selection */
     CompoundSelector  *lastsel;         /*!< last element of the selector
