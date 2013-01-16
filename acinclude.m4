@@ -779,7 +779,7 @@ if test "$PNG_LIBS" = ""; then
 	# Try the standard search path first
 	AC_TRY_LINK([
 		#include <stdio.h>
-		#include <png.h>],[png_abort((void*)0)], [
+		#include <png.h>],[png_access_version_number()], [
 		PNG_LIBS="-lpng"
 	], [
 		# libpng is not in the standard search path.
