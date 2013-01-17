@@ -17,9 +17,9 @@ export MA=/opt/MouseAtlas
 
 # Set C and C++ flags
 #export CFLAGS=-g
-export CFLAGS=-O3
+export CFLAGS='-O3 -mfpmath=sse'
 #export CXXFLAGS=-g
-export CXXFLAGS=-O3
+export CXXFLAGS='-O3 -mfpmath=sse'
 
 # Configure
 ./configure --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=/opt/fcgi/lib \
