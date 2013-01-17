@@ -39,5 +39,5 @@ SUBDIRS = src
 EXTRA_DIST = TODO COPYING.FCGI doc
 
 
-doc:
+docs:
 	doxygen src/Doxyfile
