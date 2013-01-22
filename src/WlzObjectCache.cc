@@ -55,13 +55,13 @@ WlzObjectCache()
   enabled = 1;
   maxItem = Environment::getMaxWlzObjCacheCount();
   maxSz = MBytesToBytes(Environment::getMaxWlzObjCacheSize());
-  objCache = AlcLRUCacheNew(4, 0,
+  objCache = AlcLRUCacheNew(maxItem, maxSz,
 			    (AlcLRUCKeyFn )this->WlzObjCacheKeyFn,
 			    (AlcLRUCCmpFn )this->WlzObjCacheCmpFn,
 			    (AlcLRUCUnlinkFn )this->WlzObjCacheUnlinkFn,
 			    NULL);
-  LOG_NOTICE("WlzObjectCache initialised with maxItem=" << maxItem <<
-             " and maxSz = " << maxSz << " success=" <<
+  LOG_INFO("WlzObjectCache initialised with maxItem=" << maxItem <<
+            " and maxSz = " << maxSz << " success=" <<
 	     (objCache != NULL)? 1: 0);
 }
 
@@ -96,15 +96,20 @@ size_t		WlzObjectCache::
 	break;
       case WLZ_2D_DOMAINOBJ: /* FALLTHROUGH */
       case WLZ_3D_DOMAINOBJ:
-	sz = WlzVolume(obj, &errNum);
-	if(obj->values.core && !WlzGreyTableIsTiled(obj->values.core->type))
+	sz = 4 * WlzIntervalCountObj(obj, &errNum);
+	if((errNum == WLZ_ERR_NONE) &&
+	   obj->values.core && !WlzGreyTableIsTiled(obj->values.core->type))
 	{
+	  size_t sz1;
+
 	  WlzGreyType gType;
+	  sz1 = WlzVolume(obj, &errNum);
 	  gType = WlzGreyTypeFromObj(obj, &errNum);
 	  if(errNum == WLZ_ERR_NONE)
 	  {
-	    sz *= WlzGreySize(gType);
+	    sz1 *= WlzGreySize(gType);
 	  }
+	  sz += sz1;
 	}
 	break;
       case WLZ_CMESH_2D:  /* FALLTHROUGH */
@@ -333,11 +338,12 @@ void 		WlzObjectCache::
 	       (item != NULL)? 1: 0);
       if(item == NULL)
       {
-	size_t	sz;
+        size_t	sz;
 
 	ent->obj = WlzAssignObject(obj, NULL);
 	sz = ComputeObjectSize(obj);
 	item = AlcLRUCEntryAddWithKey(objCache, sz, ent, key, &newFlg);
+	LOG_INFO("WlzObjectCache::insert sz=" << sz);
       }
       LOG_INFO("WlzObjectCache::insert item added to cache=" <<
 	       (newFlg != 0)? 1: 0);
