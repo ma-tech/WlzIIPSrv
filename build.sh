@@ -23,7 +23,7 @@ export CXXFLAGS='-O3 -mfpmath=sse'
 
 # Configure
 ./configure --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=/opt/fcgi/lib \
-            --with-nifti-incl=$MA/include -with-nifti-lib=$MA/lib \
+            --with-nifti-incl=$MA/include --with-nifti-lib=$MA/lib \
             --with-log4cpp-incl=$MA/include --with-log4cpp-lib=$MA/lib \
             --with-wlz-incl=$MA/include --with-wlz-lib=$MA/lib \
 	    --enable-openmp
