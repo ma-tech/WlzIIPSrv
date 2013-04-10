@@ -148,7 +148,8 @@ that may be queried with the \com{OBJ} command.
 \com{PTL} & Retrieve a tile as a PNG image& \texttt{PTL={\sltt res,tile}}\\
 \com{ROL} & Specify the roll angle of the sectioning rotation & \texttt{ROL={\sltt angle}}\\
 \com{SCL} & Specify the scale used in the sectioning transformation & \texttt{SCL={\sltt scale}} \\
-\com{SEL} & Specify a component of a compound object to be displayed and its colour. See \ref{ssec:morphoexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
+\com{SEL} & Specify a component of a compound object to be displayed and its
+colour. See \ref{ssec:imgpexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
 \com{UPV} & Specify the up vector for the \com{UP\_IS\_UP} mode & \texttt{UPV={\sltt X,Y,Z}}\\
 \com{WLZ} & Specify the Woolz object & \texttt{WLZ={\sltt path}}\\
 \com{YAW} & Specify the yaw angle of the sectioning rotation& \texttt{YAW={\sltt angle}} \\
@@ -369,20 +370,19 @@ Specify the yaw angle of the sectioning rotation. \\
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{SEL} & \textbf{Purpose} & Specify a component of a compound object to be displayed and its colour.
 The component can be specified either by it's index
-or by a morphological expression which can combine
-the components through the use of morphological
-operators.
+or by a image processing expression which can combine
+the components through the use of image processing operators.
 Where a Woolz object is not a compound object,
 the SEL command will regard it as a compound object with a
 single component of index zero.
-Morphological expressions are explained in \ref{ssec:morphoexp}.
+Image processing expressions are explained in \ref{ssec:imgpexp}.
 If the command is not present then the first object is returned.
 Multiple \com{SEL} will stack up the section in the request order.\\
 & \textbf{Syntax} & \texttt{SEL={\sltt E,R,G,B,A}}\newline
 \texttt{SEL={\sltt E,R,G,B}}\newline
 \texttt{SEL={\sltt E,A}}\newline
 \texttt{SEL={\sltt E} } \\
-& \textbf{Input Parameters}& \texttt{UINT {\sltt E}} compound object index or morphological expression\newline
+& \textbf{Input Parameters}& \texttt{UINT {\sltt E}} compound object index or image processing expression\newline
                              \texttt{UINT {\sltt R}} red value \newline
                              \texttt{UINT {\sltt G}} green value \newline
                              \texttt{UINT {\sltt B}} blue value \newline
@@ -599,28 +599,28 @@ and \com{App-name} return
 \textit{author/ copyright/ create-dtm/ subject/ app-name unknown} since they
 are not defined for a Woolz object.
 
-\subsection{Morphological Expressions}
-\label{ssec:morphoexp}
-Morphological expressions may be built using the components of
-Woolz compound objects and basic morphological operators.
+\subsection{Image Processing Expressions}
+\label{ssec:imgpexp}
+Image processing expressions may be built using the components of
+Woolz compound objects and basic image processing operators.
 The operators supported are:
 difference
 dilation,
 domain,
 erosion,
 intersection,
+occupancy,
 threshold
 and
 union.
-Although domain and threshold are not strictly morphological operators
-they have been included as they are useful to extract domains
-from image values.
-Morphological expressions are built from compound object
-indices and the morphological operators. Two of the
-morphological operators (intersection and union) may
+Image processing expressions are built from compound object
+indices and the image processing operators. Three of the
+image processing operators (intersection, occupancy and union) may
 given a list indices in their expressions.
-The morphological expressions can be written using the
-syntax defined in table \ref{tbl:morphosyntax}.
+The occupancy operator may also be given no indices
+which implies all components of the compound object.
+The image processing expressions can be written using the
+syntax defined in table \ref{tbl:imgpsyntax}.
 This allows expressions such as:
 \begin{description}
 \item{\verb=erosion(1,2)=} erodes the domain of the object
@@ -634,8 +634,8 @@ object with index 0 where all voxels have values greater
 than or equal to 200.
 Without the domain operator threshold would give a object with image values.
 \end{description}
-The morphological operators available and their parameters
-are described in table \ref{tbl:morphoops}.
+The image processing operators available and their parameters
+are described in table \ref{tbl:imgpops}.
 
 \begin{table}
 \centering
@@ -649,6 +649,7 @@ are described in table \ref{tbl:morphoops}.
 	    &  & domain\verb=(=\emph{exp}\verb=) |= \\
 	    &  & erosion\verb=(=\emph{exp},\emph{uint}\verb=) |= \\
 	    &  & intersect\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
+	    &  & occupancy\verb=(=\emph{exp list}\verb=?) |= \\
 	    &  & threshold\verb=(=\emph{exp},\emph{val},\emph{cmp}\verb=)= \\
 	    &  & union\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
 \emph{idx}         	&:=& \verb=[0-9]+= \\
@@ -657,8 +658,8 @@ are described in table \ref{tbl:morphoops}.
 \emph{cmp}         	&:=& \verb=(lt)|(le)|(eq)|(ge)|(gt)= \\
 \hline
 \end{tabular}
-\caption{Syntax for morphological expressions.}
-\label{tbl:morphosyntax}
+\caption{Syntax for image processing expressions.}
+\label{tbl:imgpsyntax}
 \end{table}
 
 \begin{table}
@@ -672,6 +673,7 @@ dilation\verb=(=\emph{exp},\emph{radius}\verb=)=                    & The dilati
 domain\verb=(=\emph{exp}\verb=)=                                    & The domain of an object. \\
 erosion\verb=(=\emph{exp},\emph{radius}\verb=)=                     & The erosion of the domain by \emph{radius}\ voxels. \\
 intersect\verb=(=\emph{exp list}\verb=)=                            & The intersection of the domains in the given lists. \\
+occupancy\verb=(=\emph{exp list}\verb=?)=                           & The domain occupancy in the optional list. \\
 threshold\verb=(=\emph{exp},\emph{value},\emph{comparison}\verb=)=  & Creates an object where the image values satisfy
 						                      the given \emph{value} and \emph{comparison}.
 								      Here the value is floating point and valid comparisons
@@ -680,8 +682,8 @@ threshold\verb=(=\emph{exp},\emph{value},\emph{comparison}\verb=)=  & Creates an
 union\verb=(=\emph{exp list}\verb=)=                                & The union of the domains in the given lists. \\
 \hline
 \end{tabular}
-\caption{Descriptions of morphological operators}.
-\label{tbl:morphoops}
+\caption{Descriptions of image processing operators}.
+\label{tbl:imgpops}
 \end{table}
 
 \section{HTML query examples}
@@ -695,7 +697,7 @@ http://localhost/fcgi-bin/iipsrv.fcgi?
   QLT=50&JTL=1,0
 \end{verbatim}
 
-Returns a jpeg tile 0 with the a quality factor 50\%.
+Returns a jpeg tile 0 with a quality factor of 50\%.
 The section default parameters, mode UP\_IS\_UP and zero distance and viewing
 angles are used.
 
@@ -756,7 +758,7 @@ Wlz-transformed-coordinate-3d:30 40 70.0002
 The (418.43,53.5708,15.9916) object coordinate in sectioning plane DST=130
 has display coordinates (30,40) and has a distance 70.0002 from the plane.
 
-\item[Sectioning, selection and morphological operations]
+\item[Sectioning, selection and image processing operations]
 \begin{verbatim}
 
 http://localhost/fcgi-bin/iipsrv.fcgi?DST=40&YAW=61.5&PIT=3&ROL=0&MOD=ZETA&
