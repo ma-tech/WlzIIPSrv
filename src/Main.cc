@@ -343,9 +343,9 @@ int main( int argc, char *argv[] )
       int i = 0;
       for(commands = requests.begin(); commands != requests.end(); commands++)
       {
-
 	string command = (*commands).first;
 	string argument = (*commands).second;
+
 #ifdef WLZ_IIP_LOG
 	++i;
 	LOG_INFO("[" << i << "/" << requests.size() <<
