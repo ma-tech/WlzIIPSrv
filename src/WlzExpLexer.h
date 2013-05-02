@@ -333,7 +333,7 @@ extern int yylex \
 #undef YY_DECL
 #endif
 
-#line 111 "WlzExpLexer.lex"
+#line 115 "WlzExpLexer.lex"
 
 
 #line 340 "WlzExpLexer.h"
