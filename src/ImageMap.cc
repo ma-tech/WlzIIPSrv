@@ -125,6 +125,7 @@ ImageMap::parse(const char *argStr)
   if(str)
   {
     (void )WlzStringWhiteSpSkip(str);
+    (void )WlzStringToUpper(str);
   }
   if(str && ((pS[0] = strtok_r(str, ",", &sav)) != NULL))
   {
