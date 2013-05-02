@@ -382,9 +382,9 @@ OBJ::wlz_volume()
 {
   checkImage();
   checkIfWoolz();
-  int volume = ((WlzImage*)(*session->image))->getVolume();
+  WlzLong volume = ((WlzImage*)(*session->image))->getVolume();
   LOG_INFO("OBJ :: Wlz-volume handler returning " << volume);
-  session->response->addResponse("Wlz-volume", volume);
+  session->response->addResponse("Wlz-volume", (long long )(volume));
 }
 
 void
