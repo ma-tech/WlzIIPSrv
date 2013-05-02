@@ -209,7 +209,7 @@ WlzExp		*WlzExpParse(const char *str,
   WlzExpParserParam p;
   YY_BUFFER_STATE state;
 
-  if(yylex_init(&(p.scanner)) == 0)
+  if(str && dstNPar && par && (yylex_init(&(p.scanner)) == 0))
   {
     p.exp = NULL;
     state = yy_scan_string(str, p.scanner);
