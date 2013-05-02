@@ -56,12 +56,15 @@ typedef enum _WlzExpOpType
 {
   WLZ_EXP_OP_NONE	= 0,
   WLZ_EXP_OP_INDEX,
+  WLZ_EXP_OP_INDEXLST,
+  WLZ_EXP_OP_INDEXRNG,
   WLZ_EXP_OP_INTERSECT,
   WLZ_EXP_OP_UNION,
   WLZ_EXP_OP_DILATION,
   WLZ_EXP_OP_EROSION,
   WLZ_EXP_OP_DIFF,
-  WLZ_EXP_OP_THRESHOLD
+  WLZ_EXP_OP_THRESHOLD,
+  WLZ_EXP_OP_OCCUPANCY
 } WlzExpOpType;
 
 typedef enum _WlzExpCmpType
@@ -85,10 +88,11 @@ typedef enum _WlzExpParamType
 
 typedef union _WlzExpOpParamVal
 {
+  void		*v;
   unsigned int   u;
   WlzExpCmpType	 cmp;
-  struct _WlzExp *exp;
   WlzObject	 *obj;
+  struct _WlzExp *exp;
 } WlzExpOpParamVal;
 
 typedef struct _WlzExpOpParam
@@ -104,6 +108,12 @@ typedef struct _WlzExp
   unsigned int	nParam;
   WlzExpOpParam	*param;
 }WlzExp;
+
+typedef WlzExp WlzExpIdxArray;
+
+typedef WlzExp WlzExpIdxList;
+
+typedef WlzExp WlzExpIdxRange;
 
 extern WlzExp          		*WlzExpMake(
 				  unsigned int nParam);
@@ -134,9 +144,16 @@ extern WlzExp          		*WlzExpMakeUnion(
 extern WlzExp          		*WlzExpMakeIntersect(
 				  WlzExp *e0,
 				  WlzExp *e1);
+extern WlzExp          		*WlzExpMakeOccupancy(
+				  WlzExp *e0);
 extern WlzExp          		*WlzExpMakeIndex(
+				  unsigned int idx0);
+extern WlzExp          		*WlzExpMakeIndexRange(
 				  unsigned int idx0,
 				  unsigned int idx1);
+extern WlzExp			*WlzExpMakeIndexList(
+				  WlzExp *e0,
+				  WlzExp *e1);
 extern WlzExpCmpType		WlzExpCmpFromStr(
 				  const char *str);
 extern const char      		*WlzExpCmpToStr(
