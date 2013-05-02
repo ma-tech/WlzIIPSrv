@@ -107,7 +107,7 @@ class WlzImage : public IIPImage
     WlzObject	*WlzImageExpEval(WlzExp *e);
     // Utility functions
     float 	*getTrueVoxelSize() throw(std::string);
-    int 	getVolume() throw(std::string);
+    WlzLong 	getVolume() throw(std::string);
     int 	getGreyValue(int *points);
     void	getGreyStats(int &n, WlzGreyType &t, double &gl, double &gu,
 			     double &sum, double &ss, double &mean,
