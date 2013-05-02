@@ -54,6 +54,7 @@ static char _WlzExpParser_yacc[] = "MRC HGU $Id$";
 %token		TOKEN_DASH
 %token		TOKEN_INTERSECT
 %token		TOKEN_UNION
+%token		TOKEN_OCCUPANCY
 %token		TOKEN_DILATION
 %token		TOKEN_EROSION
 %token		TOKEN_DIFF
@@ -62,6 +63,11 @@ static char _WlzExpParser_yacc[] = "MRC HGU $Id$";
 %token <u> 	TOKEN_UINT
 %token <cmp> 	TOKEN_CMP
  
+%left 		TOKEN_SEP
+%right 		TOKEN_DASH
+
+%type <idx_rng> idx_rng
+%type <idx_lst> idx_lst
 %type <exp> 	exp
  
 %%
@@ -71,29 +77,24 @@ input:
 		{ ((WlzExpParserParam*)data)->exp    = $1;
 		  ((WlzExpParserParam*)data)->nPar   = 0;
 		} |
-        	exp TOKEN_SEP TOKEN_UINT
-		{ ((WlzExpParserParam*)data)->exp    = $1;
-		  ((WlzExpParserParam*)data)->nPar   = 1;
-		  ((WlzExpParserParam*)data)->par[0] = $3;
-		} |
-        	exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
-		{ ((WlzExpParserParam*)data)->exp    = $1;
-		  ((WlzExpParserParam*)data)->nPar   = 2;
+		exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
+		{ ((WlzExpParserParam*)data)->exp = $1;
+		  ((WlzExpParserParam*)data)->nPar = 2;
 		  ((WlzExpParserParam*)data)->par[0] = $3;
 		  ((WlzExpParserParam*)data)->par[1] = $5;
 		} |
-        	exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
-		    TOKEN_SEP TOKEN_UINT
-		{ ((WlzExpParserParam*)data)->exp    = $1;
-		  ((WlzExpParserParam*)data)->nPar   = 3;
+		exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
+		TOKEN_SEP TOKEN_UINT
+		{ ((WlzExpParserParam*)data)->exp = $1;
+		  ((WlzExpParserParam*)data)->nPar = 3;
 		  ((WlzExpParserParam*)data)->par[0] = $3;
 		  ((WlzExpParserParam*)data)->par[1] = $5;
 		  ((WlzExpParserParam*)data)->par[2] = $7;
 		} |
-        	exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
-		    TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
-		{ ((WlzExpParserParam*)data)->exp    = $1;
-		  ((WlzExpParserParam*)data)->nPar   = 4;
+		exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
+		TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
+		{ ((WlzExpParserParam*)data)->exp = $1;
+		  ((WlzExpParserParam*)data)->nPar = 4;
 		  ((WlzExpParserParam*)data)->par[0] = $3;
 		  ((WlzExpParserParam*)data)->par[1] = $5;
 		  ((WlzExpParserParam*)data)->par[2] = $7;
@@ -101,27 +102,80 @@ input:
 		}
         	;
  
+idx_rng:	TOKEN_UINT TOKEN_DASH TOKEN_UINT
+		{
+		  $$ = WlzExpMakeIndexRange($1, $3);
+		}
+		;
+
+idx_lst:	TOKEN_UINT
+		{
+		  $$ = WlzExpMakeIndex($1);
+		} |
+		idx_rng
+		{
+		  $$ = $1;
+		} |
+		idx_lst TOKEN_SEP idx_lst
+		{
+		  $$ = WlzExpMakeIndexList($1, $3);
+		}
+		;
+
 exp:
 		TOKEN_UINT
-		{ $$ = WlzExpMakeIndex($1, $1); } |
-		TOKEN_UINT TOKEN_DASH TOKEN_UINT
-		{ $$ = WlzExpMakeIndex($1, $3); } |
-		TOKEN_OP exp TOKEN_CP
-		{ $$ = $2 } |
+		{
+		  $$ = WlzExpMakeIndex($1);
+		} |
 		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
 		TOKEN_UINT TOKEN_SEP TOKEN_CMP TOKEN_CP
-		{ $$ = WlzExpMakeThreshold($3, $5, $7); } |
+		{
+		  $$ = WlzExpMakeThreshold($3, $5, $7);
+		} |
 		TOKEN_DIFF TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
-		{ $$ = WlzExpMakeDiff($3, $5); } |
+		{
+		  $$ = WlzExpMakeDiff($3, $5);
+		} |
 		TOKEN_EROSION TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
-		{ $$ = WlzExpMakeErosion($3, $5); } |
+		{
+		  $$ = WlzExpMakeErosion($3, $5);
+		} |
 		TOKEN_DILATION TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
-		{ $$ = WlzExpMakeDilation($3, $5); } |
-		TOKEN_UNION TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
-		{ $$ = WlzExpMakeUnion($3, $5); } |
+		{
+		  $$ = WlzExpMakeDilation($3, $5);
+		} |
 		TOKEN_INTERSECT TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
-		{ $$ = WlzExpMakeIntersect($3, $5); }
+		{
+		  $$ = WlzExpMakeIntersect($3, $5);
+		} |
+		TOKEN_UNION TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeUnion($3, $5);
+		} |
+		TOKEN_UNION TOKEN_OP exp TOKEN_SEP idx_lst TOKEN_CP
+		{
+		  $$ = WlzExpMakeUnion($3, $5);
+		} |
+		TOKEN_UNION TOKEN_OP idx_lst TOKEN_SEP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeUnion($3, $5);
+		} |
+		TOKEN_UNION TOKEN_OP idx_lst TOKEN_CP
+		{
+		  $$ = WlzExpMakeUnion($3, NULL);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP TOKEN_CP
+		{
+		  $$ = WlzExpMakeOccupancy(NULL);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeOccupancy($3);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP idx_lst TOKEN_CP
+		{
+		$$ = WlzExpMakeOccupancy($3);
+		}
 		;
  
 %%
-
