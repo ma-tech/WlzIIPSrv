@@ -80,6 +80,14 @@ void IIPResponse::addResponse( const char* c, int a ){
   responseBody.append( eof );
 }
 
+void IIPResponse::addResponse( const char* c, long long a ){
+
+  char tmp[128];
+  snprintf( tmp, 128, "%s:%lld", c, a );
+  responseBody.append( tmp );
+  responseBody.append( eof );
+}
+
 
 void IIPResponse::addResponse( std::string arg, const char* a ){
 

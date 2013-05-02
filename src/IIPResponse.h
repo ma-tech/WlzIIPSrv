@@ -90,6 +90,12 @@ class IIPResponse{
 
   /// Add a response string
   /** \param c response string
+      \param a long long value
+   */
+  void addResponse( const char* c, long long a );
+
+  /// Add a response string
+  /** \param c response string
       \param a string reply
    */
   void addResponse( std::string c, const char* a );
