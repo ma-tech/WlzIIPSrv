@@ -60,6 +60,7 @@ DILATION    	"dilation"
 EROSION     	"erosion"
 DIFF        	"diff"
 THRESHOLD   	"threshold"
+OCCUPANCY	"occupancy"
 
  
 UINT      	[0-9]+
@@ -92,6 +93,9 @@ CMP		("lt")|("le")|("eq")|("ge")|("gt")
 		}
 {THRESHOLD}     {
                   return(TOKEN_THRESHOLD);
+		}
+{OCCUPANCY}     {
+                  return(TOKEN_OCCUPANCY);
 		}
 {OP}        	{
 		  return(TOKEN_OP);
