@@ -1171,10 +1171,10 @@ throw(std::string)
  * \brief        Return object volume
  * \return       the object volume
  */
-int WlzImage::getVolume()
+WlzLong 	WlzImage::getVolume()
 throw(std::string)
 {
-  int		vol = 0;
+  WlzLong	vol = 0;
   WlzErrorNum	errNum = WLZ_ERR_NONE;
 
   prepareObject();
