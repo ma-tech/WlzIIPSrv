@@ -40,6 +40,7 @@ static char _WlzExpTestMain_c[] = "University of Edinburgh $Id$";
 * \ingroup	WlzIIPServer
 */
 
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <Wlz.h>
@@ -126,7 +127,7 @@ int 		main(int argc, char *argv[])
   }
   if(ok)
   {
-    if((exp = WlzExpAssign(WlzExpParse(expStr, &nPar, par)), NULL) == NULL)
+    if((exp = WlzExpAssign(WlzExpParse(expStr, &nPar, par))) == NULL)
     {
       ok = 0;
       (void )fprintf(stderr,
@@ -142,7 +143,7 @@ int 		main(int argc, char *argv[])
     }
     if((errNum == WLZ_ERR_NONE) && (noEval == 0))
     {
-      outObj = WlzExpEval(inObj, exp, &errNum);
+      outObj = WlzAssignObject(WlzExpEval(inObj, exp, &errNum), NULL);
     }
     if(errNum != WLZ_ERR_NONE)
     {
@@ -155,7 +156,8 @@ int 		main(int argc, char *argv[])
   }
   if(ok && verbose)
   {
-    (void )fprintf(stderr, "Given morphological expression was: %s\n", expStr);
+    (void )fprintf(stderr, "Given image processing expression was: %s\n",
+                   expStr);
     (void )fprintf(stderr, "Expression string: %s\n", expStr2);
     (void )fprintf(stderr, "Number of parameters = %d\n", nPar);
     if(nPar > 0)
@@ -193,16 +195,16 @@ int 		main(int argc, char *argv[])
   if(usage)
   {
     (void )fprintf(stderr,
-                   "Usage: %s [-h] [-o <out>] [-s <str>] [-v] [<in obj>]\n"
-		   "Reads an object and evaluates morphological expression\n"
-		   "using it.\n"
-		   "Options are:\n"
-		   "  -h  Shows this usage message.\n"
-		   "  -n  Don't evaluate the expression.\n"
-		   "  -o  Output object file.\n"
-		   "  -s  Morphological expression.\n"
-		   "  -v  Verbose output to stderr.\n",
-		   *argv);
+     	"Usage: %s [-h] [-o <out>] [-s <str>] [-v] [<in obj>]\n"
+     	"Reads an object and evaluates an image processing expression\n"
+	"using it.\n"
+        "Options are:\n"
+        "  -h  Shows this usage message.\n"
+        "  -n  Don't evaluate the expression.\n"
+        "  -o  Output object file.\n"
+        "  -s  Image processing expression.\n"
+        "  -v  Verbose output to stderr.\n",
+        *argv);
     ok = 0;
   }
   return(!ok);
