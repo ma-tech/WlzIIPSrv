@@ -51,10 +51,12 @@ extern "C"
 
 typedef union _WlzExpTypeParser
 {
-  WlzExp 	*exp;
   unsigned int 	u;
   WlzExpCmpType	cmp;
   WlzObject	*obj;
+  WlzExp 	*exp;
+  WlzExpIdxList *idx_lst;
+  WlzExpIdxRange *idx_rng;
 }WlzExpTypeParser;
 
 #define YYSTYPE WlzExpTypeParser
