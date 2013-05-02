@@ -52,29 +52,48 @@ extern "C"
 {
 #endif
 
+static int			WlzExpIndexArraySortFn(
+				  const void *v0,
+				  const void *v1);
+static int			WlzExpIndexListFlatten(
+				  WlzExp *nE,
+				  int pos,
+				  WlzExp *e);
+static int			WlzExpIndexListCount(
+				  WlzExp *e);
+static char			*WlzExpIndexListToStr(
+				  WlzExp *e,
+				  int *sLen,
+				  WlzErrorNum *dstErr);
+static WlzExp 			*WlzExpIndexListToIndexArray(
+				  WlzExp *e,
+                                  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpGetObjByIndex(
-				  WlzObject *inObj,
+				  WlzObject *iObj,
 				  unsigned int idx,
 				  WlzErrorNum *dstErr);
-static WlzObject 		*WlzExpObjFromIndices(
-				  WlzObject *inObj,
-				  unsigned int u0,
-				  unsigned int u1,
+static WlzObject		*WlzExpIndexListToCmpObj(
+				  WlzObject *iObj,
+				  WlzExp *e,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpIntersect(
-				  WlzObject *inObj0,
-				  WlzObject *inObj1,
+				  WlzObject *iObj0,
+				  WlzObject *iObj1,
 				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpOccupancy(
+				  WlzObject *gObj,
+				  WlzObject *roiObj,
+                                  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpUnion(
-				  WlzObject *inObj0,
-				  WlzObject *inObj1,
+				  WlzObject *iObj0,
+				  WlzObject *iObj1,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpDilation(
-				  WlzObject *inObj,
+				  WlzObject *iObj,
 				  unsigned int rad,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpErosion(
-				  WlzObject *inObj,
+				  WlzObject *iObj,
 				  unsigned int rad,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpDiff(
@@ -82,7 +101,7 @@ static WlzObject 		*WlzExpDiff(
 				  WlzObject *o1,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpThreshold(
-				  WlzObject *inObj,
+				  WlzObject *iObj,
 				  unsigned int val,
 				  WlzExpCmpType cmp,
 				  WlzErrorNum *dstErr);
@@ -101,10 +120,13 @@ WlzExp 		*WlzExpMake(unsigned int nParam)
   if((e = AlcCalloc(1, sizeof(WlzExp)) ) != NULL)
   {
     e->nParam = nParam;
-    if((e->param = AlcCalloc(nParam, sizeof(WlzExp))) == NULL)
+    if(nParam > 0)
     {
-      free(e);
-      e = NULL;
+      if((e->param = AlcCalloc(nParam, sizeof(WlzExp))) == NULL)
+      {
+	free(e);
+	e = NULL;
+      }
     }
   }
   return(e);
@@ -253,7 +275,7 @@ WlzExp		*WlzExpMakeDiff(WlzExp *e0, WlzExp *e1)
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_DIFF;;
+    e->type = WLZ_EXP_OP_DIFF;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_EXP;
@@ -275,7 +297,7 @@ WlzExp		*WlzExpMakeErosion(WlzExp *e0, unsigned int rad)
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_EROSION;;
+    e->type = WLZ_EXP_OP_EROSION;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_UINT;
@@ -297,7 +319,7 @@ WlzExp		*WlzExpMakeDilation(WlzExp *e0, unsigned int rad)
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_DILATION;;
+    e->type = WLZ_EXP_OP_DILATION;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_UINT;
@@ -319,11 +341,43 @@ WlzExp		*WlzExpMakeUnion(WlzExp *e0, WlzExp *e1)
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_UNION;;
+    e->type = WLZ_EXP_OP_UNION;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_EXP;
     e->param[1].val.exp = e1;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new occupancy expression.
+* \param	e0			Expression which may either be:
+* 					NULL implying all domains,
+* 					an expression that evaluate to a
+* 					domains implying that the occupancy
+* 					should only be evaluated within the
+* 					expression domain or an index range
+* 					which implies that the evaluation
+* 					hould be restricted to the domains
+* 					within the index range.
+*/
+WlzExp		*WlzExpMakeOccupancy(WlzExp *e0)
+{
+  int		n;
+  WlzExp	*e;
+
+  n = (e0 != NULL)? 1: 0;
+  if((e = WlzExpMake(n)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_OCCUPANCY;
+    if(n != 0)
+    {
+      e->param[0].type = WLZ_EXP_PRM_EXP;
+      e->param[0].val.exp = e0;
+    }
   }
   return(e);
 }
@@ -341,7 +395,7 @@ WlzExp		*WlzExpMakeIntersect(WlzExp *e0, WlzExp *e1)
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_INTERSECT;;
+    e->type = WLZ_EXP_OP_INTERSECT;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_EXP;
@@ -353,22 +407,70 @@ WlzExp		*WlzExpMakeIntersect(WlzExp *e0, WlzExp *e1)
 /*!
 * \return	New expression.
 * \ingroup	WlzIIPServer
-* \brief	Makes a new index expression. This may have two different
-* 		index values representing a range of indices.
+* \brief	Makes a new index expression.
+* \param	i0			The index value.
+*/
+WlzExp		*WlzExpMakeIndex(unsigned int i0)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(1)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_INDEX;
+    e->param[0].type = WLZ_EXP_PRM_UINT;
+    e->param[0].val.u = i0;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new index list expression.
 * \param	i0			First index value.
 * \param	i1			Second index value.
 */
-WlzExp		*WlzExpMakeIndex(unsigned int i0, unsigned int i1)
+WlzExp		*WlzExpMakeIndexList(WlzExp *e0, WlzExp *e1)
 {
   WlzExp	*e;
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_INDEX;;
+    e->type = WLZ_EXP_OP_INDEXLST;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+    e->param[1].type = WLZ_EXP_PRM_EXP;
+    e->param[1].val.exp = e1;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new index range expression.
+* \param	u0			First index value.
+* \param	u1			Second index value.
+*/
+WlzExp		*WlzExpMakeIndexRange(unsigned int u0, unsigned int u1)
+{
+  WlzExp	*e = NULL;
+
+  if(u1 < u0)
+  {
+    unsigned int u2;
+
+    u2 = u1;
+    u1 = u0;
+    u0 = u2;
+  }
+  if((e = WlzExpMake(2)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_INDEXRNG;
     e->param[0].type = WLZ_EXP_PRM_UINT;
-    e->param[0].val.u = i0;
+    e->param[0].val.u = u0;
     e->param[1].type = WLZ_EXP_PRM_UINT;
-    e->param[1].val.u = i1;
+    e->param[1].val.u = u1;
   }
   return(e);
 }
@@ -460,10 +562,9 @@ const char	*WlzExpCmpToStr(WlzExpCmpType cmp)
 */
 WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 {
-  unsigned int	u0,
-  		u1;
-  WlzObject	*o0,
-  		*o1;
+  unsigned int	u0;
+  WlzObject	*o0 = NULL,
+  		*o1 = NULL;
   WlzExpCmpType	c;
   WlzObject 	*rObj = NULL;
   WlzErrorNum	errNum = WLZ_ERR_NONE;
@@ -480,8 +581,11 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	break;
       case WLZ_EXP_OP_INDEX:
 	u0 = e->param[0].val.u;
-	u1 = e->param[1].val.u;
-	rObj = WlzExpObjFromIndices(iObj, u0, u1, &errNum);
+	rObj = WlzExpGetObjByIndex(iObj, u0, &errNum);
+	break;
+      case WLZ_EXP_OP_INDEXRNG: /* FALLTHROUGH */
+      case WLZ_EXP_OP_INDEXLST:
+	rObj = WlzExpIndexListToCmpObj(iObj, e, &errNum);
 	break;
       case WLZ_EXP_OP_INTERSECT:
 	o0 = WlzAssignObject(
@@ -494,12 +598,58 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	break;
       case WLZ_EXP_OP_UNION:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     (e->param[0].val.v == NULL)?
+	     WlzMakeEmpty(&errNum):
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum),
+	     NULL);
 	o1 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
+	     (e->param[1].val.v == NULL)?
+	     WlzMakeEmpty(&errNum):
+	     WlzExpEval(iObj, e->param[1].val.exp, &errNum),
+	     NULL);
 	rObj = WlzExpUnion(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
 	(void )WlzFreeObj(o1);
+	break;
+      case WLZ_EXP_OP_OCCUPANCY:
+	switch(e->nParam)
+	{
+	  case 0:
+	    /* Get occupancy wrt all domains. */
+	    rObj = WlzExpOccupancy(iObj, NULL, &errNum);
+	    (void )WlzFreeObj(o0);
+	    break;
+	  case 1:
+	    if(e->param[0].type != WLZ_EXP_PRM_EXP)
+	    {
+	      errNum = WLZ_ERR_PARAM_DATA;
+	    }
+	    else
+	    {
+	      WlzExp 	*e0;
+	      WlzObject *cObj = NULL;
+
+	      e0 = e->param[0].val.exp;
+	      switch(e0->type)
+	      {
+		case WLZ_EXP_OP_INDEX:    /* FALLTHROUGH */
+		case WLZ_EXP_OP_INDEXRNG: /* FALLTHROUGH */
+		case WLZ_EXP_OP_INDEXLST:
+		  cObj = WlzAssignObject(
+		         WlzExpIndexListToCmpObj(iObj, e0, &errNum), NULL);
+		  rObj = WlzExpOccupancy(cObj, NULL, &errNum); 
+		  (void )WlzFreeObj(cObj);
+		  break;
+		default:
+	          errNum = WLZ_ERR_PARAM_DATA;
+		  break;
+	      }
+	    }
+	    break;
+	  default:
+	    errNum = WLZ_ERR_PARAM_TYPE;
+	    break;
+	}
 	break;
       case WLZ_EXP_OP_DILATION:
 	o0 = WlzAssignObject(
@@ -533,6 +683,7 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	(void )WlzFreeObj(o0);
 	break;
       default:
+	errNum = WLZ_ERR_PARAM_TYPE;
 	break;
     }
   }
@@ -584,6 +735,30 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
       case WLZ_EXP_OP_NONE:
 	break;
       case WLZ_EXP_OP_INDEX:
+	sLen2 = sInc * e->nParam;
+	if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	{
+	  errNum = WLZ_ERR_MEM_ALLOC;
+	}
+	else
+	{
+	  int	i;
+
+	  s1 = s2;
+	  for(i = 0; i < (e->nParam - 1); ++i)
+	  {
+	    u0 = e->param[i].val.u;
+	    s1 += sprintf(s1, "%d,", u0);
+	  }
+	  if(i < e->nParam)
+	  {
+	    u0 = e->param[i].val.u;
+	    s1 += sprintf(s1, "%d", u0);
+	  }
+	  sLen2 = s1 - s2;
+	}
+	break;
+      case WLZ_EXP_OP_INDEXRNG:
 	u0 = e->param[0].val.u;
 	u1 = e->param[1].val.u;
 	sLen2 = sInc;
@@ -603,8 +778,38 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
 	  }
 	}
 	break;
+      case WLZ_EXP_OP_INDEXLST:
+	s2 = WlzExpIndexListToStr(e, &sLen2, &errNum);
+	break;
+      case WLZ_EXP_OP_OCCUPANCY:
+	switch(e->nParam)
+	{
+	  case 0:
+	    if((s2 = AlcStrDup("occupancy()")) == NULL)
+	    {
+	      errNum = WLZ_ERR_MEM_ALLOC;
+	    }
+	    break;
+	  default:
+	    s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
+	    if(errNum == WLZ_ERR_NONE)
+	    {
+	      sLen2 = sInc + sLen0;
+	      if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	      {
+		errNum = WLZ_ERR_MEM_ALLOC;
+	      }
+	      else
+	      {
+	        (void )sprintf(s2, "occupancy(%s)", s0);
+	      }
+	    }
+	    AlcFree(s0);
+	    break;
+	}
+	break;
       case WLZ_EXP_OP_INTERSECT: /* FALLTHROUGH */
-      case WLZ_EXP_OP_UNION: /* FALLTHROUGH */
+      case WLZ_EXP_OP_UNION:     /* FALLTHROUGH */
       case WLZ_EXP_OP_DIFF:
 	s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
 	if(errNum == WLZ_ERR_NONE)
@@ -621,13 +826,31 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
 	}
 	if(errNum == WLZ_ERR_NONE)
 	{
+	  int	tst;
+
 	  switch(e->type)
 	  {
 	    case WLZ_EXP_OP_INTERSECT:
 	      (void )sprintf(s2, "intersect(%s,%s)", s0, s1);
 	      break;
 	    case WLZ_EXP_OP_UNION:
-	      (void )sprintf(s2, "union(%s,%s)", s0, s1);
+	      tst = (((s1 != NULL) && (*s1 != '\0')) << 1) |
+	             ((s0 != NULL) && (*s0 != '\0'));
+	      switch(tst)
+	      {
+	        case 1:
+	          (void )sprintf(s2, "union(%s)", s0);
+		  break;
+		case 2:
+	          (void )sprintf(s2, "union(%s)", s1);
+		  break;
+		case 3:
+	          (void )sprintf(s2, "union(%s,%s)", s0, s1);
+		  break;
+	        default:
+		  (void )sprintf(s2, "union()");
+		  break;
+	      }
 	      break;
 	    case WLZ_EXP_OP_DIFF:
 	      (void )sprintf(s2, "diff(%s,%s)", s0, s1);
@@ -731,42 +954,350 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
   return(s2);
 }
 
-static WlzObject *WlzExpGetObjByIndex(WlzObject *inObj, unsigned int i,
+/*!
+* \return	Expression index list string.
+* \ingroup	WlzIIPServer
+* \brief	Computes an index list string using
+* 		WlzExpIndexListToIndexArray() to get a sorted duplicate-free
+* 		index list.
+* \param	e			The given index list expression, see
+* 					WlzExpIndexListToIndexArray().
+* \param	sLen			Destination pointer for the string
+* 					length, may be NULL.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static char	*WlzExpIndexListToStr(WlzExp *e, int *sLen,
+				      WlzErrorNum *dstErr)
+{
+  int		sLen2 = 0,
+		n = 0;
+  char		*s1,
+  		*s2 = NULL;
+  WlzExp  	*a = NULL;
+  const int	dpi = 12;         /* > maximum decimal digits per index + 1. */
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+  a = WlzExpIndexListToIndexArray(e, &errNum);
+  if(errNum == WLZ_ERR_NONE)
+  {
+    n = a->nParam;
+    sLen2 = dpi * n;
+    if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+    {
+      errNum = WLZ_ERR_MEM_ALLOC;
+    }
+    else
+    {
+      int	i;
+
+      s1 = s2;
+      for(i = 0; i < (n - 1); ++i)
+      {
+        s1 += sprintf(s1, "%u,", a->param[i].val.u);
+      }
+      if(i < n)
+      {
+        s1 += sprintf(s1, "%u", a->param[i].val.u);
+      }
+      sLen2 = s2 - s1;
+    }
+  }
+  WlzExpFree(a);
+  if(sLen)
+  {
+    *sLen = sLen2;
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(s2);
+}
+
+/*!
+* \return	Woolz compound array object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes a compound array from the given index list
+* 		expression using WlzExpIndexListToIndexArray() to get a
+* 		sorted duplicate-free index list and the given object.
+* \param	iObj			Given object.
+* \param	e			The given index list expression, see
+* 					WlzExpIndexListToIndexArray().
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpIndexListToCmpObj(WlzObject *iObj,
+				          WlzExp *e, WlzErrorNum *dstErr)
+{
+  int		i,
+  		n = 0;
+  WlzExp	*a = NULL;
+  WlzCompoundArray *cObj = NULL;
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+  a = WlzExpIndexListToIndexArray(e, &errNum);
+  if(errNum == WLZ_ERR_NONE)
+  {
+    int		m = 1;
+
+    i = a->nParam - 1;
+    if((iObj->type == WLZ_COMPOUND_ARR_1) ||
+       (iObj->type == WLZ_COMPOUND_ARR_2))
+    {
+      m = ((WlzCompoundArray *)iObj)->n;
+    }
+    while((a->param[i].val.u > m) && (i >= 0))
+    {
+      --i;
+    }
+    if(i < 0)
+    {
+      errNum = WLZ_ERR_PARAM_DATA;
+    }
+    else
+    {
+      n = i + 1;
+      cObj = WlzMakeCompoundArray(WLZ_COMPOUND_ARR_2, 1, n, NULL, WLZ_NULL,
+                                &errNum);
+      if(errNum == WLZ_ERR_NONE)
+      {
+	for(i = 0; i < n; ++i)
+	{
+	  cObj->o[i] = WlzAssignObject(
+		       WlzExpGetObjByIndex(iObj, a->param[i].val.u,
+		                           &errNum), NULL);
+	}
+      }
+    }
+  }
+  WlzExpFree(a);
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return((WlzObject *)cObj);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Given an expression with indices, index ranges or any
+* 		other form of index list, this function computes a
+* 		flat index array expression, ie none of the expresions
+* 		parameters is itself an expression and the expression
+* 		will have a parameter per index. Index ranges are expanded
+* 		(ie 1-4 -> 1,2,3,4) and the reulting indices are sorted
+* 		and debuplicated.
+* \param	e			Given index expression.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzExp *WlzExpIndexListToIndexArray(WlzExp *e, WlzErrorNum *dstErr)
+{
+  int		n = 0;
+  WlzExp	*nE = NULL;
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+  if((e == NULL) || (e->nParam < 0))
+  {
+    errNum = WLZ_ERR_PARAM_DATA;
+  }
+  else
+  {
+    /* Create flat index array from index list. */
+    n = WlzExpIndexListCount(e);
+    if((nE = WlzExpMake(n)) == NULL)
+    {
+      errNum = WLZ_ERR_MEM_ALLOC;
+    }
+    else
+    {
+      nE->type = WLZ_EXP_OP_INDEX;
+      (void )WlzExpIndexListFlatten(nE, 0, e);
+    }
+  }
+  if(errNum == WLZ_ERR_NONE)
+  {
+    int		i,
+    		j;
+
+    /* Sort the indices and then remove any duplicates. */
+    n = nE->nParam;
+    if(n > 0)
+    {
+      qsort(nE->param, n, sizeof(WlzExpOpParam), WlzExpIndexArraySortFn);
+      j = 0;
+      for(i = 0; i < n; ++i)
+      {
+	if(nE->param[j].val.u != nE->param[i].val.u)
+	{
+	  ++j;
+	  nE->param[j].val.u = nE->param[i].val.u;
+	}
+      }
+      nE->nParam = j + 1;
+    }
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(nE);
+}
+
+/*!
+* \return	The number of indices in the expression.
+* \ingroup	WlzIIPServer
+* \brief	Counts the number of indice in the given index expression.
+* 		The count will include duplicates if exist in the given
+* 		expresion. This i a recursive function.
+* \param	e			The given index expresion.
+*/
+static int	WlzExpIndexListCount(WlzExp *e)
+{
+  int		i,
+  		n = 0;
+
+  switch(e->type)
+  {
+    case WLZ_EXP_OP_INDEX:
+      n = e->nParam;
+      break;
+    case WLZ_EXP_OP_INDEXRNG:
+      n = e->param[1].val.u - e->param[0].val.u + 1;
+      break;
+    case WLZ_EXP_OP_INDEXLST:
+      for(i = 0; i < e->nParam; ++i)
+      {
+        if(e->param[i].type == WLZ_EXP_PRM_EXP)
+	{
+	  n += WlzExpIndexListCount(e->param[i].val.exp);
+	}
+      }
+      break;
+    default:
+      break;
+  }
+  return(n);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Flattens the given index expression so that all it's
+* 		parameters are indices (ie none are expressions). This
+* 		is a recurive function.
+* \param	nE			New expression with room for the
+* 					appropriate number of parameters
+* 					that will result from flattening
+* 					the given expression.
+* \param	pos			Position with respect to the first
+*					index of the new expression.
+* \param	e			Given expresion to be flattened.
+*/
+static int	WlzExpIndexListFlatten(WlzExp *nE, int pos, WlzExp *e)
+{
+  int		i,
+  		n;
+
+  switch(e->type)
+  {
+    case WLZ_EXP_OP_INDEX:
+      n = e->nParam;
+      for(i = 0; i < n; ++i)
+      {
+	nE->param[pos + i].type = WLZ_EXP_PRM_UINT;
+        nE->param[pos + i].val.u = e->param[i].val.u;
+      }
+      pos += n;
+      break;
+    case WLZ_EXP_OP_INDEXRNG:
+      n = e->param[1].val.u - e->param[0].val.u + 1;
+      for(i = 0; i < n; ++i)
+      {
+	nE->param[pos + i].type = WLZ_EXP_PRM_UINT;
+        nE->param[pos + i].val.u = e->param[0].val.u + i;
+      }
+      pos += n;
+      break;
+    case WLZ_EXP_OP_INDEXLST:
+      n = e->nParam;
+      for(i = 0; i < n; ++i)
+      {
+        pos = WlzExpIndexListFlatten(nE, pos, e->param[i].val.exp);
+      }
+      break;
+    default:
+      break;
+  }
+  return(pos);
+}
+
+/*!
+* \return	Signed integer.
+* \ingroup	WlzIIPServer
+* \brief	Sort function for qsort() which sorts the given index
+* 		parameters by their unsigned interger value.
+* \param	v0			Pointer to first parameter.
+* \param	v1			Pointer to second parameter.
+*/
+static int	WlzExpIndexArraySortFn(const void *v0, const void *v1)
+{
+  int		cmp;
+  WlzExpOpParam	*p0,
+  		*p1;
+
+  p0 = (WlzExpOpParam *)v0;
+  p1 = (WlzExpOpParam *)v1;
+  cmp = p0->val.u - p1->val.u;
+  return(cmp);
+}
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Gets the Woolz object indexed by the given index value
+* 		in the given compound array object. If the given object
+* 		is a domain object then index 0 will return that object.
+* \param	iObj			Given compound array (or domain)
+* 					object.
+* \param	idx			Given index.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpGetObjByIndex(WlzObject *iObj, unsigned int idx,
 				      WlzErrorNum *dstErr)
 {
   WlzCompoundArray *cObj;
   WlzObject	*rObj = NULL;
   WlzErrorNum	errNum = WLZ_ERR_NONE;
 
-  if(inObj == NULL)
+  if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
   else
   {
-    switch(inObj->type)
+    switch(iObj->type)
     {
       case WLZ_2D_DOMAINOBJ: /* FALLTHROUGH */
       case WLZ_3D_DOMAINOBJ:
-        if(i != 0)
+        if(idx != 0)
 	{
 	  errNum = WLZ_ERR_PARAM_DATA;
 	}
 	else
 	{
-	  rObj = inObj;
+	  rObj = iObj;
 	}
 	break;
       case WLZ_COMPOUND_ARR_1: /* FALLTHROUGH */
       case WLZ_COMPOUND_ARR_2:
-	cObj = (WlzCompoundArray *)inObj;
-        if((i < 0) || (i >= cObj->n))
+	cObj = (WlzCompoundArray *)iObj;
+        if((idx < 0) || (idx >= cObj->n))
 	{
 	  errNum = WLZ_ERR_PARAM_DATA;
 	}
 	else
 	{
-	  rObj = cObj->o[i];
+	  rObj = cObj->o[idx];
 	}
 	break;
       default:
@@ -781,68 +1312,26 @@ static WlzObject *WlzExpGetObjByIndex(WlzObject *inObj, unsigned int i,
   return(rObj);
 }
 
-static WlzObject *WlzExpObjFromIndices(WlzObject *inObj,
-			               unsigned int u0, unsigned int u1,
-				       WlzErrorNum *dstErr)
-{
-  int		i,
-  		n;
-  WlzObject     *rObj = NULL;
-  WlzErrorNum   errNum = WLZ_ERR_NONE;
-
-  if((u0 < 0) || ((n = u1 - u0 + 1) <= 0))
-  {
-    errNum = WLZ_ERR_PARAM_DATA;
-  }
-  else if(u0 == u1)
-  {
-    rObj = WlzExpGetObjByIndex(inObj, u0, &errNum);
-  }
-  else
-  {
-    WlzCompoundArray *cObj;
-
-    cObj = WlzMakeCompoundArray(WLZ_COMPOUND_ARR_2, 1, n, NULL, WLZ_NULL,
-                                &errNum);
-    if(errNum == WLZ_ERR_NONE)
-    {
-      for(i = 0; i < n; ++i)
-      {
-	cObj->o[i] = WlzAssignObject(
-		     WlzExpGetObjByIndex(inObj, u0 + i, &errNum), NULL);
-        if(errNum != WLZ_ERR_NONE)
-	{
-	  break;
-	}
-      }
-      if(errNum == WLZ_ERR_NONE)
-      {
-        rObj = (WlzObject *)cObj;
-      }
-      else
-      {
-        (void )WlzFreeObj((WlzObject *)cObj);
-      }
-    }
-  }
-  if(dstErr)
-  {
-    *dstErr = errNum;
-  }          
-  return(rObj);
-}            
-
-static WlzObject *WlzExpIntersect(WlzObject *inObj0, WlzObject *inObj1,
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the intersection of the given objects (which
+* 		may be compound array objects).
+* \param	iObj0			First given object.
+* \param	iObj1			Second given object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpIntersect(WlzObject *iObj0, WlzObject *iObj1,
 			          WlzErrorNum *dstErr)
 {
   int		i;
   WlzCompoundArray *cObj;
   WlzObject	*objs[2],
-  		*inObjs[2];
+  		*iObjs[2];
   WlzObject     *rObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if((inObj0 == NULL) || (inObj1 == NULL))
+  if((iObj0 == NULL) || (iObj1 == NULL))
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
@@ -850,19 +1339,19 @@ static WlzObject *WlzExpIntersect(WlzObject *inObj0, WlzObject *inObj1,
   {
     objs[0] = NULL;
     objs[1] = NULL;
-    inObjs[0] = inObj0;
-    inObjs[1] = inObj1;
+    iObjs[0] = iObj0;
+    iObjs[1] = iObj1;
     for(i = 0; i < 2; ++i)
     {
-      switch(inObjs[i]->type)
+      switch(iObjs[i]->type)
       {
 	case WLZ_2D_DOMAINOBJ:
 	case WLZ_3D_DOMAINOBJ:
-	  objs[i] = WlzAssignObject(inObjs[i], NULL);
+	  objs[i] = WlzAssignObject(iObjs[i], NULL);
 	  break;
 	case WLZ_COMPOUND_ARR_1:
 	case WLZ_COMPOUND_ARR_2:
-	  cObj = (WlzCompoundArray *)(inObjs[i]);
+	  cObj = (WlzCompoundArray *)(iObjs[i]);
 	  objs[i] = WlzIntersectN(cObj->n, cObj->o, 0, &errNum);
 	default:
 	  break;
@@ -886,17 +1375,26 @@ static WlzObject *WlzExpIntersect(WlzObject *inObj0, WlzObject *inObj1,
   return(rObj);
 }            
 
-static WlzObject *WlzExpUnion(WlzObject *inObj0, WlzObject *inObj1,
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the union of the given objects (which may be
+* 		compound array objects).
+* \param	iObj0			First given object.
+* \param	iObj1			Second given object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpUnion(WlzObject *iObj0, WlzObject *iObj1,
                               WlzErrorNum *dstErr)
 {
   int		i;
   WlzCompoundArray *cObj;
   WlzObject	*objs[2],
-  		*inObjs[2];
+  		*iObjs[2];
   WlzObject     *rObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if((inObj0 == NULL) || (inObj1 == NULL))
+  if((iObj0 == NULL) || (iObj1 == NULL))
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
@@ -904,19 +1402,20 @@ static WlzObject *WlzExpUnion(WlzObject *inObj0, WlzObject *inObj1,
   {
     objs[0] = NULL;
     objs[1] = NULL;
-    inObjs[0] = inObj0;
-    inObjs[1] = inObj1;
+    iObjs[0] = iObj0;
+    iObjs[1] = iObj1;
     for(i = 0; i < 2; ++i)
     {
-      switch(inObjs[i]->type)
+      switch(iObjs[i]->type)
       {
-	case WLZ_2D_DOMAINOBJ:
+	case WLZ_EMPTY_OBJ:    /* FALLTHROUGH */
+	case WLZ_2D_DOMAINOBJ: /* FALLTHROUGH */
 	case WLZ_3D_DOMAINOBJ:
-	  objs[i] = WlzAssignObject(inObjs[i], NULL);
+	  objs[i] = WlzAssignObject(iObjs[i], NULL);
 	  break;
 	case WLZ_COMPOUND_ARR_1:
 	case WLZ_COMPOUND_ARR_2:
-	  cObj = (WlzCompoundArray *)(inObjs[i]);
+	  cObj = (WlzCompoundArray *)(iObjs[i]);
 	  objs[i] = WlzUnionN(cObj->n, cObj->o, 0, &errNum);
 	default:
 	  break;
@@ -940,14 +1439,115 @@ static WlzObject *WlzExpUnion(WlzObject *inObj0, WlzObject *inObj1,
   return(rObj);
 }            
 
-static WlzObject *WlzExpDilation(WlzObject *inObj, unsigned int rad,
+/*!
+* \return	Occupancy object.
+* \ingroup	WlzIIPServer
+* \brief	Computes the occupancy of the domains in the given compound
+* 		array as a grey valued object. If given the occupancy is
+* 		computed within the supplied ROI domain, otherwise the
+* 		occupancy is computed within the union of the domains
+* 		in the compound array.
+* \param	gObj			Object containing the domains for
+* 					which the occupancy is to be computed.
+* 					Can either be a compound array or a
+* 					spatial domain object.
+* \param	roiObj			Object with a domain for the region of
+* 					interest, may be NULL.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpOccupancy(WlzObject *gObj,
+				  WlzObject *roiObj,
+                                  WlzErrorNum *dstErr)
+{
+  WlzObject	*cObj = NULL,
+  	     	*rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if(gObj == NULL)
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else
+  {
+    switch(gObj->type)
+    {
+      case WLZ_2D_DOMAINOBJ:
+      case WLZ_3D_DOMAINOBJ:
+	if(roiObj)
+	{
+	  cObj = WlzAssignObject(
+	  	 WlzIntersect2(gObj, roiObj, &errNum), NULL);
+	}
+	else
+	{
+	  cObj = WlzAssignObject(gObj, NULL);
+	}
+	break;
+      case WLZ_COMPOUND_ARR_1:
+      case WLZ_COMPOUND_ARR_2:
+	if(roiObj)
+	{
+	  WlzCompoundArray *gCObj,
+	  		   *nCObj = NULL;
+
+	  gCObj = (WlzCompoundArray *)(gObj);
+	  nCObj = WlzMakeCompoundArray(WLZ_COMPOUND_ARR_2, 1, gCObj->n, NULL,
+	  			       WLZ_NULL, &errNum);
+	  if(errNum == WLZ_ERR_NONE)
+	  {
+	    int		i;
+
+	    for(i = 0; i < gCObj->n; ++i)
+	    {
+	      nCObj->o[i] = (gCObj->o[i] == NULL)?
+			    NULL:
+	                    WlzAssignObject(
+	                    WlzIntersect2(roiObj, gCObj->o[i], &errNum), NULL);
+	    }
+	    cObj = (WlzObject *)nCObj;
+	  }
+	  else
+	  {
+	    (void )WlzFreeObj((WlzObject *)nCObj);
+	    nCObj = NULL;
+	  }
+	}
+	else
+	{
+	  cObj = WlzAssignObject(gObj, NULL);
+	}
+      default:
+	break;
+    }
+  }
+  if(errNum == WLZ_ERR_NONE)
+  {
+    rObj = WlzDomainOccupancy(cObj, &errNum);
+  }
+  (void )WlzFreeObj((WlzObject *)cObj);
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }          
+  return(rObj);
+}            
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the dilation of the given object. 
+* \param	iObj			Given object.
+* \param	rad			Radius of structuring element.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpDilation(WlzObject *iObj, unsigned int rad,
                                  WlzErrorNum *dstErr)
 {
   WlzObject     *rObj = NULL,
   		*sObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if(inObj == NULL)
+  if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
@@ -957,7 +1557,7 @@ static WlzObject *WlzExpDilation(WlzObject *inObj, unsigned int rad,
   }
   else
   {
-    switch(inObj->type)
+    switch(iObj->type)
     {
       case WLZ_2D_DOMAINOBJ:
 	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
@@ -972,7 +1572,7 @@ static WlzObject *WlzExpDilation(WlzObject *inObj, unsigned int rad,
     }
     if(errNum == WLZ_ERR_NONE)
     {
-      rObj = WlzStructDilation(inObj, sObj, &errNum);
+      rObj = WlzStructDilation(iObj, sObj, &errNum);
     }
   }
   (void )WlzFreeObj(sObj);
@@ -983,14 +1583,22 @@ static WlzObject *WlzExpDilation(WlzObject *inObj, unsigned int rad,
   return(rObj);
 }            
 
-static WlzObject *WlzExpErosion(WlzObject *inObj, unsigned int rad,
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the erosion of the given object. 
+* \param	iObj			Given object.
+* \param	rad			Radius of structuring element.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpErosion(WlzObject *iObj, unsigned int rad,
                                 WlzErrorNum *dstErr)
 {
   WlzObject     *rObj = NULL,
   		*sObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if(inObj == NULL)
+  if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
@@ -1000,7 +1608,7 @@ static WlzObject *WlzExpErosion(WlzObject *inObj, unsigned int rad,
   }
   else
   {
-    switch(inObj->type)
+    switch(iObj->type)
     {
       case WLZ_2D_DOMAINOBJ:
 	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
@@ -1015,7 +1623,7 @@ static WlzObject *WlzExpErosion(WlzObject *inObj, unsigned int rad,
     }
     if(errNum == WLZ_ERR_NONE)
     {
-      rObj = WlzStructErosion(inObj, sObj, &errNum);
+      rObj = WlzStructErosion(iObj, sObj, &errNum);
     }
   }
   (void )WlzFreeObj(sObj);
@@ -1026,19 +1634,28 @@ static WlzObject *WlzExpErosion(WlzObject *inObj, unsigned int rad,
   return(rObj);
 }            
 
-static WlzObject *WlzExpDiff(WlzObject *inObj0, WlzObject *inObj1,
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the difference between the domains of the
+* 		given objects.
+* \param	iObj0			First object.
+* \param	iObj1			Second object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpDiff(WlzObject *iObj0, WlzObject *iObj1,
                              WlzErrorNum *dstErr)
 {
   WlzObject     *rObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if((inObj0 == NULL) || (inObj1 == NULL))
+  if((iObj0 == NULL) || (iObj1 == NULL))
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
   else
   {
-    rObj = WlzDiffDomain(inObj0, inObj1, &errNum);
+    rObj = WlzDiffDomain(iObj0, iObj1, &errNum);
   }
   if(dstErr)
   {
@@ -1047,7 +1664,19 @@ static WlzObject *WlzExpDiff(WlzObject *inObj0, WlzObject *inObj1,
   return(rObj);
 }            
 
-static WlzObject *WlzExpThreshold(WlzObject *inObj, unsigned int val,
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes an above, below or at threshold value object
+* 		given an object with grey values, a threhold value and
+* 		a threhold comparison operator.
+* 		given objects.
+* \param	iObj			Given object.
+* \param	val			Threshold value.
+* \param	cmp			Threshold comparison operator.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpThreshold(WlzObject *iObj, unsigned int val,
 				  WlzExpCmpType cmp, WlzErrorNum *dstErr)
 {
   WlzObject     *rObj = NULL;
@@ -1057,7 +1686,7 @@ static WlzObject *WlzExpThreshold(WlzObject *inObj, unsigned int val,
 
   thrVal.type = WLZ_GREY_INT;
   hiLo[0] = hiLo[1] = WLZ_THRESH_LOW;
-  if(inObj == NULL)
+  if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
@@ -1089,7 +1718,7 @@ static WlzObject *WlzExpThreshold(WlzObject *inObj, unsigned int val,
   if(errNum == WLZ_ERR_NONE)
   {
     thrVal.v.inv = (int )val;
-    rObj = WlzThreshold(inObj, thrVal, hiLo[0], &errNum);
+    rObj = WlzThreshold(iObj, thrVal, hiLo[0], &errNum);
   }
   if((errNum == WLZ_ERR_NONE) && (cmp == WLZ_EXP_CMP_EQ))
   {
