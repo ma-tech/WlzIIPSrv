@@ -2,7 +2,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{natbib}
+\usepackage[numbers]{natbib}
 \usepackage{hyperref}
 
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
@@ -22,7 +22,7 @@
     pdfmenubar=true,
     pdffitwindow=false,
     pdfstartview={FitH},
-    pdftitle={The Woolz Internet Image Protocol (IIP) Server},
+    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.0.2)},
     pdfauthor={Bill Hill},
     pdfsubject={Woolz Internet Image Protocol Server},
     pdfcreator={Bill Hill},
@@ -37,7 +37,7 @@
 
 \newfont{\sltt}{cmsltt10}  % font for command argument (slanted typewriter)
 
-\title{The Woolz Internet Image Protocol (IIP) Server}
+\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.0.2)}
 \author{
   Zsult Husz \footnote{Supported by {NIH} under grant \#1R01MH070370-01A2.} \\
   \and
@@ -614,8 +614,8 @@ threshold
 and
 union.
 Image processing expressions are built from compound object
-indices and the image processing operators. Three of the
-image processing operators (intersection, occupancy and union) may
+indices and the image processing operators. Two of the
+image processing operators (occupancy and union) may
 given a list indices in their expressions.
 The occupancy operator may also be given no indices
 which implies all components of the compound object.
@@ -642,16 +642,17 @@ are described in table \ref{tbl:imgpops}.
 \begin{tabular}{|lcl|}
 \hline
 \emph{exp list}    	&:=& \verb=(=\emph{exp}\verb=|=\emph{idx list}\verb=)(=,\emph{exp list}\verb=)= \\
-\emph{idx list}    	&:=& \verb=(=\emph{idx}\verb=|(=\emph{idx}-\verb=)|(=\emph{idx}-\emph{idx}\verb=)|(=-\emph{idx}\verb=))(=,\emph{idx list}\verb=)= \\
-\emph{exp}         	&:=& \emph{idx}\verb=)|= \\
+\emph{exp}         	&:=& \emph{idx}\verb=|= \\
 	    &  & diff\verb=(=\emph{exp},\emph{exp}\verb=) |= \\
 	    &  & dilation\verb=(=\emph{exp},\emph{uint}\verb=) |= \\
 	    &  & domain\verb=(=\emph{exp}\verb=) |= \\
 	    &  & erosion\verb=(=\emph{exp},\emph{uint}\verb=) |= \\
 	    &  & intersect\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
-	    &  & occupancy\verb=(=\emph{exp list}\verb=?) |= \\
+	    &  & occupancy\verb=(=\emph{index list}\verb=?) |= \\
 	    &  & threshold\verb=(=\emph{exp},\emph{val},\emph{cmp}\verb=)= \\
-	    &  & union\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
+	    &  & union\verb=(=\emph{exp list}\verb=|=\emph{idx list},\emph{exp list}\verb=|=\emph{idx list}\verb=) |= \\
+\emph{idx list}    	&:=& \verb=(=\emph{uint}\verb=|=\emph{idx range}\verb=|=\emph{idx list},\emph{idx list}\verb=)= \\
+\emph{idx range}    	&:=& \emph{uint}\verb=-=\emph{uint} \\
 \emph{idx}         	&:=& \verb=[0-9]+= \\
 \emph{uint}         	&:=& \verb=[1-9][0-9]*= \\
 \emph{val}         	&:=& \verb=[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?= \\
@@ -673,13 +674,13 @@ dilation\verb=(=\emph{exp},\emph{radius}\verb=)=                    & The dilati
 domain\verb=(=\emph{exp}\verb=)=                                    & The domain of an object. \\
 erosion\verb=(=\emph{exp},\emph{radius}\verb=)=                     & The erosion of the domain by \emph{radius}\ voxels. \\
 intersect\verb=(=\emph{exp list}\verb=)=                            & The intersection of the domains in the given lists. \\
-occupancy\verb=(=\emph{exp list}\verb=?)=                           & The domain occupancy in the optional list. \\
+occupancy\verb=(=\emph{idx list}\verb=?)=                           & The domain occupancy in the optional list. \\
 threshold\verb=(=\emph{exp},\emph{value},\emph{comparison}\verb=)=  & Creates an object where the image values satisfy
 						                      the given \emph{value} and \emph{comparison}.
 								      Here the value is floating point and valid comparisons
 								      are \verb=lt= (less than), \verb=le= (less than or equal), \verb=eq= (equal),
 								      \verb=ge= (greater than or equal) and \verb=gt)= (greater than). \\
-union\verb=(=\emph{exp list}\verb=)=                                & The union of the domains in the given lists. \\
+union\verb=(=\emph{exp list}\verb=|=\emph{idx list},\emph{exp list}\verb=|=\emph{idx list}\verb=)=                                                  & The union of the domains in the given lists. \\
 \hline
 \end{tabular}
 \caption{Descriptions of image processing operators}.
