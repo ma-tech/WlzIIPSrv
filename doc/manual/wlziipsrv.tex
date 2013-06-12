@@ -146,6 +146,7 @@ that may be queried with the \com{OBJ} command.
 \com{PIT} & Specify the pitch angle of the sectioning rotation& \texttt{PIT={\sltt angle}}\\
 \com{PRL} & Specify the 2D query point relative in tile or display or tile coordinate& \texttt{PRL={\sltt T,X,Y}}\\
 \com{PTL} & Retrieve a tile as a PNG image& \texttt{PTL={\sltt res,tile}}\\
+\com{RMD} & Specify the rendering mode & \texttt{RMD={\sltt mode}} \\
 \com{ROL} & Specify the roll angle of the sectioning rotation & \texttt{ROL={\sltt angle}}\\
 \com{SCL} & Specify the scale used in the sectioning transformation & \texttt{SCL={\sltt scale}} \\
 \com{SEL} & Specify a component of a compound object to be displayed and its
@@ -199,8 +200,10 @@ include all other object domains. If file name ends with \texttt{.gz}, gzipped W
 \end{tabular}
 
 \subsection{Setting sectioning and query parameters}
-The next commands are optional and can be used in any combination.
 
+The following commands are optional and can be used in any combination.
+
+\hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{DST} & \textbf{Purpose} &
 Specify the distance of the sectioning plane\\
@@ -257,8 +260,7 @@ two specifications a grey with alpha mapping, three an RGB mapping and four an R
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
-\com{MOD} & \textbf{Purpose} &
-Specify projection mode.\\
+\com{MOD} & \textbf{Purpose} & Specify projection mode.\\
 & \textbf{Syntax} & \texttt{MOD={\sltt mode}} \\
 & \textbf{Input Parameters}& \texttt{{\sltt mode} $\in$ STATUE | UP\_IS\_UP | FIXED\_LINE | ZERO\_ZETA | ZETA} \newline The projection mode\\
 & \textbf{Response} & none\\
@@ -304,6 +306,17 @@ Specify a 2D query point relative to tile or display coordinate system.\\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
+\com{RMD} & \textbf{Purpose} &
+Specify the rendering mode\\
+& \textbf{Syntax} & \texttt{RMD={\sltt mode}}\\
+& \textbf{Input Parameters}& \texttt{{\sltt mode} $\in$ SECTION | PROJ\_N |
+PROJ\_D | PROJ\_V} \newline The rendering mode\\
+& \textbf{Response} & none\\
+& \textbf{Example} & \outparam\texttt{RMD=PROJ\_V}\\
+& \textbf{Default value} & \texttt{SECTION}\\
+\end{tabular}
+\hrule\noindent
+\begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{ROL} & \textbf{Purpose} &
 Specify the roll angle of the sectioning rotation\\
 & \textbf{Syntax} & \texttt{ROL={\sltt angle}}\\
@@ -314,6 +327,7 @@ Specify the roll angle of the sectioning rotation\\
 & \textbf{Default value} & \texttt{0.0}\\
 \end{tabular}
 \hrule\noindent
+
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{SCL} & \textbf{Purpose} &
 Specify the scale used in the sectioning transformation.\\
@@ -881,6 +895,7 @@ The list of commands from Table~\ref{tab:comparision} compares command sets of t
 \com{PIT}  & N & N & S \\
 \com{PRL}  & N & N & S \\
 \com{PTL}  & N & N & S \\
+\com{RMD}  & N & N & S \\
 \com{ROL}  & N & N & S \\
 \com{SCL}  & N & N & S \\
 \com{SEL}  & N & N & S \\
