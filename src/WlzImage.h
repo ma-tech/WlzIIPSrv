@@ -71,19 +71,19 @@ class WlzImage : public IIPImage
     						 user. These might not be
 						 reflected yet in wlzViewStr. */
     static WlzObjectCache wlzObjectCache;   /*!< Woolz object cache*/
-    unsigned char   	*tile_buf;          /*!< Tile data buffer */
+    WlzUByte	   	*tile_buf;          /*!< Tile data buffer */
     int                 number_of_tiles;    /*!< Number of tiles */
     static const WlzInterpolationType interp ; /*!< Type of interpollation */
     int         	lastTileWidth;      /*!< Width for last column tiles */
     int                 lastTileHeight;     /*!< Height for last row tiles */
     int                 ntlx;               /*!< Number of tiles per row */
     int                 ntly;               /*!< Number of tiles per columns */
-    unsigned char       background[4];      /*!< Background value */
+    WlzUByte	        background[4];      /*!< Background value */
   public:
     // Constructors and destructor
     WlzImage();
-    WlzImage( const WlzImage& image );
-    WlzImage( const std::string& path);
+    WlzImage(const WlzImage& image);
+    WlzImage(const std::string& path);
     /*!
     * \ingroup      WlzIIPServer
     * \brief        Destructor
@@ -93,33 +93,63 @@ class WlzImage : public IIPImage
 	closeImage();
     };
     // Overloaded IIPImage methods
-    void	openImage();
-    void	loadImageInfo(int x, int y ) throw(std::string);
-    void 	closeImage();
-    RawTile 	getTile(int x, int y, unsigned int r, unsigned int t)
-      	        throw(std::string);
-    string	getFileName();
-    const std::string getHash();
+    void			openImage();
+    void			loadImageInfo(
+    				  int x,
+				  int y )
+				throw(std::string);
+    void 			closeImage();
+    RawTile 			getTile(
+    				  int x,
+				  int y,
+				  unsigned int r,
+				  unsigned int t)
+      	        		throw(std::string);
+    string			getFileName();
+    const std::string 		getHash();
     // Woolz operations
-    void	prepareObject() throw (std::string);
-    void	prepareViewStruct() throw (std::string);
-    bool	isViewChanged();
-    WlzObject	*WlzImageExpEval(WlzExp *e);
+    void			prepareObject()
+    				throw(std::string);
+    void			prepareViewStruct()
+    				throw(std::string);
+    bool			isViewChanged();
+    WlzObject			*WlzImageExpEval(
+    				  WlzExp *e);
     // Utility functions
-    float 	*getTrueVoxelSize() throw(std::string);
-    WlzLong 	getVolume() throw(std::string);
-    int 	getGreyValue(int *points);
-    void	getGreyStats(int &n, WlzGreyType &t, double &gl, double &gu,
-			     double &sum, double &ss, double &mean,
-			     double &sdev) throw(std::string);
-    void 	getDepthRange(double &min, double &max);
-    void 	getAngles(double &theta, double &phi, double &zeta);
-    void 	get3DBoundingBox(WlzIBox3 &box) throw(std::string);
-    void 	getTransformed3DBBox(WlzIBox3 &box) throw(std::string);
-    WlzDVertex3 getCurrentPointIn3D();
-    WlzDVertex3 getTransformed3DPoint();
-    int 	getForegroundObjects(int *values);
-    int 	getCompoundNo();
+    float 			*getTrueVoxelSize()
+    				throw(std::string);
+    WlzLong 			getVolume()
+    				throw(std::string);
+    int 			getGreyValue(
+    				  int *points);
+    void			getGreyStats(
+    				  int &n,
+				  WlzGreyType &t,
+				  double &gl,
+				  double &gu,
+			          double &sum,
+				  double &ss,
+				  double &mean,
+			          double &sdev)
+				throw(std::string);
+    void 			getDepthRange(
+    				  double &min,
+				  double &max);
+    void 			getAngles(
+    				  double &theta,
+				  double &phi,
+				  double &zeta);
+    void 			get3DBoundingBox(
+    				  WlzIBox3 &box)
+				throw(std::string);
+    void 			getTransformed3DBBox(
+    				  WlzIBox3 &box)
+				throw(std::string);
+    WlzDVertex3 		getCurrentPointIn3D();
+    WlzDVertex3 		getTransformed3DPoint();
+    int 			getForegroundObjects(
+    				  int *values);
+    int 			getCompoundNo();
 
     /*!
     * \return   Woolz object (with incremented linkcount) if the obejct
@@ -129,7 +159,8 @@ class WlzImage : public IIPImage
     *		the given string.
     * \param	ois			Woolz object identification string.
     */
-    WlzObject   *getObjectFromCache(std::string ois)
+    WlzObject   		*getObjectFromCache(
+    				  std::string ois)
     {
       WlzObject     *obj;
 
@@ -144,7 +175,9 @@ class WlzImage : public IIPImage
     * \param	obj			Woolz object to add to the cache.
     * 		ois			Woolz object identification string.
     */
-    void            addObjectToCache(WlzObject *obj, string ois)
+    void            		addObjectToCache(
+    				  WlzObject *obj,
+				  string ois)
     {
       wlzObjectCache.insert(obj , ois);
     }
@@ -156,15 +189,38 @@ class WlzImage : public IIPImage
     * \param	first			First part of string.
     * \param	errNum			Woolz error number.
     */
-    static std::string	makeWlzErrorMessage(std::string first,
-    					    WlzErrorNum errNum)
+    static std::string		makeWlzErrorMessage(
+    				  std::string first,
+    				  WlzErrorNum errNum)
     {
       const char    *errStr,
 	    	    *msgStr;
       stringstream  msg; 
 
-      errStr = WlzStringFromErrorNum(WLZ_ERR_OBJECT_NULL, &msgStr);
-      msg <<first << " " << msgStr << " (" << errStr << ")";
+      errStr = WlzStringFromErrorNum(errNum, &msgStr);
+      msg <<first << " " << msgStr << " (" << errStr << ").";
+      return(msg.str());
+    }
+
+    /*!
+    * \ingroup 	WlzIIPServer
+    * \brief	Creates an error message string. Handy for thowing
+    * 		exceptions.
+    * \param	first			First part of string.
+    * \param	errNum			Woolz error number.
+    * \param	last			Last part of string.
+    */
+    static std::string		makeWlzErrorMessage(
+    				  std::string first,
+    				  WlzErrorNum errNum,
+				  std::string last)
+    {
+      const char    *errStr,
+	    	    *msgStr;
+      stringstream  msg; 
+
+      errStr = WlzStringFromErrorNum(errNum, &msgStr);
+      msg <<first << " " << msgStr << " (" << errStr << "). " << last;
       return(msg.str());
     }
 
@@ -173,14 +229,19 @@ class WlzImage : public IIPImage
     * \brief    Sets pointer to task parameters
     * \param   	viewP 			Pointer to view parameters
     */
-    void 	setView(const ViewParameters  *viewP ){viewParams = viewP;};
+    void 			setView(
+    				  const ViewParameters  *viewP)
+    {
+      viewParams = viewP;
+    };
 
     /*!
     * \ingroup  WlzIIPServer
     * \brief    Forces channel no update to alpha value.
     * \param  	alpha 		New alpha value
     */
-    virtual void recomputeChannel(bool alpha)
+    virtual void 		recomputeChannel(
+    				  bool alpha)
     {
       if((channels == 3) || (channels == 4))
       {
@@ -194,29 +255,50 @@ class WlzImage : public IIPImage
 
     // Internal functions
     protected:
-    WlzErrorNum convertObjToRGB(unsigned char * cbuf, WlzObject* obj,
-                                WlzIVertex2  pos, WlzIVertex2  size);
-    WlzErrorNum convertDomainObjToRGB(unsigned char *cbuf, WlzObject* obj,
-                                      WlzIVertex2  pos, WlzIVertex2  size,
-				      CompoundSelector *sel);
-    WlzErrorNum convertValueObjToRGB(unsigned char *cbuf, WlzObject *obj,
-				     WlzIVertex2  pos, WlzIVertex2  size,
-				     CompoundSelector *sel);
-    WlzErrorNum sectionObject(unsigned char* tile_buf, WlzObject *wlzObject,
-                              WlzObject *tileObject, WlzIVertex2  pos,
-			      WlzIVertex2  size, CompoundSelector *sel);
-    WlzObject *getMapLUTObj(WlzErrorNum *dstErr);
-    WlzObject *mapValueObj(WlzObject *iObj, WlzObject *lutObj,
-    			   WlzErrorNum *dstErr);
-    WlzDVertex3 getCurrentPointInPlane();
-    const std::string generateHash(const ViewParameters *view);
-    const std::string selString(const ViewParameters* view );
+    WlzErrorNum 		convertObjToRGB(
+    				  WlzUByte * cbuf,
+				  WlzObject* obj,
+                                  WlzIVertex2  pos,
+				  WlzIVertex2  size);
+    WlzErrorNum 		convertDomainObjToRGB(
+    				  WlzUByte *cbuf,
+				  WlzObject* obj,
+                                  WlzIVertex2  pos,
+				  WlzIVertex2  size,
+				  CompoundSelector *sel);
+    WlzErrorNum 		convertValueObjToRGB(
+    				  WlzUByte *cbuf,
+				  WlzObject *obj,
+				  WlzIVertex2  pos,
+				  WlzIVertex2  size,
+				  CompoundSelector *sel);
+    WlzErrorNum 		renderObj(
+    				  WlzUByte* tile_buf,
+				  WlzObject *wlzObject,
+                                  WlzObject *tileObject,
+				  WlzIVertex2  pos,
+			          WlzIVertex2  size,
+				  CompoundSelector *sel);
+    WlzObject			*getSubProjFromObject(
+    				  WlzObject *wlzObject,
+				  WlzObject *tileObject,
+				  CompoundSelector *sel,
+				  WlzErrorNum *dstErr);
+    WlzObject 			*getMapLUTObj(
+    				  WlzErrorNum *dstErr);
+    WlzObject 			*mapValueObj(
+    				  WlzObject *iObj,
+				  WlzObject *lutObj,
+    			   	  WlzErrorNum *dstErr);
+    WlzDVertex3 		getCurrentPointInPlane();
+    const std::string 		generateHash(const ViewParameters *view);
+    const std::string 		selString(const ViewParameters* view );
 
     /*!
      * \ingroup WlzIIPServer
      * \brief   Return the number of channels for the output
      */
-    unsigned int getNumChannels()
+    unsigned int 		getNumChannels()
     {
       // Forces RGB/RGBA output if a selector is specified
       return((viewParams->selector)? ((viewParams->alpha)? 4: 3): channels);
@@ -228,7 +310,7 @@ class WlzImage : public IIPImage
      * \ingroup	WlzIIPServer
      * \brief	Acesses the current compound array object.
      */
-    WlzCompoundArray *getArray()
+    WlzCompoundArray 		*getArray()
     {
       WlzCompoundArray *array = NULL;
 
@@ -248,7 +330,7 @@ class WlzImage : public IIPImage
      * \brief	Acesses the current object or if it is a compound array
      * 		the first object of the compound array.
      */
-    WlzObject	*getObj()
+    WlzObject			*getObj()
     {
       WlzObject *obj;
 
