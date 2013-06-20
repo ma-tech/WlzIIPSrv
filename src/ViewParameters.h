@@ -64,6 +64,20 @@ typedef enum _QueryPointType
 } QueryPointType ;
 
 /*!
+* \enum		_RenderModeType
+* \ingroup	WlzIIPServer
+* \brief	Rendering mode, section of one of WlzProjectIntMode.
+*		Typedef: RenderModeType
+*/
+typedef enum _RenderModeType
+{
+  RENDERMODE_SECT	= 0,
+  RENDERMODE_PROJ_N	= 1,
+  RENDERMODE_PROJ_D	= 2,
+  RENDERMODE_PROJ_V	= 3
+} RenderModeType;
+
+/*!
 * \struct	_ImageMapChan
 * \ingroup	WlzIIPServer
 * \brief	Image value mapping parameters for a single channel.
@@ -149,6 +163,8 @@ class ViewParameters
     WlzDVertex3       fixed2;           /*!< second fixed point */
     WlzDVertex3       up;               /*!< upvector */
 
+    RenderModeType    rmd;		/*!< rendering mode */
+
     //selection have no access methods
     int x;                              /*!< current point x coordinate */
     int y;                              /*!< current point y coordinate */
@@ -179,6 +195,7 @@ class ViewParameters
       fixed2.vtX      = fixed2.vtY = fixed2.vtZ = 0.0;
       up.vtX          = up.vtY = 0.0;
       up.vtZ          = -1.0;
+      rmd	      = RENDERMODE_SECT;
       x               = 0;
       y               = 0;
       tile            = 0;
@@ -203,6 +220,7 @@ class ViewParameters
       fixed           = viewParameters.fixed;
       fixed2          = viewParameters.fixed2;
       up              = viewParameters.up;
+      rmd	      = viewParameters.rmd;
       x               = viewParameters.x;
       y               = viewParameters.y;
       tile            = viewParameters.tile;
@@ -248,6 +266,7 @@ class ViewParameters
       fixed           = viewParameters.fixed;
       fixed2          = viewParameters.fixed2;
       up              = viewParameters.up;
+      rmd             = viewParameters.rmd;
       x               = viewParameters.x;
       y               = viewParameters.y;
       tile            = viewParameters.tile;
@@ -316,7 +335,8 @@ class ViewParameters
     void setFixedPoint( WlzDVertex3 f ){ fixed = f; };
 
     /// Set the second fixed point
-    /** \param f second fixed point for the sectioning plane rotation in WLZ_FIXED_LINE_MODE mode*/
+    /** \param f second fixed point for the sectioning plane rotation in
+     ** WLZ_FIXED_LINE_MODE mode*/
     void setFixedPoint2( WlzDVertex3 f ){ fixed2 = f; };
 
     /** \param u up vector for the sectioning plane rotation */
@@ -331,36 +351,83 @@ class ViewParameters
     void setAlpha( bool  a ){ alpha = a; };
 
     /// Set the sectioning mode
-    /** \param m section mode as case-insensitive string. Accepted values are:
-      STATUE, UP_IS_UP, FIXED_LINE, ZERO_ZETA and ZETA */
+    /** \param m section mode as case-insensitive string. Accepted values
+     ** are: STATUE, UP_IS_UP, FIXED_LINE, ZERO_ZETA and ZETA */
     WlzErrorNum setMode( string m )
     { 
+      WlzErrorNum errNum = WLZ_ERR_NONE;
+
       //make it uppercase
       transform( m.begin(), m.end(), m.begin(), ::toupper );
-
       if (m=="STATUE")
+      {
 	mode = WLZ_STATUE_MODE;
+      }
       else if (m=="UP_IS_UP")
+      {
 	mode = WLZ_UP_IS_UP_MODE;
+      }
       else if (m=="FIXED_LINE")
+      {
 	mode = WLZ_FIXED_LINE_MODE;
+      }
       else if (m=="ZERO_ZETA")
+      {
 	mode = WLZ_ZERO_ZETA_MODE;
+      }
       else if (m=="ZETA")
+      {
 	mode = WLZ_ZETA_MODE;
+      }
       else 
       {
 	mode = WLZ_UP_IS_UP_MODE;
-	return  WLZ_ERR_UNSPECIFIED;  // return an unspecified error, since 
-				      // no special error for mode selection
-				      // is yet defined
+	errNum = WLZ_ERR_PARAM_DATA;
       }
-      return  WLZ_ERR_NONE;
+      return(errNum);
     };
 
     /// Set the sectioning mode
     /** \param m section mode as WlzThreeDViewMode structure */
     void setMode(WlzThreeDViewMode m){ mode = m; };
+
+    /// Set the rendering mode
+    /** \param m section mode as case-insensitive string. Accepted values are:
+      SECT, PRJN, PRJD and PRJV. */
+    WlzErrorNum setRenderMode(string m)
+    {
+      WlzErrorNum errNum = WLZ_ERR_NONE;
+
+      //make it uppercase
+      transform(m.begin(), m.end(), m.begin(), ::toupper);
+
+      if(m == "SECT")
+      {
+        rmd = RENDERMODE_SECT;
+      }
+      else if(m == "PRJN")
+      {
+        rmd = RENDERMODE_PROJ_N;
+      }
+      else if(m == "PRJD")
+      {
+        rmd = RENDERMODE_PROJ_D;
+      }
+      else if(m == "PRJV")
+      {
+        rmd = RENDERMODE_PROJ_V;
+      }
+      else 
+      {
+	rmd = RENDERMODE_SECT;
+	errNum = WLZ_ERR_PARAM_DATA;
+      }
+      return(errNum);
+    }
+    //
+    /// Set the rendering mode
+    /** \param m section mode as RenderModeType. */
+    void setMode(RenderModeType m){rmd = m;};
 
     /// Set a 2D query point relative to a tile
     /** \param xx current point x coordinate
