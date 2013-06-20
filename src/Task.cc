@@ -81,6 +81,7 @@ Task* Task::factory(std::string type)
   else if( type == "fxp" ) return new FXP; // Sectioning fixed point
   else if( type == "fxt" ) return new FXT; // Sectioning second fixed point
   else if( type == "upv" ) return new UPV; // Sectioning up vector
+  else if( type == "rmd" ) return new RMD; // Rendering mode
   else if( type == "prl" ) return new PRL; // Sets a 2D point
   else if( type == "pab" ) return new PAB; // Sets a 3D point
   else if( type == "scl" ) return new SCL; // Sets scale
@@ -400,6 +401,24 @@ void UPV::run(Session* session, std::string argument)
 	        session->viewParams->up.vtX  << ',' <<
 	        session->viewParams->up.vtY << ',' <<
 	        session->viewParams->up.vtZ << ')');
+    }
+  }
+}
+
+void RMD::run(Session* session, std::string argument)
+{
+  if(argument.length())
+  {
+    // Set if the value is valid 
+    if(session->viewParams->setRenderMode( argument) != WLZ_ERR_NONE)
+    {
+      LOG_WARN("RMD :: Unknown mode " << argument <<
+	  ". The render mode must be one of SECT, PROJ_N, PROJ_D or PROJ_V.");
+    }
+    else
+    {
+      LOG_INFO("RMD :: Woolz rendering mode set to " <<
+                session->viewParams->rmd);
     }
   }
 }
