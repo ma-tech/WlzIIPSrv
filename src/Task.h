@@ -385,6 +385,12 @@ class FXT : public Task {
   void run( Session* session, std::string argument );
 };
 
+/// RMD Woolz Command: sets the rendering mode
+class RMD : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
 /// UPV Woolz Command: sets the up vector
 class UPV : public Task {
  public:
