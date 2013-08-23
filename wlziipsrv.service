@@ -1,0 +1,16 @@
+[Unit]
+Description=Woolz IIP3D Server
+After=network.target
+Before=getty@tty1.service
+
+[Service]
+User=genex
+Group=ma
+EnvironmentFile=/opt/MAWWW/etc/wlziipsrv.env
+ExecStart=/opt/MAWWW/fcgi-bin/wlziipsrv.fcgi --port 8000
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
