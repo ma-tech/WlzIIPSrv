@@ -235,7 +235,7 @@ AC_ARG_WITH( wlz-lib,
 
 LIBWLZ_INCLUDES="-I$wlz_include_path";
 LIBWLZ_LDFLAGS="-L$wlz_lib_path";
-LIBWLZ_LIBS="-lWlzExtFF -lWlz -lAlc -lAlg "
+LIBWLZ_LIBS="-lWlzExtFF -lhguDlpList -lWlz -lbibfile -lAlg -lAlc "
 
 AC_SUBST(LIBWLZ_INCLUDES)
 AC_SUBST(LIBWLZ_LDFLAGS)
