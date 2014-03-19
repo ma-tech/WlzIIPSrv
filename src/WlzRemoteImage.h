@@ -43,8 +43,10 @@ static char _WlzRemoteImage_h[] = "University of Edinburgh $Id$";
 */
 
 #include "Wlz.h"
+#include "WlzImage.h"
 
-class WlzRemoteImage {
+class WlzRemoteImage : public WlzImage
+{
 /// buffer size for reading and parsing files
 
  protected:
