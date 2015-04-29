@@ -767,7 +767,7 @@ WlzObject 			*WlzImage::getSubProjFromObject(
     if(errNum == WLZ_ERR_NONE)
     {
       t0 = WlzAssignObject(
-	   WlzProjectObjToPlane(gvnObj, wlzViewStr, itm, 1, NULL,
+	   WlzProjectObjToPlane(gvnObj, wlzViewStr, itm, 1, NULL, 0.0,
 				&errNum), NULL);
     }
     if(errNum == WLZ_ERR_NONE)
