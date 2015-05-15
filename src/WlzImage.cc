@@ -767,8 +767,8 @@ WlzObject 			*WlzImage::getSubProjFromObject(
     if(errNum == WLZ_ERR_NONE)
     {
       t0 = WlzAssignObject(
-	   WlzProjectObjToPlane(gvnObj, wlzViewStr, itm, 1, NULL, 0.0,
-				&errNum), NULL);
+	   WlzProjectObjToPlane(gvnObj, wlzViewStr, itm, 1, NULL,
+	                        viewParams->depth, &errNum), NULL);
     }
     if(errNum == WLZ_ERR_NONE)
     {
@@ -1801,15 +1801,16 @@ const std::string WlzImage::generateHash(const ViewParameters* view ) {
     view = curViewParams;
   prepareObject();  // needs to have set channel number
   
-  char temp[256];
-  snprintf(temp, 256,
-           "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,N=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
+  char temp[512];
+  snprintf(temp, 512,
+	 "(D=%g,S=%g,Y=%g,P=%g,R=%g,M=%d,P=%gN=%d,C=%d,F=%g,%g,%g,F2=%g,%g,%g)",
 	   view->dist,
 	   view->scale,
 	   view->yaw,
 	   view->pitch,
 	   view->roll,
 	   view->mode,
+	   view->depth,
 	   view->rmd,
 	   getNumChannels(),
 	   view->fixed.vtX,

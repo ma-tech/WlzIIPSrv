@@ -146,6 +146,7 @@ that may be queried with the \com{OBJ} command.
 \com{PIT} & Specify the pitch angle of the sectioning rotation& \texttt{PIT={\sltt angle}}\\
 \com{PRL} & Specify the 2D query point relative in tile or display or tile coordinate& \texttt{PRL={\sltt T,X,Y}}\\
 \com{PTL} & Retrieve a tile as a PNG image& \texttt{PTL={\sltt res,tile}}\\
+\com{DPT} & Specify the rendering depth & \texttt{DPT={\sltt depth}} \\
 \com{RMD} & Specify the rendering mode & \texttt{RMD={\sltt mode}} \\
 \com{ROL} & Specify the roll angle of the sectioning rotation & \texttt{ROL={\sltt angle}}\\
 \com{SCL} & Specify the scale used in the sectioning transformation & \texttt{SCL={\sltt scale}} \\
@@ -303,6 +304,16 @@ Specify a 2D query point relative to tile or display coordinate system.\\
 & \textbf{Range} & \texttt{{\sltt T}=-1 .. maxtile}\newline {\sltt X,Y} are limited to the tile or section size\\
 & \textbf{Example} & \outparam\texttt{PRL=2,20,1}\\
 & \textbf{Default value} & none \\
+\end{tabular}
+\hrule\noindent
+\begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
+\com{DPT} & \textbf{Purpose} &
+Specify the rendering mode\\
+& \textbf{Syntax} & \texttt{DPT={\sltt depth}}\\
+& \textbf{Input Parameters}& \texttt{FLOAT {\sltt depth}} rendering depth for projection rendering modes, depth zero implies no limit\\
+& \textbf{Response} & none\\
+& \textbf{Example} & \outparam\texttt{DPT=10}\\
+& \textbf{Default value} & \texttt{0}\\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
@@ -895,6 +906,7 @@ The list of commands from Table~\ref{tab:comparision} compares command sets of t
 \com{PIT}  & N & N & S \\
 \com{PRL}  & N & N & S \\
 \com{PTL}  & N & N & S \\
+\com{DPT}  & N & N & S \\
 \com{RMD}  & N & N & S \\
 \com{ROL}  & N & N & S \\
 \com{SCL}  & N & N & S \\

@@ -163,6 +163,7 @@ class ViewParameters
     WlzDVertex3       fixed2;           /*!< second fixed point */
     WlzDVertex3       up;               /*!< upvector */
 
+    double	      depth;		/*!< rendering depth */
     RenderModeType    rmd;		/*!< rendering mode */
 
     //selection have no access methods
@@ -195,6 +196,7 @@ class ViewParameters
       fixed2.vtX      = fixed2.vtY = fixed2.vtZ = 0.0;
       up.vtX          = up.vtY = 0.0;
       up.vtZ          = -1.0;
+      depth           = 0.0;
       rmd	      = RENDERMODE_SECT;
       x               = 0;
       y               = 0;
@@ -220,6 +222,7 @@ class ViewParameters
       fixed           = viewParameters.fixed;
       fixed2          = viewParameters.fixed2;
       up              = viewParameters.up;
+      depth           = viewParameters.depth;
       rmd	      = viewParameters.rmd;
       x               = viewParameters.x;
       y               = viewParameters.y;
@@ -266,6 +269,7 @@ class ViewParameters
       fixed           = viewParameters.fixed;
       fixed2          = viewParameters.fixed2;
       up              = viewParameters.up;
+      depth           = viewParameters.depth;
       rmd             = viewParameters.rmd;
       x               = viewParameters.x;
       y               = viewParameters.y;
@@ -391,6 +395,26 @@ class ViewParameters
     /** \param m section mode as WlzThreeDViewMode structure */
     void setMode(WlzThreeDViewMode m){ mode = m; };
 
+    /// Set the render depth
+    /** \param ds render depth string */
+    WlzErrorNum setRenderDepth(string ds)
+    {
+      WlzErrorNum  errNum = WLZ_ERR_PARAM_DATA;
+      double	   d = 0.0;
+      const double eps = -1.0e-06;
+
+      if((sscanf(ds.c_str(), "%lg", &d) == 1) || (d > eps))
+      {
+        depth = d;
+	errNum = WLZ_ERR_NONE;
+      }
+      return(errNum);
+    };
+
+    /// Set the render depth
+    /** \param d render depth */
+    void setRenderDepth(double d){depth = d;};
+
     /// Set the rendering mode
     /** \param m section mode as case-insensitive string. Accepted values are:
       SECT, PRJN, PRJD and PRJV. */
@@ -424,7 +448,7 @@ class ViewParameters
       }
       return(errNum);
     }
-    //
+
     /// Set the rendering mode
     /** \param m section mode as RenderModeType. */
     void setMode(RenderModeType m){rmd = m;};

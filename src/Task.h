@@ -391,6 +391,12 @@ class RMD : public Task {
   void run( Session* session, std::string argument );
 };
 
+/// DPT Woolz Command: sets the rendering depth
+class DPT : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
 /// UPV Woolz Command: sets the up vector
 class UPV : public Task {
  public:
