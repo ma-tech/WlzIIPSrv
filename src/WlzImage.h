@@ -79,6 +79,7 @@ class WlzImage : public IIPImage
     int                 ntlx;               /*!< Number of tiles per row */
     int                 ntly;               /*!< Number of tiles per columns */
     WlzUByte	        background[4];      /*!< Background value */
+
   public:
     // Constructors and destructor
     WlzImage();

@@ -1382,113 +1382,152 @@ int WlzImage::getCompoundNo() {
 }
 
 /*!
+ * \return       The number visible objects, or -1 on error.
  * \ingroup      WlzIIPServer
- * \brief        Return number of visible objects at the query point and return these object indexes
- * \param        points pointer to the array where the points should be stored
- * \return       the number visible objects, or -1 for error
- * \par      Source:
- *                WlzImage.cc
+ * \brief        Computes the number of visible objects at the query point
+ * 		 and return these object indexes.
+ * \param values	Destination pointer for the object indexes.
  */
 int WlzImage::getForegroundObjects(int *values){
   
-  WlzErrorNum errNum = WLZ_ERR_NONE;
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
   WlzDVertex3   pos;
-  
-  switch (viewParams->queryPointType) {
-  case QUERYPOINTTYPE_2D:
-    // use 2D (tile based) relative query
-    pos = getCurrentPointInPlane();
-    Wlz3DSectionTransformInvVtx ( &pos, wlzViewStr );
-    break;
-  case QUERYPOINTTYPE_3D:
-    // use 3D absolute query
-    pos =  viewParams->queryPoint;
-    break;
-  defualt:
-    return -1;  //return -1 for invalid point
+
+  switch(viewParams->queryPointType)
+  {
+    case QUERYPOINTTYPE_2D:
+      // use 2D (tile based) relative query
+      pos = getCurrentPointInPlane();
+      Wlz3DSectionTransformInvVtx ( &pos, wlzViewStr );
+      break;
+    case QUERYPOINTTYPE_3D:
+      // use 3D absolute query
+      pos =  viewParams->queryPoint;
+      break;
+    defualt:
+      return -1;  //return -1 for invalid point
   }
-  
+
   prepareObject();
   int counter = 0;
-  WlzCompoundArray *array = wlzObject->type==WLZ_COMPOUND_ARR_2 ? (WlzCompoundArray *)wlzObject : NULL;
+  WlzCompoundArray *array = (wlzObject->type == WLZ_COMPOUND_ARR_2)?
+                            (WlzCompoundArray *)wlzObject : NULL;
   WlzObject *obj;
-  if (array) {
-    int i;
-    for (i=0; i<array->n; i++) {
+  if(array)
+  {
+    int		i;
+
+    for(i = 0; i < array->n; ++i)
+    {
       errNum = WLZ_ERR_NONE;
       obj = array->o[i];
-      if (obj && WlzInsideDomain(obj, pos.vtZ, pos.vtY, pos.vtX, &errNum) && errNum == WLZ_ERR_NONE) {
-	values[counter++]= i;
+      if(obj && WlzInsideDomain(obj, pos.vtZ, pos.vtY, pos.vtX, &errNum) &&
+         (errNum == WLZ_ERR_NONE))
+      {
+	values[counter++] = i;
       }
     }
-  } else {
-    if (WlzInsideDomain(wlzObject, pos.vtZ, pos.vtY, pos.vtX, &errNum) && errNum == WLZ_ERR_NONE) {
-      values[counter++]= 0;
+  }
+  else
+  {
+    if(WlzInsideDomain(wlzObject, pos.vtZ, pos.vtY, pos.vtX, &errNum) &&
+       (errNum == WLZ_ERR_NONE))
+    {
+      values[counter++] = 0;
     }
   }
-  return counter;
+  return(counter);
 }
 
-
 /*!
+ * \return       Woolz error code.
  * \ingroup      WlzIIPServer
  * \brief        Converts a Woolz of type WLZ_2D_DOMAINOBJ with WLZ_GREY_RGBA
  * 		 grey values into a 3 channel raw bitmap
- * \param        buffer to store converted image. the buffer has to be correctly preallocated
- * \param        obj object to be converted
- * \param        pos the origin of the tile
- * \return       void
- * \par      Source:
- *                WlzImage.cc
+ * \param cBuffer 	To store converted image. The buffer has to be
+ *               	correctly preallocated.
+ * \param obj 		Object to be converted.
+ * \param pos 		The origin of the tile.
+ * \param size		Size of the buffer.
+ * \param sel		The selection with red, green, blue and possibly
+ * 			alpha values.
  */
 WlzErrorNum
-WlzImage::convertDomainObjToRGB(WlzUByte *cbuffer, WlzObject* obj,
+WlzImage::convertDomainObjToRGB(WlzUByte *cBuffer, WlzObject* obj,
                                 WlzIVertex2  pos, WlzIVertex2  size,
 				CompoundSelector *sel)
 {
   WlzErrorNum	errNum = WLZ_ERR_NONE;
 
-  if(!cbuffer || !obj)
+  if(!cBuffer || !obj)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
   else if(obj->type == WLZ_2D_DOMAINOBJ)
   {
-    int           i;
-    WlzIntervalWSpace iwsp;
+    WlzIntervalWSpace iWSp;
 
-    int col1 = pos.vtX;
-    int line1 = pos.vtY;
-    int lnOff = 0;
-    int iwidth = 0;
-    int alpha = sel ? sel->a:255;
-    int nCh = getNumChannels();
-    float fA = alpha / 255.0;
-    float fA1 = 1.0f - fA;
-    float r = (sel ? sel->r:255) * fA;
-    float g = (sel ? sel->g:255) * fA;
-    float b = (sel ? sel->b:255) * fA;
+    unsigned int r,
+    		 g,
+		 b,
+		 a,
+		 a1;
+    int 	 nCh = getNumChannels();
 
-    //scan the object
-    if((errNum = WlzInitRasterScan(obj, &iwsp,
+    if(sel)
+    {
+      a = sel->a;
+      r = sel->r * a;
+      g = sel->g * a;
+      b = sel->b * a;
+      a1 = 255 - a;
+    }
+    else
+    {
+      a = 255;
+      r = 255 * 255;
+      g = 255 * 255;
+      b = 255 * 255;
+      a1 = 0;
+    }
+    if((errNum = WlzInitRasterScan(obj, &iWSp,
 	                           WLZ_RASTERDIR_ILIC)) == WLZ_ERR_NONE)
     {
-      while((errNum = WlzNextInterval(&iwsp)) == WLZ_ERR_NONE)
+      while((errNum = WlzNextInterval(&iWSp)) == WLZ_ERR_NONE)
       {
-	WlzUInt val;
-	lnOff = ((size.vtX * (iwsp.linpos-line1)) + (iwsp.lftpos-col1))* nCh;
-	iwidth = iwsp.rgtpos - iwsp.lftpos;
-	for(i = 0; i <= iwidth; i++)
-	{
-	  int	lnCOff = lnOff + (i * nCh);
+	int	i,
+		lnOff,
+		lnCOff,
+		iWidth;
+	WlzUByte *cBuf;
 
-	  cbuffer[lnCOff]     = (WlzUByte )(r + cbuffer[lnCOff] * fA1);
-	  cbuffer[lnCOff + 1] = (WlzUByte )(g + cbuffer[lnCOff + 1] * fA1);
-	  cbuffer[lnCOff + 2] = (WlzUByte )(b + cbuffer[lnCOff + 2] * fA1);
-	  if (nCh==4)
+	iWidth = iWSp.rgtpos - iWSp.lftpos + 1;
+	lnOff = ((size.vtX * (iWSp.linpos - pos.vtY)) +
+	         (iWSp.lftpos - pos.vtX))* nCh;
+	cBuf = cBuffer + lnOff;
+	/* Alpha blending src over dst in Porter Duff fashion while
+	 * keeping everything 0-255. */
+	if(nCh == 4)
+	{
+	  for(i = 0; i < iWidth; ++i)
 	  {
-	    float a2 = cbuffer[lnCOff + 3] / 255.0f;
-	    cbuffer[lnCOff + 3] = (WlzUByte )round((fA + a2 - a2 * fA)*255.0);
+	    unsigned int c;
+
+	    c = *cBuf; *cBuf++ = (r + (c * a1)) / 255;
+	    c = *cBuf; *cBuf++ = (g + (c * a1)) / 255;
+	    c = *cBuf; *cBuf++ = (b + (c * a1)) / 255;
+	    c = *cBuf; *cBuf++ =  a + (a1 * c)  / 255;
+	  }
+	}
+	else
+	{
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    unsigned int c;
+
+	    c = *cBuf; *cBuf++ = (r + (c * a1)) / 255;
+	    c = *cBuf; *cBuf++ = (g + (c * a1)) / 255;
+	    c = *cBuf; *cBuf++ = (b + (c * a1)) / 255;
 	  }
 	}
       }
@@ -1511,182 +1550,267 @@ WlzImage::convertDomainObjToRGB(WlzUByte *cbuffer, WlzObject* obj,
  * \param       size       	Section bounding box size.
  * \param       sel        	Selector with the colour to be used for the
  * 				section.
- * \par      Source:
- *                WlzImage.cc
  */
 WlzErrorNum
-WlzImage::convertValueObjToRGB(WlzUByte *cbuf,
+WlzImage::convertValueObjToRGB(WlzUByte *cBuffer,
 			       WlzObject* obj,
                                WlzIVertex2  pos, WlzIVertex2  size,
 			       CompoundSelector *sel)
 {
-  WlzIntervalWSpace     iwsp;
-  WlzGreyWSpace         gwsp;
-  int           i,
-  		j;
-  WlzGreyType   gType;
-  WlzErrorNum   errNum = WLZ_ERR_NONE;
-  
-  if(!cbuf || !obj)
+  WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+  if(!cBuffer || !obj)
   {
-    return WLZ_ERR_OBJECT_NULL;
+    errNum = WLZ_ERR_OBJECT_NULL;
   }
-  if(obj->values.i == NULL)
+  else if(obj->type == WLZ_2D_DOMAINOBJ)
   {
-    return WLZ_ERR_DOMAIN_NULL;
-  }
-  
-  int col1 = pos.vtX;
-  int line1 = pos.vtY;
-  int lineoff = 0;
-  int iwidth = 0;
-  int outchannels = getNumChannels();
-  bool copyGreyToRGB = outchannels != channels;
-  int alphaoffset = (outchannels == 2 || outchannels==4)?
-                    ((copyGreyToRGB || outchannels==4)? 3 :1): 0;
-  float gray;
-  int   alpha = sel ? sel->a : 255;
-  float fA = alpha / 255.0f;
-  float fR = sel ? sel->r/255.0f : 1.0f;
-  float fG = sel ? sel->g/255.0f : 1.0f;
-  float fB = sel ? sel->b/255.0f : 1.0f;
-  float fAlphaPrev = 0, fANew=0;
-  
-  gType = WlzGreyTypeFromObj(obj, &errNum);
-  //scan the object
-  if(errNum == WLZ_ERR_NONE)
-  {
-    errNum = WlzInitGreyScan(obj, &iwsp, &gwsp);
-  }
-  if(errNum == WLZ_ERR_NONE)
-  {
-    j = 0;
-    while((errNum == WLZ_ERR_NONE) &&
-          ((errNum = WlzNextGreyInterval(&iwsp)) == WLZ_ERR_NONE))
+    unsigned int r,
+    		 g,
+		 b,
+		 a,
+		 a1;
+    double	dr,
+    		dg,
+		db,
+		da,
+		da1;
+    int 	outChan = getNumChannels();
+    bool 	copyGreyToRGB = outChan != channels;
+    WlzIntervalWSpace     iWSp;
+    WlzGreyWSpace         gWSp;
+
+    if(sel)
     {
-      lineoff = (size.vtX * (iwsp.linpos - line1) + (iwsp.colpos - col1)) *
-                outchannels;
-      iwidth = iwsp.rgtpos-iwsp.lftpos;
-      switch( gType ){
-      case WLZ_GREY_LONG:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray = gwsp.u_grintptr.lnp[i] * fA;
-	  cbuf[boff] = (WlzUByte)(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB)
+      a = sel->a;
+      r = (sel->r * a) / 255;
+      g = (sel->g * a) / 255;
+      b = (sel->b * a) / 255;
+      a1 = 255 - a;
+    }
+    else
+    {
+      a = 255;
+      r = 255;
+      g = 255;
+      b = 255;
+      a1 = 0;
+    }
+    da = a / 255.0;
+    dr = r / 255.0;
+    dg = g / 255.0;
+    db = b / 255.0;
+    da1 = 1.0 - a;
+    errNum = WlzInitGreyScan(obj, &iWSp, &gWSp);
+    while((errNum == WLZ_ERR_NONE) &&
+	  ((errNum = WlzNextGreyInterval(&iWSp)) == WLZ_ERR_NONE))
+    {
+      int	i,
+	      bOff,
+	      lnOff,
+	      lnCOff,
+	      iWidth;
+      WlzUByte *cBuf;
+
+      iWidth = iWSp.rgtpos - iWSp.lftpos + 1;
+      lnOff = ((size.vtX * (iWSp.linpos - pos.vtY)) +
+	       (iWSp.lftpos - pos.vtX)) * outChan;
+      cBuf = cBuffer + lnOff;
+      /* Alpha blending src over dst in Porter Duff fashion while
+       * keeping everything 0-255. */
+      switch(gWSp.pixeltype)
+      {
+	case WLZ_GREY_LONG:
+	  for(i = 0; i < iWidth; ++i)
 	  {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fG + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB + cbuf[boff + 2] * (1 - fA));
+	    double	 c,
+			 v;
+
+	    v = gWSp.u_grintptr.lnp[i];
+	    c = *cBuf; c = (dr * v) + (c * da1);
+	    *cBuf++ = (int )round(c);
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; c = (dg * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	      c = *cBuf; c = (db * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; c = da + (da1 * c);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
 	  }
-	  if(alphaoffset > 0)
+	  break;
+	case WLZ_GREY_INT:
+	  for(i = 0; i < iWidth; ++i)
 	  {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+	    double	 c,
+			 v;
+
+	    v = gWSp.u_grintptr.inp[i];
+	    c = *cBuf; c = (dr * v) + (c * da1);
+	    c = WLZ_CLAMP(c, 0, 255);
+	    *cBuf++ = (WlzUByte )round(c);
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; c = (dg * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	      c = *cBuf; c = (db * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; c = da + (da1 * c);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
 	  }
-	}
-	break;
-      case WLZ_GREY_INT:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray = gwsp.u_grintptr.inp[i] * fA;
-	  cbuf[boff] = (WlzUByte )(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fG + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB + cbuf[boff + 2] * (1 - fA));
+	  break;
+	case WLZ_GREY_SHORT:
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    double	 c,
+			 v;
+
+	    v = gWSp.u_grintptr.shp[i];
+	    c = *cBuf; c = (dr * v) + (c * da1);
+	    c = WLZ_CLAMP(c, 0, 255);
+	    *cBuf++ = (WlzUByte )round(c);
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; c = (dg * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	      c = *cBuf; c = (db * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; c = da + (da1 * c);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
 	  }
-	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
+	  break;
+	case WLZ_GREY_UBYTE:
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    unsigned int c,
+			 v;
+
+	    v = gWSp.u_grintptr.ubp[i];
+	    c = *cBuf;
+	    *cBuf++ = ((r * v) + (c * a1)) / 255;
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; *cBuf++ = ((g * v) + (c * a1)) / 255;
+	      c = *cBuf; *cBuf++ = ((b * v) + (c * a1)) / 255;
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; *cBuf++ = a + (a1 * c) / 255;
+	    }
 	  }
-	}
-	break;
-      case WLZ_GREY_SHORT:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray= gwsp.u_grintptr.shp[i] * fA;
-	  cbuf[boff] = (WlzUByte )(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fR + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB + cbuf[boff + 2] * (1 - fA));
+	  break;
+	case WLZ_GREY_FLOAT:
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    double	 c,
+			 v;
+
+	    v = gWSp.u_grintptr.flp[i];
+	    c = *cBuf; c = (dr * v) + (c * da1);
+	    c = WLZ_CLAMP(c, 0, 255);
+	    *cBuf++ = (WlzUByte )round(c);
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; c = (dg * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	      c = *cBuf; c = (db * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; c = da + (da1 * c);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
 	  }
-	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
+	  break;
+	case WLZ_GREY_DOUBLE:
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    double	 c,
+			 v;
+
+	    v = gWSp.u_grintptr.flp[i];
+	    c = *cBuf; c = (dr * v) + (c * da1);
+	    c = WLZ_CLAMP(c, 0, 255);
+	    *cBuf++ = (WlzUByte )round(c);
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf; c = (dg * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	      c = *cBuf; c = (db * v) + (c * da1);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf; c = da + (da1 * c);
+	      c = WLZ_CLAMP(c, 0, 255);
+	      *cBuf++ = (WlzUByte )round(c);
+	    }
 	  }
-	}
-	break;
-      case WLZ_GREY_FLOAT:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray= gwsp.u_grintptr.flp[i] * fA;
-	  cbuf[boff] = (WlzUByte )(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fG + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB+ cbuf[boff + 2] * (1 - fA));
+	  break;
+	case WLZ_GREY_RGBA:
+	  for(i = 0; i < iWidth; ++i)
+	  {
+	    unsigned int c,
+			 v,
+			 rv;
+
+	    rv = gWSp.u_grintptr.rgbp[i];
+	    c = *cBuf;
+	    v = WLZ_RGBA_RED_GET(rv);
+	    *cBuf++ = ((r * v) + (c * a1)) / 255;
+	    if(copyGreyToRGB)
+	    {
+	      c = *cBuf;
+	      v = WLZ_RGBA_GREEN_GET(rv);
+	      *cBuf++ = ((g * v) + (c * a1)) / 255;
+	      c = *cBuf;
+	      v = WLZ_RGBA_BLUE_GET(rv);
+	      *cBuf++ = ((b * v) + (c * a1)) / 255;
+	    }
+	    if((outChan == 2) || (outChan == 4))
+	    {
+	      c = *cBuf;
+	      v = WLZ_RGBA_ALPHA_GET(rv);
+	      *cBuf++ = a + (a1 * c) / 255;
+	    }
 	  }
-	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
-	  }
-	}
-	break;
-      case WLZ_GREY_DOUBLE:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray= gwsp.u_grintptr.dbp[i] * fA;
-	  
-	  cbuf[boff] = (WlzUByte )(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fG + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB + cbuf[boff + 2] * (1 - fA));
-	  }
-	  if (alphaoffset>0) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )(round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0));
-	  }
-	}
-	break;
-	
-      case WLZ_GREY_UBYTE:
-	for(i=0; i <= iwidth; i++){
-	  int boff = lineoff + (i * outchannels);
-	  gray= gwsp.u_grintptr.ubp[i] * fA;
-	  cbuf[boff] = (WlzUByte )(gray * fR + cbuf[boff] * (1 - fA));
-	  if (copyGreyToRGB) {
-	    cbuf[boff + 1] = (WlzUByte )(gray * fG + cbuf[boff + 1] * (1 - fA));
-	    cbuf[boff + 2] = (WlzUByte )(gray * fB + cbuf[boff + 2] * (1 - fA));
-	  }
-	  if (outchannels==2 || outchannels==4) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )round((fA + fAlphaPrev - fAlphaPrev * fA)*255.0);
-	  }
-	}
-	break;
-	
-      case WLZ_GREY_RGBA:
-	for(i=0; i <= iwidth; i++){
-          WlzUInt val;
-	  int boff = lineoff + (i * outchannels);
-	  val = gwsp.u_grintptr.rgbp[i];
-	  cbuf[boff]   = (WlzUByte )(WLZ_RGBA_RED_GET(val)   * fA * fR + cbuf[boff] * (1 - fA));
-	  cbuf[boff + 1] = (WlzUByte )(WLZ_RGBA_GREEN_GET(val) * fA * fG + cbuf[boff + 1] * (1 - fA));
-	  cbuf[boff + 2] = (WlzUByte )(WLZ_RGBA_BLUE_GET(val)  * fA * fB + cbuf[boff + 2] * (1 - fA));
-	  if (outchannels==4) {
-	    fAlphaPrev=cbuf[boff + alphaoffset]/255.0f;
-	    fANew = fA* ((WlzUByte )(WLZ_RGBA_ALPHA_GET(val)))/255.0f;
-	    cbuf[boff + alphaoffset] = (WlzUByte )round((fANew + fAlphaPrev - fAlphaPrev * fANew)*255.0);
-	  }
-	}
-	break;
-      default:
-	errNum = WLZ_ERR_GREY_TYPE;
-	break;
+	  break;
+	default:
+	  errNum = WLZ_ERR_GREY_TYPE;
+	  break;
       }
     }
-  }
-  if(errNum == WLZ_ERR_EOO)
-  {
-    errNum = WLZ_ERR_NONE;
+    if(errNum == WLZ_ERR_EOO)
+    {
+      errNum = WLZ_ERR_NONE;
+    }
   }
   return(errNum);
 }
