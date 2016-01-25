@@ -266,7 +266,33 @@ then
 
 fi
 
-AM_CONDITIONAL( ENABLE_OPENMP, test x$openmp = xtrue )
+AM_CONDITIONAL( ENABLE_LTO, test x$lto = xtrue )
+
+dnl	************************************************************ 
+dnl 	Check for link time optimisation used
+
+AC_ARG_ENABLE(lto,
+    [  --enable-lto		build with link time optimisation] )
+
+if test "$enable_lto" = "yes"
+then
+	lto=true
+	# GNU CC
+	if test "$CC" = "gcc"
+	then
+	  CFLAGS="${CFLAGS} -flto"
+	  CXXFLAGS="${CXXFLAGS} -flto"
+	fi
+	# Intel CC
+	if test "$CC" = "icc"
+	then
+	  CFLAGS="${CFLAGS} -ipo"
+	  CXXFLAGS="${CXXFLAGS} -ipo"
+	fi
+
+fi
+
+AM_CONDITIONAL( ENABLE_LTO, test x$lto = xtrue )
 
 dnl	************************************************************ 
 dnl 	Check for libdl for dynamic library loading
