@@ -947,6 +947,7 @@ throw(string)
   //init tile buffer
   for (int i = 0; i < size.vtX * size.vtY; i++)
   {
+    // TODO crazy way of doing this
     memcpy(tile_buf + i * outchannels, background, outchannels);
   }
   if(viewParams->selector)
