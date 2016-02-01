@@ -119,6 +119,7 @@ WlzImage::WlzImage( const std::string& path): IIPImage( path ) {
   
   tile_height       = Environment::getWlzTileHeight();
   tile_width        = Environment::getWlzTileWidth();
+  fileSystemPrefix  = Environment::getFileSystemPrefix();
 };
 
 /*!
@@ -298,6 +299,7 @@ throw(string)
     LOG_DEBUG("WlzImage::prepareObject() reloading");
     //check cache first
     filename = getFileName( );
+    LOG_DEBUG("WlzImage::prepareObject() filename " << filename);
     wlzObject  = WlzAssignObject(wlzObjectCache.get(filename), NULL);
 #ifdef __PERFORMANCE_DEBUG
     struct timeval tVal;
@@ -316,14 +318,28 @@ throw(string)
 	command += filename;
 	fp = popen( command.c_str(), "r");
 	usepipe = 1;
-      } else
-	fp = fopen(filename.c_str(), "r");
+      }
+      else
+      {
+	std::string fullFilename;
+
+	fullFilename = fileSystemPrefix + filename;
+	fp = fopen(fullFilename.c_str(), "r");
+        LOG_DEBUG("WlzImage::prepareObject() open of " <<
+	          fullFilename << " " <<
+		  ((fp)? "successful": "unsuccessful"));
+      }
       
       if (fp)
+      {
 	wlzObject = WlzEffReadObj( fp , NULL, WLZEFF_FORMAT_WLZ,
 	                           0, 0, 0, &errNum );
+        LOG_DEBUG("WlzImage::prepareObject() read of " << filename <<
+	          "Error code = " << WlzStringFromErrorNum(errNum, NULL));
+      }
       
-      if (fp) {
+      if (fp)
+      {
 	if (usepipe)
 	  pclose(fp);
 	else
@@ -333,11 +349,13 @@ throw(string)
 #ifdef __ALLOW_REMOTE_FILE
       /////???????????? Yiya added for remote wlz file
 	// no local wlzObject
-	if (NULL == wlzObject) {
+	if (NULL == wlzObject)
+	{
 	  char* remoteFile = new char[strlen(filename.c_str()) + 1];
 	  strcpy(remoteFile, filename.c_str());
 
-	  wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile, (const char*)NULL, -1);
+	  wlzObject = WlzRemoteImage::wlzRemoteReadObj((const char*)remoteFile,
+	                                               (const char*)NULL, -1);
 
 	  if (NULL == wlzObject) 
 	  {
@@ -914,8 +932,7 @@ throw(string)
 					 &errNum)))
     {
       LOG_DEBUG("WlzImage::getTile() domain size " << pos.vtX <<"," <<
-                pos.vtY << "," << tw << "," << th << " --- " <<
-		wlzObject->domain.core->type);
+                pos.vtY << "," << tw << "," << th);
       values.core = NULL;
       tmpObj = WlzAssignObject(WlzMakeMain(WLZ_2D_DOMAINOBJ, domain,
 					   values, NULL, NULL, &errNum), NULL);
