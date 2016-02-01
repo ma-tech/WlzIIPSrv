@@ -78,6 +78,7 @@ IIPImage::IIPImage( const IIPImage& image )
   isFile = image.isFile;
   type = image.type;
   fileNamePattern = image.fileNamePattern;
+  fileSystemPrefix = image.fileSystemPrefix;
   horizontalAnglesList = image.horizontalAnglesList;
   verticalAnglesList = image.verticalAnglesList;
   image_width = image.image_width;
@@ -98,6 +99,7 @@ const IIPImage& IIPImage::operator = ( const IIPImage& image )
   isFile = image.isFile;
   type = image.type;
   fileNamePattern = image.fileNamePattern;
+  fileSystemPrefix = image.fileSystemPrefix;
   horizontalAnglesList = image.horizontalAnglesList;
   verticalAnglesList = image.verticalAnglesList;
   image_width = image.image_width;
@@ -118,7 +120,7 @@ void IIPImage::testImageType()
     int dot = imagePath.find_last_of( "." );
     type = imagePath.substr( dot + 1, imagePath.length() );
 
-    // wlz may be a remot file
+    // wlz may be a remote file
     if (NULL != type.c_str() &&
 	0 == strcmp(type.c_str(), "wlz"))
       isFile = true;
@@ -137,7 +139,7 @@ void IIPImage::testImageType()
 
     // Check for sequence
     glob_t gdat;
-    string filename = imagePath + fileNamePattern + "000_090.*";
+    string filename = fileSystemPrefix + imagePath + fileNamePattern + "000_090.*";
       
     if( glob( filename.c_str(), 0, NULL, &gdat ) != 0 ){
       globfree( &gdat );
@@ -180,7 +182,7 @@ void IIPImage::measureVerticalAngles()
   glob_t gdat;
   unsigned int i;
 
-  string filename = imagePath + fileNamePattern + "000_*." + type;
+  string filename = fileSystemPrefix + imagePath + fileNamePattern + "000_*." + type;
   
   if( glob( filename.c_str(), 0, NULL, &gdat ) != 0 ){
     globfree( &gdat );
@@ -217,7 +219,7 @@ void IIPImage::measureHorizontalAngles()
   glob_t gdat;
   unsigned int i;
 
-  string filename = imagePath + fileNamePattern + "*_090." + type;
+  string filename = fileSystemPrefix + imagePath + fileNamePattern + "*_090." + type;
   
   if( glob( filename.c_str(), 0, NULL, &gdat ) != 0 ){
     globfree( &gdat );
@@ -285,11 +287,13 @@ string IIPImage::getFileName( int seq, int ang )
   char name[1024];
   string suffix;
 
-  if( isFile ) return imagePath;
+  if( isFile ) return fileSystemPrefix + imagePath;
   else{
     snprintf( name, 1024,
-	      "%s%s%.3d_%.3d.%s", imagePath.c_str(), fileNamePattern.c_str(),
-	      seq, ang, type.c_str() );
+	      "%s%s%.3d_%.3d.%s",
+	      (fileSystemPrefix + imagePath).c_str(),
+	       fileNamePattern.c_str(),
+	       seq, ang, type.c_str() );
     
     string file( name );
 
