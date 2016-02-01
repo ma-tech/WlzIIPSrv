@@ -197,10 +197,14 @@ int main( int argc, char *argv[] )
   imageCacheMapType imageCache;
   // Get our image pattern variable
   string filename_pattern = Environment::getFileNamePattern();
+  //  Get the filesystem prefix
+  string filesystem_prefix = Environment::getFileSystemPrefix();
   //  Get our default quality variable
   int jpeg_quality = Environment::getJPEGQuality();
   //  Get our max CVT size (not respected by Woolz objects)
   int max_CVT = Environment::getMaxCVT();
+  LOG_INFO("Setting filesystem prefix to " <<
+           filesystem_prefix);
   LOG_INFO("Setting maximum image cache size to " <<
            max_image_cache_size << "MB");
   LOG_INFO("Setting 3D file sequence name pattern to " <<
