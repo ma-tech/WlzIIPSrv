@@ -51,6 +51,7 @@ static char _Environment_h[] = "University of Edinburgh $Id$";
 #define MAX_VIEW_STRUCT_CACHE_SIZE 1024
 #define MAX_WLZOBJ_CACHE_COUNT 	1024
 #define MAX_WLZOBJ_CACHE_SIZE 	1024 /* in MB */
+#define FILESYSTEM_PREFIX       ""
 #define FILENAME_PATTERN 	"_pyr_"
 #define JPEG_QUALITY 		75
 #define MAX_CVT 		5000
@@ -162,6 +163,19 @@ class Environment {
     return max_object_cache_size;
   }
 
+  static std::string getFileSystemPrefix(){
+    char* envpara = getenv( "FILESYSTEM_PREFIX" );
+
+    std::string filesystem_prefix; 
+    if(envpara){ 
+      filesystem_prefix = std::string( envpara ); 
+    } 
+    else{
+      filesystem_prefix = FILESYSTEM_PREFIX; 
+    }
+    return(filesystem_prefix);
+  }
+
   static std::string getFileNamePattern(){
     char* envpara = getenv( "FILENAME_PATTERN" );
     std::string filename_pattern;
@@ -217,7 +231,6 @@ class Environment {
 
     return max_CVT;
   }
-
 
 };
 
