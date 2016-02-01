@@ -106,6 +106,8 @@ void FIF::run( Session* session, std::string argument ){
   // Get our image pattern variable
   string filename_pattern = Environment::getFileNamePattern();
 
+  // Get our filesystem prefix
+  string filesystem_prefix = Environment::getFileSystemPrefix();
 
   // Put the image opening into a try block so that we can set
   // a meaningful error
@@ -117,19 +119,23 @@ void FIF::run( Session* session, std::string argument ){
     if(session->imageCache->empty()){
       test = IIPImage( argument );
       test.setFileNamePattern( filename_pattern );
+      test.setFileSystemPrefix( filesystem_prefix );
       test.Initialise();
       (*session->imageCache)[argument] = test;
       LOG_INFO("Image cache initialisation");
     }
     else{
+      // Cache hit
       if(session->imageCache->find(argument) != session->imageCache->end()){
 	test = (*session->imageCache)[ argument ];
 	LOG_INFO("Image cache hit. Number of elements: " <<
 	          session->imageCache->size());
       }
       else{
+	// Cache miss
 	test = IIPImage( argument );
 	test.setFileNamePattern( filename_pattern );
+	test.setFileSystemPrefix( filesystem_prefix );
 	test.Initialise();
 	LOG_INFO("Image cache miss");
 	if(session->imageCache->size() >= 100)
