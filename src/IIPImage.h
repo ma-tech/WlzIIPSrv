@@ -91,6 +91,9 @@ class IIPImage {
   /// Return the image type e.g. tif
   std::string type;
 
+  /// Prefix to add to paths
+  std::string fileSystemPrefix;
+
   /// The image pixel dimensions
   unsigned int image_width, image_height;
 
@@ -146,6 +149,9 @@ class IIPImage {
   /// Return the image path
   const std::string& getImagePath() { return imagePath; };
 
+  /// Return the filesystem prefix
+  const std::string& getFileSystemPrefix() {return fileSystemPrefix; };
+
   /// Return the full file path for a particular horizontal and vertical angle
   /** \param x horizontal sequence angle
       \param y vertical sequence angle
@@ -157,6 +163,9 @@ class IIPImage {
 
   /// Check whether this object has been initialised
   bool set() { return isSet; };
+
+  /// Set file system prefix
+  void setFileSystemPrefix( const std::string& prefix ) { fileSystemPrefix = prefix; };
 
   /// Set the file name pattern used in image sequences
   void setFileNamePattern( std::string pattern ) { fileNamePattern = pattern; };
