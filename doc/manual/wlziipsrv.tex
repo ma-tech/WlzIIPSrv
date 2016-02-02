@@ -22,7 +22,7 @@
     pdfmenubar=true,
     pdffitwindow=false,
     pdfstartview={FitH},
-    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.0.2)},
+    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.1.4)},
     pdfauthor={Bill Hill},
     pdfsubject={Woolz Internet Image Protocol Server},
     pdfcreator={Bill Hill},
@@ -37,7 +37,7 @@
 
 \newfont{\sltt}{cmsltt10}  % font for command argument (slanted typewriter)
 
-\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.3)}
+\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.4)}
 \author{
   Zsult Husz \footnote{Supported by {NIH} under grant \#1R01MH070370-01A2.} \\
   \and
@@ -1012,7 +1012,8 @@ figure\ref{fig:proxyarchit}
 \subsection{WlzIIPProxy options}
 Usage:
 \begin{verbatim}
-WlzIIPProxy [-p<portnumber>] [-c<conf_filename>] [-l<log_filename>] [-v<loglevel>] [-h]
+WlzIIPProxy [-p<portnumber>] [-c<conf_filename>] [-l<log_filename>]
+            [-v<loglevel>] [-h]
 \end{verbatim}
 
 where the options are:
@@ -1088,7 +1089,9 @@ Do not forget to set read and execute access modes!
 
 \subsection{Customisable parameters}
 \label{sec:custom_param}
-In addition to the IIPSrv \cite[p.25]{IIPSRV097} configuration parameters, \texttt{WlzIIPSrv} allows with the  parameters from Table~\ref{tab:parameters} changing the default cache and tile sizes.
+In addition to the IIPSrv \cite[p.25]{IIPSRV097} configuration parameters,
+\texttt{WlzIIPSrv} allows with the  parameters from
+Table~\ref{tab:parameters} changing the logging, caches and tile sizes.
 
 \begin{table}[!htbp]
 \centering
@@ -1096,6 +1099,11 @@ In addition to the IIPSrv \cite[p.25]{IIPSRV097} configuration parameters, \text
 \hline
 \textbf{Parameter}          & \textbf{Description}                        & \textbf{Default value} \\
 \hline
+\texttt{LOGFILE}                         & Location of log file                                 & /tmp/iipsrv.log \\
+\texttt{LOGLEVEL}                        & Log level (EMERG, FATAL,                             & WARN \\
+                                         & ALERT, CRIT, ERROR, WARN,                            & \\
+					 & NOTICE, INFO, DEBUG)                                 & \\
+\texttt{FILESYSTEM\_PREFIX}              & Prefix directory for images                          & '' \\
 \texttt{MAX\_WLZOBJ\_CACHE\_SIZE}        & Maximum Woolz object cache size in MBs               & 1024 \\
 \texttt{MAX\_WLZOBJ\_CACHE\_COUNT}	 & Maximum number of Woolz object in cache		& 100 \\
 \texttt{WLZ\_TILE\_WIDTH}                & Tile width in pixels                                 & 100  \\
@@ -1178,9 +1186,10 @@ FastCgiServer /opt/apache/fcgi-bin/wlziipsrv.fcgi \
 -initial-env LOGFILE=/opt/apache/logs/wlziipsrv.log \
 -initial-env LOGLEVEL=WARN \
 -initial-env JPEG_QUALITY=50 \
+-initial-env FILESYSTEM_PREFIX=/export/images \
 -initial-env MAX_CVT=3000 \
--initial-env MAX_IMAGE_CACHE_SIZE=1000 \
 -initial-env MAX_WLZOBJ_CACHE_COUNT=100 \
+-initial-env MAX_WLZOBJ_CACHE_SIZE=4000 \
 -initial-env WLZ_TILE_WIDTH="100" \
 -initial-env WLZ_TILE_HEIGHT="100"
 \end{verbatim}
