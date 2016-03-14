@@ -54,13 +54,18 @@ CP      	")"
 SEP         	","
 DASH         	"-"
 
-INTERSECT	"intersect"
-UNION       	"union"
-DILATION    	"dilation"
-EROSION     	"erosion"
+BACKGROUND	"background"
 DIFF        	"diff"
-THRESHOLD   	"threshold"
+DILATION    	"dilation"
+DOMAIN    	"domain"
+EROSION     	"erosion"
+FILL        	"fill"
+INTERSECT	"intersect"
 OCCUPANCY	"occupancy"
+SETVALUE   	"setvalue"
+THRESHOLD   	"threshold"
+TRANSFER    	"transfer"
+UNION       	"union"
 
  
 UINT      	[0-9]+
@@ -76,26 +81,41 @@ CMP		("lt")|("le")|("eq")|("ge")|("gt")
                   yylval->cmp = WlzExpCmpFromStr(yytext);
 		  return(TOKEN_CMP);
 		}
-{INTERSECT}     {
-                  return(TOKEN_INTERSECT);
-		}
-{UNION}     	{
-                  return(TOKEN_UNION);
-		}
-{DILATION}     	{
-                  return(TOKEN_DILATION);
-		}
-{EROSION}     	{
-                  return(TOKEN_EROSION);
+{BACKGROUND}    {
+                  return(TOKEN_BACKGROUND);
 		}
 {DIFF}     	{
                   return(TOKEN_DIFF);
 		}
-{THRESHOLD}     {
-                  return(TOKEN_THRESHOLD);
+{DILATION}     	{
+                  return(TOKEN_DILATION);
+		}
+{DOMAIN}     	{
+                  return(TOKEN_DOMAIN);
+		}
+{EROSION}     	{
+                  return(TOKEN_EROSION);
+		}
+{FILL}     	{
+                  return(TOKEN_FILL);
+		}
+{INTERSECT}     {
+                  return(TOKEN_INTERSECT);
 		}
 {OCCUPANCY}     {
                   return(TOKEN_OCCUPANCY);
+		}
+{SETVALUE}     {
+                  return(TOKEN_SETVALUE);
+		}
+{THRESHOLD}     {
+                  return(TOKEN_THRESHOLD);
+		}
+{TRANSFER}      {
+                  return(TOKEN_TRANSFER);
+		}
+{UNION}     	{
+                  return(TOKEN_UNION);
 		}
 {OP}        	{
 		  return(TOKEN_OP);

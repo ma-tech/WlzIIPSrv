@@ -637,8 +637,9 @@ erosion,
 fill,
 intersection,
 occupancy,
-template,
-threshold
+setvalue,
+threshold,
+transfer
 and
 union.
 Image processing expressions are built from compound object
@@ -679,9 +680,10 @@ are described in table \ref{tbl:imgpops}.
 	    &  & fill\verb=(=\emph{exp}\verb=) |= \\
 	    &  & intersect\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
 	    &  & occupancy\verb=(=\emph{index list}\verb=?) |= \\
-	    &  & template\verb=(=\emph{exp},\emph{exp}\verb=) |= \\
-	    &  & threshold\verb=(=\emph{exp},\emph{val},\emph{cmp}\verb=)= \\
-	    &  & union\verb=(=\emph{exp list}\verb=|=\emph{idx list},\emph{exp list}\verb=|=\emph{idx list}\verb=) |= \\
+	    &  & setvalue\verb=(=\emph{exp},\emph{val}\verb=) |= \\
+	    &  & threshold\verb=(=\emph{exp},\emph{val},\emph{cmp}\verb=) |= \\
+	    &  & transfer\verb=(=\emph{exp},\emph{exp}\verb=) |= \\
+	    &  & union\verb=(=\emph{exp list}\verb=|=\emph{idx list},\emph{exp list}\verb=|=\emph{idx list}\verb=)= \\
 \emph{idx list}    	&:=& \verb=(=\emph{uint}\verb=|=\emph{idx range}\verb=|=\emph{idx list},\emph{idx list}\verb=)= \\
 \emph{idx range}    	&:=& \emph{uint}\verb=-=\emph{uint} \\
 \emph{idx}         	&:=& \verb=[0-9]+= \\
@@ -710,15 +712,17 @@ fill\verb=(=\emph{exp}\verb=)=                                      & Fills all 
                                                                       given expression's domain. \\
 intersect\verb=(=\emph{exp list}\verb=)=                            & The intersection of the domains in the given lists. \\
 occupancy\verb=(=\emph{idx list}\verb=?)=                           & The domain occupancy in the optional list. \\
-template\verb=(=\emph{exp},\emph{exp}\verb=)=                        & Creates a new object with the domain of the first
-                                                                      expression's object and the values of the second.
-								      Values outside the domain of the second but within
-								      the first are set to the second's background value. \\
+setvalue\verb=(=\emph{exp},\emph{value}\verb=)=                     & Creates an object with the domain of the given
+                                                                      expression and all values set to the given value. \\
 threshold\verb=(=\emph{exp},\emph{value},\emph{comparison}\verb=)=  & Creates an object where the image values satisfy
 						                      the given \emph{value} and \emph{comparison}.
 								      Here the value is floating point and valid comparisons
 								      are \verb=lt= (less than), \verb=le= (less than or equal), \verb=eq= (equal),
 								      \verb=ge= (greater than or equal) and \verb=gt)= (greater than). \\
+transfer\verb=(=\emph{exp},\emph{exp}\verb=)=                        & Creates a new object with the domain of the first
+                                                                      expression's object and the values of the second.
+								      Values outside the domain of the second but within
+								      the first are set to the second's background value. \\
 union\verb=(=\emph{exp list}\verb=|=\emph{idx list},
              \emph{exp list}\verb=|=\emph{idx list}\verb=)=         & The union of the domains in the given lists. \\
 \hline
