@@ -52,13 +52,19 @@ static char _WlzExpParser_yacc[] = "MRC HGU $Id$";
 %token		TOKEN_CP
 %token		TOKEN_SEP
 %token		TOKEN_DASH
-%token		TOKEN_INTERSECT
-%token		TOKEN_UNION
-%token		TOKEN_OCCUPANCY
-%token		TOKEN_DILATION
-%token		TOKEN_EROSION
+
+%token		TOKEN_BACKGROUND
 %token		TOKEN_DIFF
+%token		TOKEN_DILATION
+%token		TOKEN_DOMAIN
+%token		TOKEN_EROSION
+%token		TOKEN_FILL
+%token		TOKEN_INTERSECT
+%token		TOKEN_OCCUPANCY
+%token		TOKEN_SETVALUE
 %token		TOKEN_THRESHOLD
+%token		TOKEN_TRANSFER
+%token		TOKEN_UNION
  
 %token <u> 	TOKEN_UINT
 %token <cmp> 	TOKEN_CMP
@@ -127,26 +133,59 @@ exp:
 		{
 		  $$ = WlzExpMakeIndex($1);
 		} |
-		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
-		TOKEN_UINT TOKEN_SEP TOKEN_CMP TOKEN_CP
+		TOKEN_BACKGROUND TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
 		{
-		  $$ = WlzExpMakeThreshold($3, $5, $7);
+		  $$ = WlzExpMakeBackground($3, $5);
 		} |
 		TOKEN_DIFF TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
 		{
 		  $$ = WlzExpMakeDiff($3, $5);
 		} |
-		TOKEN_EROSION TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
-		{
-		  $$ = WlzExpMakeErosion($3, $5);
-		} |
 		TOKEN_DILATION TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
 		{
 		  $$ = WlzExpMakeDilation($3, $5);
 		} |
+		TOKEN_DOMAIN TOKEN_OP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeDomain($3);
+		} |
+		TOKEN_EROSION TOKEN_OP exp TOKEN_SEP TOKEN_UINT TOKEN_CP
+		{
+		  $$ = WlzExpMakeErosion($3, $5);
+		} |
+		TOKEN_FILL TOKEN_OP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeFill($3);
+		} |
 		TOKEN_INTERSECT TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
 		{
 		  $$ = WlzExpMakeIntersect($3, $5);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP TOKEN_CP
+		{
+		  $$ = WlzExpMakeOccupancy(NULL);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeOccupancy($3);
+		} |
+		TOKEN_OCCUPANCY TOKEN_OP idx_lst TOKEN_CP
+		{
+		$$ = WlzExpMakeOccupancy($3);
+		} |
+		TOKEN_SETVALUE TOKEN_OP exp TOKEN_SEP
+		TOKEN_UINT TOKEN_CP
+		{
+		  $$ = WlzExpMakeSetvalue($3, $5);
+		} |
+		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
+		TOKEN_UINT TOKEN_SEP TOKEN_CMP TOKEN_CP
+		{
+		  $$ = WlzExpMakeThreshold($3, $5, $7);
+		} |
+		TOKEN_TRANSFER TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
+		{
+		  $$ = WlzExpMakeTransfer($3, $5);
 		} |
 		TOKEN_UNION TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
 		{
@@ -163,19 +202,6 @@ exp:
 		TOKEN_UNION TOKEN_OP idx_lst TOKEN_CP
 		{
 		  $$ = WlzExpMakeUnion($3, NULL);
-		} |
-		TOKEN_OCCUPANCY TOKEN_OP TOKEN_CP
-		{
-		  $$ = WlzExpMakeOccupancy(NULL);
-		} |
-		TOKEN_OCCUPANCY TOKEN_OP exp TOKEN_CP
-		{
-		  $$ = WlzExpMakeOccupancy($3);
-		} |
-		TOKEN_OCCUPANCY TOKEN_OP idx_lst TOKEN_CP
-		{
-		$$ = WlzExpMakeOccupancy($3);
-		}
-		;
+		};
  
 %%
