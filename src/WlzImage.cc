@@ -1801,18 +1801,12 @@ WlzImage::convertValueObjToRGB(WlzUByte *cBuffer,
 
 	    rv = gWSp.u_grintptr.rgbp[i];
 	    c = *cBuf;
-	    v = WLZ_RGBA_RED_GET(rv);
-	    *cBuf++ = ((r * v) + (c * a1)) / 255;
-	    if(copyGreyToRGB)
-	    {
-	      c = *cBuf;
-	      v = WLZ_RGBA_GREEN_GET(rv);
-	      *cBuf++ = ((g * v) + (c * a1)) / 255;
-	      c = *cBuf;
-	      v = WLZ_RGBA_BLUE_GET(rv);
-	      *cBuf++ = ((b * v) + (c * a1)) / 255;
-	    }
-	    if((outChan == 2) || (outChan == 4))
+	    *cBuf++ = ((r * WLZ_RGBA_RED_GET(rv))   + (c * a1)) / 255;
+	    c = *cBuf;
+	    *cBuf++ = ((g * WLZ_RGBA_GREEN_GET(rv)) + (c * a1)) / 255;
+	    c = *cBuf;
+	    *cBuf++ = ((b * WLZ_RGBA_BLUE_GET(rv))  + (c * a1)) / 255;
+	    if(outChan == 4)
 	    {
 	      c = *cBuf;
 	      v = WLZ_RGBA_ALPHA_GET(rv);
