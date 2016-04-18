@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT
-AM_INIT_AUTOMAKE(wlziipsrv,1.1.4)
+AM_INIT_AUTOMAKE(wlziipsrv,1.1.5)
 
 AC_PREFIX_DEFAULT( `pwd` )
 
