@@ -1,10 +1,8 @@
+/* A Bison parser, made by GNU Bison 2.7.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
-
-/* Skeleton interface for Bison's Yacc-like parsers in C
+/* Bison interface for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,6 +30,15 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+#ifndef YY_YY_WLZEXPPARSER_H_INCLUDED
+# define YY_YY_WLZEXPPARSER_H_INCLUDED
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -43,18 +50,22 @@
      TOKEN_CP = 259,
      TOKEN_SEP = 260,
      TOKEN_DASH = 261,
-     TOKEN_INTERSECT = 262,
-     TOKEN_UNION = 263,
-     TOKEN_OCCUPANCY = 264,
-     TOKEN_DILATION = 265,
+     TOKEN_BACKGROUND = 262,
+     TOKEN_DIFF = 263,
+     TOKEN_DILATION = 264,
+     TOKEN_DOMAIN = 265,
      TOKEN_EROSION = 266,
-     TOKEN_DIFF = 267,
-     TOKEN_THRESHOLD = 268,
-     TOKEN_UINT = 269,
-     TOKEN_CMP = 270
+     TOKEN_FILL = 267,
+     TOKEN_INTERSECT = 268,
+     TOKEN_OCCUPANCY = 269,
+     TOKEN_SETVALUE = 270,
+     TOKEN_THRESHOLD = 271,
+     TOKEN_TRANSFER = 272,
+     TOKEN_UNION = 273,
+     TOKEN_UINT = 274,
+     TOKEN_CMP = 275
    };
 #endif
-
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -64,5 +75,18 @@
 #endif
 
 
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void *YYPARSE_PARAM);
+#else
+int yyparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void);
+#else
+int yyparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
 
-
+#endif /* !YY_YY_WLZEXPPARSER_H_INCLUDED  */

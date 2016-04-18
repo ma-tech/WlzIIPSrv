@@ -58,13 +58,18 @@ typedef enum _WlzExpOpType
   WLZ_EXP_OP_INDEX,
   WLZ_EXP_OP_INDEXLST,
   WLZ_EXP_OP_INDEXRNG,
-  WLZ_EXP_OP_INTERSECT,
-  WLZ_EXP_OP_UNION,
-  WLZ_EXP_OP_DILATION,
-  WLZ_EXP_OP_EROSION,
+  WLZ_EXP_OP_BACKGROUND,
   WLZ_EXP_OP_DIFF,
+  WLZ_EXP_OP_DILATION,
+  WLZ_EXP_OP_DOMAIN,
+  WLZ_EXP_OP_EROSION,
+  WLZ_EXP_OP_FILL,
+  WLZ_EXP_OP_INTERSECT,
+  WLZ_EXP_OP_OCCUPANCY,
+  WLZ_EXP_OP_SETVALUE,
   WLZ_EXP_OP_THRESHOLD,
-  WLZ_EXP_OP_OCCUPANCY
+  WLZ_EXP_OP_TRANSFER,
+  WLZ_EXP_OP_UNION
 } WlzExpOpType;
 
 typedef enum _WlzExpCmpType
@@ -125,27 +130,6 @@ extern WlzExp			*WlzExpParse(
 				  const char *str,
 				  unsigned int *dstNPar,
 				  unsigned int *par);
-extern WlzExp          		*WlzExpMakeThreshold(
-				  WlzExp *e,
-				  unsigned int val,
-				  WlzExpCmpType cmp);
-extern WlzExp          		*WlzExpMakeDiff(
-				  WlzExp *e0,
-				  WlzExp *e1);
-extern WlzExp          		*WlzExpMakeErosion(
-				  WlzExp *e0,
-				  unsigned int val);
-extern WlzExp          		*WlzExpMakeDilation(
-				  WlzExp *e0,
-				  unsigned int val);
-extern WlzExp          		*WlzExpMakeUnion(
-				  WlzExp *e0,
-				  WlzExp *e1);
-extern WlzExp          		*WlzExpMakeIntersect(
-				  WlzExp *e0,
-				  WlzExp *e1);
-extern WlzExp          		*WlzExpMakeOccupancy(
-				  WlzExp *e0);
 extern WlzExp          		*WlzExpMakeIndex(
 				  unsigned int idx0);
 extern WlzExp          		*WlzExpMakeIndexRange(
@@ -166,6 +150,41 @@ extern char            		*WlzExpStr(
 				  WlzExp *e,
 				  int *dstStrLen,
 				  WlzErrorNum *dstErr);
+
+extern WlzExp          		*WlzExpMakeBackground(
+				  WlzExp *e0,
+				  unsigned int val);
+extern WlzExp          		*WlzExpMakeDiff(
+				  WlzExp *e0,
+				  WlzExp *e1);
+extern WlzExp          		*WlzExpMakeDilation(
+				  WlzExp *e0,
+				  unsigned int val);
+extern WlzExp			*WlzExpMakeDomain(
+                                  WlzExp *e0);
+extern WlzExp          		*WlzExpMakeErosion(
+				  WlzExp *e0,
+				  unsigned int val);
+extern WlzExp			*WlzExpMakeFill(
+                                  WlzExp *e0);
+extern WlzExp          		*WlzExpMakeIntersect(
+				  WlzExp *e0,
+				  WlzExp *e1);
+extern WlzExp          		*WlzExpMakeOccupancy(
+				  WlzExp *e0);
+extern WlzExp          		*WlzExpMakeSetValue(
+				  WlzExp *e,
+				  unsigned int val);
+extern WlzExp          		*WlzExpMakeThreshold(
+				  WlzExp *e,
+				  unsigned int val,
+				  WlzExpCmpType cmp);
+extern WlzExp          		*WlzExpMakeTransfer(
+				  WlzExp *e0,
+				  WlzExp *e1);
+extern WlzExp          		*WlzExpMakeUnion(
+				  WlzExp *e0,
+				  WlzExp *e1);
 
 #ifdef __cplusplus
 }

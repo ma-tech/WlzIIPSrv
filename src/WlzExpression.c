@@ -42,6 +42,7 @@ static char _WlzExpression_c[] = "University of Edinburgh $Id$";
 * \ingroup	WlzIIPServer
 */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "WlzExpression.h"
@@ -76,6 +77,29 @@ static WlzObject		*WlzExpIndexListToCmpObj(
 				  WlzObject *iObj,
 				  WlzExp *e,
 				  WlzErrorNum *dstErr);
+
+static WlzObject 		*WlzExpBackground(
+				  WlzObject *o0,
+				  unsigned int idx,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpDiff(
+				  WlzObject *o0,
+				  WlzObject *o1,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpDilation(
+				  WlzObject *iObj,
+				  unsigned int rad,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpDomain(
+				  WlzObject *iObj,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpErosion(
+				  WlzObject *iObj,
+				  unsigned int rad,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpFill(
+				  WlzObject *iObj,
+				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpIntersect(
 				  WlzObject *iObj0,
 				  WlzObject *iObj1,
@@ -84,26 +108,22 @@ static WlzObject 		*WlzExpOccupancy(
 				  WlzObject *gObj,
 				  WlzObject *roiObj,
                                   WlzErrorNum *dstErr);
-static WlzObject 		*WlzExpUnion(
-				  WlzObject *iObj0,
-				  WlzObject *iObj1,
-				  WlzErrorNum *dstErr);
-static WlzObject 		*WlzExpDilation(
+static WlzObject 		*WlzExpSetvalue(
 				  WlzObject *iObj,
-				  unsigned int rad,
-				  WlzErrorNum *dstErr);
-static WlzObject 		*WlzExpErosion(
-				  WlzObject *iObj,
-				  unsigned int rad,
-				  WlzErrorNum *dstErr);
-static WlzObject 		*WlzExpDiff(
-				  WlzObject *o0,
-				  WlzObject *o1,
+				  unsigned int val,
 				  WlzErrorNum *dstErr);
 static WlzObject 		*WlzExpThreshold(
 				  WlzObject *iObj,
 				  unsigned int val,
 				  WlzExpCmpType cmp,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpTransfer(
+				  WlzObject *dObj,
+				  WlzObject *vObj,
+				  WlzErrorNum *dstErr);
+static WlzObject 		*WlzExpUnion(
+				  WlzObject *iObj0,
+				  WlzObject *iObj1,
 				  WlzErrorNum *dstErr);
 
 /*!
@@ -194,7 +214,8 @@ void 		WlzExpFree(WlzExp *e)
 /*!
 * \return	New expression or NULL on error.
 * \ingroup	WlzIIPServer
-* \brief	Parses the given string and builds a morphological expression.
+* \brief	Parses the given string and builds a image processing
+* 		expression.
 * \param	str			Given string to be parsed.
 * \param	dstNPar			Destination pointer for the number
 * 					of parameters parsed.
@@ -238,26 +259,21 @@ WlzExp		*WlzExpParse(const char *str,
 /*!
 * \return	New expression.
 * \ingroup	WlzIIPServer
-* \brief	Makes a new threshold expression.
-* \param	e0			Expression for object to be
-* 					thresholded.
-* \param	val			Threshold value.
-* \param	cmp			Threshold comparison value.
+* \brief	Makes a new background expression.
+* \param	e0			Expression for object.
+* \param	val			Background value.
 */
-WlzExp		*WlzExpMakeThreshold(WlzExp *e0, unsigned int val,
-				     WlzExpCmpType cmp)
+WlzExp		*WlzExpMakeBackground(WlzExp *e0, unsigned int val)
 {
   WlzExp	*e;
 
-  if((e = WlzExpMake(3)) != NULL)
+  if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_THRESHOLD;
+    e->type = WLZ_EXP_OP_BACKGROUND;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_UINT;
     e->param[1].val.u = val;
-    e->param[2].type = WLZ_EXP_PRM_CMP;
-    e->param[2].val.cmp = cmp;
   }
   return(e);
 }
@@ -287,28 +303,6 @@ WlzExp		*WlzExpMakeDiff(WlzExp *e0, WlzExp *e1)
 /*!
 * \return	New expression.
 * \ingroup	WlzIIPServer
-* \brief	Makes a new erosion expression.
-* \param	e0			Expression for object to be eroded.
-* \param	rad			Erosion radius.
-*/
-WlzExp		*WlzExpMakeErosion(WlzExp *e0, unsigned int rad)
-{
-  WlzExp	*e;
-
-  if((e = WlzExpMake(2)) != NULL)
-  {
-    e->type = WLZ_EXP_OP_EROSION;
-    e->param[0].type = WLZ_EXP_PRM_EXP;
-    e->param[0].val.exp = e0;
-    e->param[1].type = WLZ_EXP_PRM_UINT;
-    e->param[1].val.u = rad;
-  }
-  return(e);
-}
-
-/*!
-* \return	New expression.
-* \ingroup	WlzIIPServer
 * \brief	Makes a new dilation expression.
 * \param	e0			Expression for object to be dilated.
 * \param	rad			Erosion radius.
@@ -331,17 +325,77 @@ WlzExp		*WlzExpMakeDilation(WlzExp *e0, unsigned int rad)
 /*!
 * \return	New expression.
 * \ingroup	WlzIIPServer
-* \brief	Makes a new union expression.
-* \param	e0			Expression for first object.
-* \param	e1			Expression for second object.
+* \brief	Makes a new domain expression.
+* \param	e0			Expression for object.
 */
-WlzExp		*WlzExpMakeUnion(WlzExp *e0, WlzExp *e1)
+WlzExp		*WlzExpMakeDomain(WlzExp *e0)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(1)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_DOMAIN;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new erosion expression.
+* \param	e0			Expression for object to be eroded.
+* \param	rad			Erosion radius.
+*/
+WlzExp		*WlzExpMakeErosion(WlzExp *e0, unsigned int rad)
 {
   WlzExp	*e;
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_UNION;
+    e->type = WLZ_EXP_OP_EROSION;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+    e->param[1].type = WLZ_EXP_PRM_UINT;
+    e->param[1].val.u = rad;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new fill expression.
+* \param	e0			Expression for object to be filled.
+*/
+WlzExp		*WlzExpMakeFill(WlzExp *e0)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(1)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_FILL;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new intersect expression.
+* \param	e0			Expression for first object.
+* \param	e1			Expression for second object.
+*/
+WlzExp		*WlzExpMakeIntersect(WlzExp *e0, WlzExp *e1)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(2)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_INTERSECT;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_EXP;
@@ -385,17 +439,89 @@ WlzExp		*WlzExpMakeOccupancy(WlzExp *e0)
 /*!
 * \return	New expression.
 * \ingroup	WlzIIPServer
-* \brief	Makes a new intersect expression.
-* \param	e0			Expression for first object.
-* \param	e1			Expression for second object.
+* \brief	Makes a new setvalue expression.
+* \param	e0			Expression for object to have
+* 					value set.
+* \param	val			Value to set.
 */
-WlzExp		*WlzExpMakeIntersect(WlzExp *e0, WlzExp *e1)
+WlzExp		*WlzExpMakeSetvalue(WlzExp *e0, unsigned int val)
 {
   WlzExp	*e;
 
   if((e = WlzExpMake(2)) != NULL)
   {
-    e->type = WLZ_EXP_OP_INTERSECT;
+    e->type = WLZ_EXP_OP_SETVALUE;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+    e->param[1].type = WLZ_EXP_PRM_UINT;
+    e->param[1].val.u = val;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new threshold expression.
+* \param	e0			Expression for object to be
+* 					thresholded.
+* \param	val			Threshold value.
+* \param	cmp			Threshold comparison value.
+*/
+WlzExp		*WlzExpMakeThreshold(WlzExp *e0, unsigned int val,
+				     WlzExpCmpType cmp)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(3)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_THRESHOLD;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+    e->param[1].type = WLZ_EXP_PRM_UINT;
+    e->param[1].val.u = val;
+    e->param[2].type = WLZ_EXP_PRM_CMP;
+    e->param[2].val.cmp = cmp;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new transfer expression.
+* \param	e0			Expression for first object.
+* \param	e1			Expression for second object.
+*/
+WlzExp		*WlzExpMakeTransfer(WlzExp *e0, WlzExp *e1)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(2)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_TRANSFER;
+    e->param[0].type = WLZ_EXP_PRM_EXP;
+    e->param[0].val.exp = e0;
+    e->param[1].type = WLZ_EXP_PRM_EXP;
+    e->param[1].val.exp = e1;
+  }
+  return(e);
+}
+
+/*!
+* \return	New expression.
+* \ingroup	WlzIIPServer
+* \brief	Makes a new union expression.
+* \param	e0			Expression for first object.
+* \param	e1			Expression for second object.
+*/
+WlzExp		*WlzExpMakeUnion(WlzExp *e0, WlzExp *e1)
+{
+  WlzExp	*e;
+
+  if((e = WlzExpMake(2)) != NULL)
+  {
+    e->type = WLZ_EXP_OP_UNION;
     e->param[0].type = WLZ_EXP_PRM_EXP;
     e->param[0].val.exp = e0;
     e->param[1].type = WLZ_EXP_PRM_EXP;
@@ -553,7 +679,7 @@ const char	*WlzExpCmpToStr(WlzExpCmpType cmp)
 /*!
 * \return	Woolz object or NULL on error.
 * \ingroup	WlzIIPServer
-* \brief	Evaluates a morphological expression with reference to the
+* \brief	Evaluates a image processing expression with reference to the
 * 		given object.
 * \param	iObj			Given object.
 * \param	e			Morphological expression to be
@@ -587,27 +713,54 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
       case WLZ_EXP_OP_INDEXLST:
 	rObj = WlzExpIndexListToCmpObj(iObj, e, &errNum);
 	break;
+      case WLZ_EXP_OP_BACKGROUND:
+        o0 = WlzAssignObject(     
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	u0 = (unsigned int)(e->param[1].val.u);
+        rObj = WlzExpBackground(o0, u0, &errNum);
+	(void )WlzFreeObj(o0);
+	break;
+      case WLZ_EXP_OP_DIFF:
+	o0 = WlzAssignObject(
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	o1 = WlzAssignObject(
+	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
+	rObj = WlzExpDiff(o0, o1, &errNum);
+	(void )WlzFreeObj(o0);
+	(void )WlzFreeObj(o1);
+	break;
+      case WLZ_EXP_OP_DILATION:
+	o0 = WlzAssignObject(
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	u0 = (unsigned int)(e->param[1].val.u);
+	rObj = WlzExpDilation(o0, u0, &errNum);
+	(void )WlzFreeObj(o0);
+	break;
+      case WLZ_EXP_OP_DOMAIN:
+        o0 = WlzAssignObject(     
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+        rObj = WlzExpDomain(o0, &errNum);
+	(void )WlzFreeObj(o0);
+	break;
+      case WLZ_EXP_OP_EROSION:
+	o0 = WlzAssignObject(
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	u0 = e->param[1].val.u;
+	rObj = WlzExpErosion(o0, u0, &errNum);
+	(void )WlzFreeObj(o0);
+	break;
+      case WLZ_EXP_OP_FILL:
+        o0 = WlzAssignObject(     
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+        rObj = WlzExpFill(o0, &errNum);
+	(void )WlzFreeObj(o0);
+	break;
       case WLZ_EXP_OP_INTERSECT:
 	o0 = WlzAssignObject(
 	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
 	o1 = WlzAssignObject(
 	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
 	rObj = WlzExpIntersect(o0, o1, &errNum);
-	(void )WlzFreeObj(o0);
-	(void )WlzFreeObj(o1);
-	break;
-      case WLZ_EXP_OP_UNION:
-	o0 = WlzAssignObject(
-	     (e->param[0].val.v == NULL)?
-	     WlzMakeEmpty(&errNum):
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum),
-	     NULL);
-	o1 = WlzAssignObject(
-	     (e->param[1].val.v == NULL)?
-	     WlzMakeEmpty(&errNum):
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum),
-	     NULL);
-	rObj = WlzExpUnion(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
 	(void )WlzFreeObj(o1);
 	break;
@@ -647,32 +800,24 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	    }
 	    break;
 	  default:
-	    errNum = WLZ_ERR_PARAM_TYPE;
+	    errNum = WLZ_ERR_PARAM_DATA;
 	    break;
-	}
+        }
 	break;
-      case WLZ_EXP_OP_DILATION:
-	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
-	u0 = (unsigned int)(e->param[1].val.u);
-	rObj = WlzExpDilation(o0, u0, &errNum);
-	(void )WlzFreeObj(o0);
-	break;
-      case WLZ_EXP_OP_EROSION:
-	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
-	u0 = e->param[1].val.u;
-	rObj = WlzExpErosion(o0, u0, &errNum);
-	(void )WlzFreeObj(o0);
-	break;
-      case WLZ_EXP_OP_DIFF:
+      case WLZ_EXP_OP_TRANSFER:
 	o0 = WlzAssignObject(
 	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
 	o1 = WlzAssignObject(
 	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
-	rObj = WlzExpDiff(o0, o1, &errNum);
+	rObj = WlzExpTransfer(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
-	(void )WlzFreeObj(o1);
+	break;
+      case WLZ_EXP_OP_SETVALUE:
+	o0 = WlzAssignObject(
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	u0 = e->param[1].val.u;
+	rObj = WlzExpSetvalue(o0, u0, &errNum);
+	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_THRESHOLD:
 	o0 = WlzAssignObject(
@@ -681,6 +826,21 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	c = e->param[2].val.cmp;
 	rObj = WlzExpThreshold(o0, u0, c, &errNum);
 	(void )WlzFreeObj(o0);
+	break;
+      case WLZ_EXP_OP_UNION:
+	o0 = WlzAssignObject(
+	     (e->param[0].val.v == NULL)?
+	     WlzMakeEmpty(&errNum):
+	     WlzExpEval(iObj, e->param[0].val.exp, &errNum),
+	     NULL);
+	o1 = WlzAssignObject(
+	     (e->param[1].val.v == NULL)?
+	     WlzMakeEmpty(&errNum):
+	     WlzExpEval(iObj, e->param[1].val.exp, &errNum),
+	     NULL);
+	rObj = WlzExpUnion(o0, o1, &errNum);
+	(void )WlzFreeObj(o0);
+	(void )WlzFreeObj(o1);
 	break;
       default:
 	errNum = WLZ_ERR_PARAM_TYPE;
@@ -697,7 +857,7 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 /*!
 * \return	String or NULL on error.
 * \ingroup	WlzIIPServer
-* \brief	Computes a string representing the given morphological
+* \brief	Computes a string representing the given image processing
 * 		expression. This is the inverse of parsing a string for
 * 		the expression. The returned string should be destroyed
 * 		using AlcFree().
@@ -781,36 +941,54 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
       case WLZ_EXP_OP_INDEXLST:
 	s2 = WlzExpIndexListToStr(e, &sLen2, &errNum);
 	break;
-      case WLZ_EXP_OP_OCCUPANCY:
-	switch(e->nParam)
+      case WLZ_EXP_OP_BACKGROUND:
+	s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
+	if(errNum == WLZ_ERR_NONE)
 	{
-	  case 0:
-	    if((s2 = AlcStrDup("occupancy()")) == NULL)
-	    {
-	      errNum = WLZ_ERR_MEM_ALLOC;
-	    }
-	    break;
-	  default:
-	    s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
-	    if(errNum == WLZ_ERR_NONE)
-	    {
-	      sLen2 = sInc + sLen0;
-	      if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
-	      {
-		errNum = WLZ_ERR_MEM_ALLOC;
-	      }
-	      else
-	      {
-	        (void )sprintf(s2, "occupancy(%s)", s0);
-	      }
-	    }
-	    AlcFree(s0);
-	    break;
+	  sLen2 = sLen0 + sInc;
+	  u0 = e->param[1].val.u;
+	  if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	  {
+	    errNum = WLZ_ERR_MEM_ALLOC;
+	  }
 	}
-	break;
+	if(errNum == WLZ_ERR_NONE)
+	{
+	  (void )sprintf(s2, "background(%s,%d)", s0, u0);
+	}
+	AlcFree(s0);
+        break;
+      case WLZ_EXP_OP_DOMAIN:    /* FALLTHROUGH */
+      case WLZ_EXP_OP_FILL:
+	s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
+	if(errNum == WLZ_ERR_NONE)
+	{
+	  sLen2 = sLen0 + sInc;
+	  if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	  {
+	    errNum = WLZ_ERR_MEM_ALLOC;
+	  }
+	}
+	if(errNum == WLZ_ERR_NONE)
+	{
+	  switch(e->type)
+	  {
+	    case WLZ_EXP_OP_DOMAIN:
+	      (void )sprintf(s2, "domain(%s)", s0);
+	      break;
+	    case WLZ_EXP_OP_FILL:
+	      (void )sprintf(s2, "fill(%s)", s0);
+	      break;
+	    default:
+	      break;
+	  }
+	}
+	AlcFree(s0);
+        break;
+      case WLZ_EXP_OP_DIFF:      /* FALLTHROUGH */
       case WLZ_EXP_OP_INTERSECT: /* FALLTHROUGH */
-      case WLZ_EXP_OP_UNION:     /* FALLTHROUGH */
-      case WLZ_EXP_OP_DIFF:
+      case WLZ_EXP_OP_TRANSFER:  /* FALLTHROUGH */
+      case WLZ_EXP_OP_UNION:
 	s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
 	if(errNum == WLZ_ERR_NONE)
 	{
@@ -830,8 +1008,14 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
 
 	  switch(e->type)
 	  {
+	    case WLZ_EXP_OP_DIFF:
+	      (void )sprintf(s2, "diff(%s,%s)", s0, s1);
+	      break;
 	    case WLZ_EXP_OP_INTERSECT:
 	      (void )sprintf(s2, "intersect(%s,%s)", s0, s1);
+	      break;
+	    case WLZ_EXP_OP_TRANSFER:
+	      (void )sprintf(s2, "transfer(%s,%s)", s0, s1);
 	      break;
 	    case WLZ_EXP_OP_UNION:
 	      tst = (((s1 != NULL) && (*s1 != '\0')) << 1) |
@@ -851,9 +1035,6 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
 		  (void )sprintf(s2, "union()");
 		  break;
 	      }
-	      break;
-	    case WLZ_EXP_OP_DIFF:
-	      (void )sprintf(s2, "diff(%s,%s)", s0, s1);
 	      break;
 	    default:
 	      break;
@@ -887,6 +1068,50 @@ char	      	*WlzExpStr(WlzExp *e, int *dstStrLen, WlzErrorNum *dstErr)
 	    default:
 	      break;
 	  }
+	}
+	AlcFree(s0);
+	break;
+      case WLZ_EXP_OP_OCCUPANCY:
+	switch(e->nParam)
+	{
+	  case 0:
+	    if((s2 = AlcStrDup("occupancy()")) == NULL)
+	    {
+	      errNum = WLZ_ERR_MEM_ALLOC;
+	    }
+	    break;
+	  default:
+	    s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
+	    if(errNum == WLZ_ERR_NONE)
+	    {
+	      sLen2 = sInc + sLen0;
+	      if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	      {
+		errNum = WLZ_ERR_MEM_ALLOC;
+	      }
+	      else
+	      {
+	        (void )sprintf(s2, "occupancy(%s)", s0);
+	      }
+	    }
+	    AlcFree(s0);
+	    break;
+	}
+	break;
+      case WLZ_EXP_OP_SETVALUE:
+	s0 = WlzExpStr(e->param[0].val.exp, &sLen0, &errNum);
+	if(errNum == WLZ_ERR_NONE)
+	{
+	  sLen2 = sInc + sLen0;   
+	  if((s2 = AlcMalloc(sizeof(char) * sLen2)) == NULL)
+	  {
+	    errNum = WLZ_ERR_MEM_ALLOC;
+	  }
+	}
+	if(errNum == WLZ_ERR_NONE)
+	{
+	  u0 = e->param[1].val.u;
+	  (void )sprintf(s2, "setvalue(%s,%d)", s0, u0);
 	}
 	AlcFree(s0);
 	break;
@@ -1315,6 +1540,238 @@ static WlzObject *WlzExpGetObjByIndex(WlzObject *iObj, unsigned int idx,
 /*!
 * \return	Woolz object or NULL on error.
 * \ingroup	WlzIIPServer
+* \brief	Computes an object with background value set to the given
+* 		value. Because a object can only have a background value
+* 		if it has foreground values, foreground values will be
+* 		created if required and set to the background value too.
+* \param	gObj			Given object.
+* \param	bgdI			Background value as an integer.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpBackground(WlzObject *gObj, unsigned int bgdI,
+                                   WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL;
+  WlzPixelV     bgdV;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if(gObj== NULL)
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else if(gObj->domain.core == NULL)
+  {
+    errNum = WLZ_ERR_DOMAIN_NULL;
+  }
+  else
+  {
+    if(bgdI <= 255)
+    {
+      bgdV.type = WLZ_GREY_UBYTE;
+      bgdV.v.ubv = bgdI;
+    }
+    else
+    {
+      bgdV.type = WLZ_GREY_INT;
+      bgdV.v.inv = bgdI;
+    }
+    rObj = WlzSetBackGroundNewObj(gObj, bgdV, &errNum);
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(rObj);
+}
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the difference between the domains of the
+* 		given objects.
+* \param	iObj0			First object.
+* \param	iObj1			Second object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpDiff(WlzObject *iObj0, WlzObject *iObj1,
+                             WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if((iObj0 == NULL) || (iObj1 == NULL))
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else
+  {
+    rObj = WlzDiffDomain(iObj0, iObj1, &errNum);
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }          
+  return(rObj);
+}            
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the dilation of the given object. 
+* \param	iObj			Given object.
+* \param	rad			Radius of structuring element.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpDilation(WlzObject *iObj, unsigned int rad,
+                                 WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL,
+  		*sObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if(iObj == NULL)
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else if(rad < 0)
+  {
+    errNum = WLZ_ERR_PARAM_DATA;
+  }
+  else
+  {
+    switch(iObj->type)
+    {
+      case WLZ_2D_DOMAINOBJ:
+	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
+	                           &errNum);
+        break;
+      case WLZ_3D_DOMAINOBJ:
+	sObj = WlzMakeSphereObject(WLZ_3D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
+	                           &errNum);
+        break;
+      default:
+        break;
+    }
+    if(errNum == WLZ_ERR_NONE)
+    {
+      rObj = WlzStructDilation(iObj, sObj, &errNum);
+    }
+  }
+  (void )WlzFreeObj(sObj);
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }          
+  return(rObj);
+}            
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Creates a new object which has the domain of the given
+* 		object but NULL values .
+* \param	iObj			Given object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpDomain(WlzObject *iObj, WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if(iObj == NULL)
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else
+  {
+    WlzValues	val;
+
+    val.core = NULL;
+    rObj = WlzMakeMain(iObj->type, iObj->domain, val, NULL, NULL, &errNum);
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(rObj);
+}
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the erosion of the given object. 
+* \param	iObj			Given object.
+* \param	rad			Radius of structuring element.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpErosion(WlzObject *iObj, unsigned int rad,
+                                WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL,
+  		*sObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if(iObj == NULL)
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else if(rad < 0)
+  {
+    errNum = WLZ_ERR_PARAM_DATA;
+  }
+  else
+  {
+    switch(iObj->type)
+    {
+      case WLZ_2D_DOMAINOBJ:
+	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
+	                           &errNum);
+        break;
+      case WLZ_3D_DOMAINOBJ:
+	sObj = WlzMakeSphereObject(WLZ_3D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
+	                           &errNum);
+        break;
+      default:
+        break;
+    }
+    if(errNum == WLZ_ERR_NONE)
+    {
+      rObj = WlzStructErosion(iObj, sObj, &errNum);
+    }
+  }
+  (void )WlzFreeObj(sObj);
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }          
+  return(rObj);
+}            
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes a new object in which the domain is that of
+* 		the given object filled so that there are no holes
+* 		connected to the outside.
+* \param	iObj			Given object with domain to be filled.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpFill(WlzObject *iObj, WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  rObj = WlzDomainFill(iObj, &errNum);
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(rObj);
+}
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
 * \brief	Computes the intersection of the given objects (which
 * 		may be compound array objects).
 * \param	iObj0			First given object.
@@ -1364,70 +1821,6 @@ static WlzObject *WlzExpIntersect(WlzObject *iObj0, WlzObject *iObj1,
     if(errNum == WLZ_ERR_NONE) 
     {
       rObj = WlzIntersectN(2, objs, 0, &errNum);
-    }
-    (void )WlzFreeObj(objs[0]);
-    (void )WlzFreeObj(objs[1]);
-  }
-  if(dstErr)
-  {
-    *dstErr = errNum;
-  }          
-  return(rObj);
-}            
-
-/*!
-* \return	Woolz object or NULL on error.
-* \ingroup	WlzIIPServer
-* \brief	Computes the union of the given objects (which may be
-* 		compound array objects).
-* \param	iObj0			First given object.
-* \param	iObj1			Second given object.
-* \param	dstErr			Destination error pointer, may be NULL.
-*/
-static WlzObject *WlzExpUnion(WlzObject *iObj0, WlzObject *iObj1,
-                              WlzErrorNum *dstErr)
-{
-  int		i;
-  WlzCompoundArray *cObj;
-  WlzObject	*objs[2],
-  		*iObjs[2];
-  WlzObject     *rObj = NULL;
-  WlzErrorNum   errNum = WLZ_ERR_NONE;
-
-  if((iObj0 == NULL) || (iObj1 == NULL))
-  {
-    errNum = WLZ_ERR_OBJECT_NULL;
-  }
-  else
-  {
-    objs[0] = NULL;
-    objs[1] = NULL;
-    iObjs[0] = iObj0;
-    iObjs[1] = iObj1;
-    for(i = 0; i < 2; ++i)
-    {
-      switch(iObjs[i]->type)
-      {
-	case WLZ_EMPTY_OBJ:    /* FALLTHROUGH */
-	case WLZ_2D_DOMAINOBJ: /* FALLTHROUGH */
-	case WLZ_3D_DOMAINOBJ:
-	  objs[i] = WlzAssignObject(iObjs[i], NULL);
-	  break;
-	case WLZ_COMPOUND_ARR_1:
-	case WLZ_COMPOUND_ARR_2:
-	  cObj = (WlzCompoundArray *)(iObjs[i]);
-	  objs[i] = WlzUnionN(cObj->n, cObj->o, 0, &errNum);
-	default:
-	  break;
-      }
-      if(errNum != WLZ_ERR_NONE)
-      {
-        break;
-      }
-    }
-    if(errNum == WLZ_ERR_NONE) 
-    {
-      rObj = WlzUnionN(2, objs, 0, &errNum);
     }
     (void )WlzFreeObj(objs[0]);
     (void )WlzFreeObj(objs[1]);
@@ -1535,127 +1928,52 @@ static WlzObject *WlzExpOccupancy(WlzObject *gObj,
 /*!
 * \return	Woolz object or NULL on error.
 * \ingroup	WlzIIPServer
-* \brief	Computes the dilation of the given object. 
-* \param	iObj			Given object.
-* \param	rad			Radius of structuring element.
-* \param	dstErr			Destination error pointer, may be NULL.
-*/
-static WlzObject *WlzExpDilation(WlzObject *iObj, unsigned int rad,
-                                 WlzErrorNum *dstErr)
-{
-  WlzObject     *rObj = NULL,
-  		*sObj = NULL;
-  WlzErrorNum   errNum = WLZ_ERR_NONE;
-
-  if(iObj == NULL)
-  {
-    errNum = WLZ_ERR_OBJECT_NULL;
-  }
-  else if(rad < 0)
-  {
-    errNum = WLZ_ERR_PARAM_DATA;
-  }
-  else
-  {
-    switch(iObj->type)
-    {
-      case WLZ_2D_DOMAINOBJ:
-	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
-	                           &errNum);
-        break;
-      case WLZ_3D_DOMAINOBJ:
-	sObj = WlzMakeSphereObject(WLZ_3D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
-	                           &errNum);
-        break;
-      default:
-        break;
-    }
-    if(errNum == WLZ_ERR_NONE)
-    {
-      rObj = WlzStructDilation(iObj, sObj, &errNum);
-    }
-  }
-  (void )WlzFreeObj(sObj);
-  if(dstErr)
-  {
-    *dstErr = errNum;
-  }          
-  return(rObj);
-}            
-
-/*!
-* \return	Woolz object or NULL on error.
-* \ingroup	WlzIIPServer
-* \brief	Computes the erosion of the given object. 
-* \param	iObj			Given object.
-* \param	rad			Radius of structuring element.
-* \param	dstErr			Destination error pointer, may be NULL.
-*/
-static WlzObject *WlzExpErosion(WlzObject *iObj, unsigned int rad,
-                                WlzErrorNum *dstErr)
-{
-  WlzObject     *rObj = NULL,
-  		*sObj = NULL;
-  WlzErrorNum   errNum = WLZ_ERR_NONE;
-
-  if(iObj == NULL)
-  {
-    errNum = WLZ_ERR_OBJECT_NULL;
-  }
-  else if(rad < 0)
-  {
-    errNum = WLZ_ERR_PARAM_DATA;
-  }
-  else
-  {
-    switch(iObj->type)
-    {
-      case WLZ_2D_DOMAINOBJ:
-	sObj = WlzMakeSphereObject(WLZ_2D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
-	                           &errNum);
-        break;
-      case WLZ_3D_DOMAINOBJ:
-	sObj = WlzMakeSphereObject(WLZ_3D_DOMAINOBJ, rad, 0.0, 0.0, 0.0,
-	                           &errNum);
-        break;
-      default:
-        break;
-    }
-    if(errNum == WLZ_ERR_NONE)
-    {
-      rObj = WlzStructErosion(iObj, sObj, &errNum);
-    }
-  }
-  (void )WlzFreeObj(sObj);
-  if(dstErr)
-  {
-    *dstErr = errNum;
-  }          
-  return(rObj);
-}            
-
-/*!
-* \return	Woolz object or NULL on error.
-* \ingroup	WlzIIPServer
-* \brief	Computes the difference between the domains of the
+* \brief	Sets the grey values of an object.
 * 		given objects.
-* \param	iObj0			First object.
-* \param	iObj1			Second object.
+* \param	iObj			Given object.
+* \param	val			Threshold value.
 * \param	dstErr			Destination error pointer, may be NULL.
 */
-static WlzObject *WlzExpDiff(WlzObject *iObj0, WlzObject *iObj1,
-                             WlzErrorNum *dstErr)
+static WlzObject *WlzExpSetvalue(WlzObject *iObj, unsigned int val,
+				  WlzErrorNum *dstErr)
 {
   WlzObject     *rObj = NULL;
   WlzErrorNum   errNum = WLZ_ERR_NONE;
 
-  if((iObj0 == NULL) || (iObj1 == NULL))
+  if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
   }
   else
   {
-    rObj = WlzDiffDomain(iObj0, iObj1, &errNum);
+    int		ival = (int )val;
+    WlzObjectType tType;
+    WlzPixelV	bgdV,
+    		fgdV;
+
+    if((ival >= 0) && (ival <= 255))
+    {
+      fgdV.type = bgdV.type = WLZ_GREY_UBYTE;
+      bgdV.v.ubv = 0;
+      fgdV.v.ubv = (WlzUByte )ival;
+    }
+    else if((ival >= SHRT_MIN) && (ival <= SHRT_MAX))
+    {
+      fgdV.type = bgdV.type = WLZ_GREY_SHORT;
+      bgdV.v.shv = 0;
+      fgdV.v.shv = (short )ival;
+    }
+    else
+    {
+      fgdV.type = bgdV.type = WLZ_GREY_INT;
+      bgdV.v.inv = 0;
+      fgdV.v.inv = ival;
+    }
+    tType = WlzGreyTableType(WLZ_GREY_TAB_RAGR, fgdV.type, &errNum);
+    if(errNum == WLZ_ERR_NONE)
+    {
+      rObj = WlzNewObjectValues(iObj, tType, bgdV, 1, fgdV, &errNum);
+    }
   }
   if(dstErr)
   {
@@ -1735,6 +2053,110 @@ static WlzObject *WlzExpThreshold(WlzObject *iObj, unsigned int val,
   }          
   return(rObj);
 }            
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Creates a new object with the domain of the first given
+* 		object and (within the intersection of the two object's
+* 		domains) the values of the second given object.
+* \param	dObj			First given object.
+* \param	vObj			Second given object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpTransfer(WlzObject *dObj, WlzObject *vObj,
+                                 WlzErrorNum *dstErr)
+{
+  WlzObject     *rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if((dObj == NULL) || (vObj == NULL))
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else if((dObj->domain.core == NULL) || (vObj->domain.core == NULL))
+  {
+    errNum = WLZ_ERR_DOMAIN_NULL;
+  }
+  else if(vObj->values.core == NULL)
+  {
+    errNum = WLZ_ERR_VALUES_NULL;
+  }
+  else
+  {
+    rObj = WlzGreyTransfer(dObj, vObj, 0, &errNum);
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }
+  return(rObj);
+}
+
+/*!
+* \return	Woolz object or NULL on error.
+* \ingroup	WlzIIPServer
+* \brief	Computes the union of the given objects (which may be
+* 		compound array objects).
+* \param	iObj0			First given object.
+* \param	iObj1			Second given object.
+* \param	dstErr			Destination error pointer, may be NULL.
+*/
+static WlzObject *WlzExpUnion(WlzObject *iObj0, WlzObject *iObj1,
+                              WlzErrorNum *dstErr)
+{
+  int		i;
+  WlzCompoundArray *cObj;
+  WlzObject	*objs[2],
+  		*iObjs[2];
+  WlzObject     *rObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
+
+  if((iObj0 == NULL) || (iObj1 == NULL))
+  {
+    errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else
+  {
+    objs[0] = NULL;
+    objs[1] = NULL;
+    iObjs[0] = iObj0;
+    iObjs[1] = iObj1;
+    for(i = 0; i < 2; ++i)
+    {
+      switch(iObjs[i]->type)
+      {
+	case WLZ_EMPTY_OBJ:    /* FALLTHROUGH */
+	case WLZ_2D_DOMAINOBJ: /* FALLTHROUGH */
+	case WLZ_3D_DOMAINOBJ:
+	  objs[i] = WlzAssignObject(iObjs[i], NULL);
+	  break;
+	case WLZ_COMPOUND_ARR_1:
+	case WLZ_COMPOUND_ARR_2:
+	  cObj = (WlzCompoundArray *)(iObjs[i]);
+	  objs[i] = WlzUnionN(cObj->n, cObj->o, 0, &errNum);
+	default:
+	  break;
+      }
+      if(errNum != WLZ_ERR_NONE)
+      {
+        break;
+      }
+    }
+    if(errNum == WLZ_ERR_NONE) 
+    {
+      rObj = WlzUnionN(2, objs, 0, &errNum);
+    }
+    (void )WlzFreeObj(objs[0]);
+    (void )WlzFreeObj(objs[1]);
+  }
+  if(dstErr)
+  {
+    *dstErr = errNum;
+  }          
+  return(rObj);
+}            
+
 
 #ifdef __cplusplus
 }
