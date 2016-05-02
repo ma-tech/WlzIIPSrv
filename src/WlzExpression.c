@@ -53,6 +53,8 @@ extern "C"
 {
 #endif
 
+static int			WlzExpCost(
+				  WlzExp *e);
 static int			WlzExpIndexArraySortFn(
 				  const void *v0,
 				  const void *v1);
@@ -682,11 +684,17 @@ const char	*WlzExpCmpToStr(WlzExpCmpType cmp)
 * \brief	Evaluates a image processing expression with reference to the
 * 		given object.
 * \param	iObj			Given object.
+* \param	cpxExp			Allow complex (and costly) expressions.
+* 					Possible values are:
+* 					  0 - no,
+* 					  1 - those with fairly low cost,
+* 					  2 or greater - all.
 * \param	e			Morphological expression to be
 * 					evaluated using the given object.
 * \param	dstErr			Destination error pointer, may be NULL.
 */
-WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
+WlzObject      *WlzExpEval(WlzObject *iObj, int cpxExp,
+                           WlzExp *e, WlzErrorNum *dstErr)
 {
   unsigned int	u0;
   WlzObject	*o0 = NULL,
@@ -698,6 +706,10 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
   if(iObj == NULL)
   {
     errNum = WLZ_ERR_OBJECT_NULL;
+  }
+  else if(WlzExpCost(e) > cpxExp)
+  {
+    errNum = WLZ_ERR_PARAM_DATA;
   }
   else
   {
@@ -715,51 +727,51 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	break;
       case WLZ_EXP_OP_BACKGROUND:
         o0 = WlzAssignObject(     
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	u0 = (unsigned int)(e->param[1].val.u);
         rObj = WlzExpBackground(o0, u0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_DIFF:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	o1 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[1].val.exp, &errNum), NULL);
 	rObj = WlzExpDiff(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
 	(void )WlzFreeObj(o1);
 	break;
       case WLZ_EXP_OP_DILATION:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	u0 = (unsigned int)(e->param[1].val.u);
 	rObj = WlzExpDilation(o0, u0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_DOMAIN:
         o0 = WlzAssignObject(     
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
         rObj = WlzExpDomain(o0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_EROSION:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	u0 = e->param[1].val.u;
 	rObj = WlzExpErosion(o0, u0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_FILL:
         o0 = WlzAssignObject(     
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
         rObj = WlzExpFill(o0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_INTERSECT:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	o1 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[1].val.exp, &errNum), NULL);
 	rObj = WlzExpIntersect(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
 	(void )WlzFreeObj(o1);
@@ -806,22 +818,22 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	break;
       case WLZ_EXP_OP_TRANSFER:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	o1 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[1].val.exp, &errNum), NULL);
 	rObj = WlzExpTransfer(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_SETVALUE:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	u0 = e->param[1].val.u;
 	rObj = WlzExpSetvalue(o0, u0, &errNum);
 	(void )WlzFreeObj(o0);
 	break;
       case WLZ_EXP_OP_THRESHOLD:
 	o0 = WlzAssignObject(
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum), NULL);
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum), NULL);
 	u0 = e->param[1].val.u;
 	c = e->param[2].val.cmp;
 	rObj = WlzExpThreshold(o0, u0, c, &errNum);
@@ -831,12 +843,12 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
 	o0 = WlzAssignObject(
 	     (e->param[0].val.v == NULL)?
 	     WlzMakeEmpty(&errNum):
-	     WlzExpEval(iObj, e->param[0].val.exp, &errNum),
+	     WlzExpEval(iObj, cpxExp, e->param[0].val.exp, &errNum),
 	     NULL);
 	o1 = WlzAssignObject(
 	     (e->param[1].val.v == NULL)?
 	     WlzMakeEmpty(&errNum):
-	     WlzExpEval(iObj, e->param[1].val.exp, &errNum),
+	     WlzExpEval(iObj, cpxExp, e->param[1].val.exp, &errNum),
 	     NULL);
 	rObj = WlzExpUnion(o0, o1, &errNum);
 	(void )WlzFreeObj(o0);
@@ -852,6 +864,48 @@ WlzObject      *WlzExpEval(WlzObject *iObj, WlzExp *e, WlzErrorNum *dstErr)
     *dstErr = errNum;
   }
   return(rObj);
+}
+
+/*!
+* \return	Expression cost.
+* \ingroup	WlzIIPServer
+* \brief	Costs the given expression. The expression cost is ass
+* 		documented in WlzExpEval().
+* \param	e			Expression to be costed.
+*/
+static int	WlzExpCost(WlzExp *e)
+{
+  int		cost = 0;
+
+  if(e)
+  {
+    switch(e->type)
+    {
+      case WLZ_EXP_OP_NONE:       /* FALLTHROUGH */
+      case WLZ_EXP_OP_INDEX:      /* FALLTHROUGH */
+      case WLZ_EXP_OP_INDEXRNG:   /* FALLTHROUGH */
+      case WLZ_EXP_OP_INDEXLST:
+	break;
+      case WLZ_EXP_OP_BACKGROUND: /* FALLTHROUGH */
+      case WLZ_EXP_OP_DOMAIN:
+	cost = 1;
+	break;
+      case WLZ_EXP_OP_DIFF:       /* FALLTHROUGH */
+      case WLZ_EXP_OP_DILATION:   /* FALLTHROUGH */
+      case WLZ_EXP_OP_EROSION:    /* FALLTHROUGH */
+      case WLZ_EXP_OP_FILL:       /* FALLTHROUGH */
+      case WLZ_EXP_OP_INTERSECT:  /* FALLTHROUGH */
+      case WLZ_EXP_OP_OCCUPANCY:  /* FALLTHROUGH */
+      case WLZ_EXP_OP_TRANSFER:   /* FALLTHROUGH */
+      case WLZ_EXP_OP_SETVALUE:   /* FALLTHROUGH */
+      case WLZ_EXP_OP_THRESHOLD:  /* FALLTHROUGH */
+      case WLZ_EXP_OP_UNION:      /* FALLTHROUGH */
+      default:
+	cost = 2;
+	break;
+    }
+  }
+  return(cost);
 }
 
 /*!
