@@ -43,6 +43,7 @@ static char _WlzExpTestMain_c[] = "University of Edinburgh $Id$";
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
 #include <Wlz.h>
 #include "WlzExpression.h"
 
@@ -143,7 +144,7 @@ int 		main(int argc, char *argv[])
     }
     if((errNum == WLZ_ERR_NONE) && (noEval == 0))
     {
-      outObj = WlzAssignObject(WlzExpEval(inObj, exp, &errNum), NULL);
+      outObj = WlzAssignObject(WlzExpEval(inObj, INT_MAX, exp, &errNum), NULL);
     }
     if(errNum != WLZ_ERR_NONE)
     {

@@ -123,7 +123,8 @@ class CompoundSelector
 {
   public:
     /// Constructor
-    CompoundSelector(): next(NULL), expression(NULL), r(0), g(0), b(0), a(0) {}
+    CompoundSelector(): next(NULL), complexSelection(0), expression(NULL),
+                        r(0), g(0), b(0), a(0) {}
 
     /// Destructor
     ~CompoundSelector()
@@ -139,6 +140,8 @@ class CompoundSelector
 
     /// Data
     CompoundSelector *next;            /*!< The next element */
+    int complexSelection;              /*!< Control allowing complex and
+    					    costly expressions. */
     WlzExp *expression;		       /*!< Expression for selected object. */
     unsigned char r;                   /*!< red value */
     unsigned char g;                   /*!< green value */
