@@ -115,7 +115,8 @@ class WlzImage : public IIPImage
     				throw(std::string);
     bool			isViewChanged();
     WlzObject			*WlzImageExpEval(
-    				  WlzExp *e);
+				  int cpxExp,
+    				  WlzExp *exp);
     // Utility functions
     float 			*getTrueVoxelSize()
     				throw(std::string);
