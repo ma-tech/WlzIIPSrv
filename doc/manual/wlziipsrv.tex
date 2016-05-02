@@ -22,7 +22,7 @@
     pdfmenubar=true,
     pdffitwindow=false,
     pdfstartview={FitH},
-    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.1.5)},
+    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.1.6)},
     pdfauthor={Bill Hill},
     pdfsubject={Woolz Internet Image Protocol Server},
     pdfcreator={Bill Hill},
@@ -37,7 +37,7 @@
 
 \newfont{\sltt}{cmsltt10}  % font for command argument (slanted typewriter)
 
-\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.4)}
+\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.6)}
 \author{
   Zsult Husz \footnote{Supported by {NIH} under grant \#1R01MH070370-01A2.} \\
   \and
@@ -166,19 +166,20 @@ colour. See \ref{ssec:imgpexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
 \hline
 \textbf{Object} &\textbf{Purpose}\\
 \hline
-\com{IIP-server}            & Identify if WLZ-IIP is running\\
-\com{Max-size}              & The size of the section\\
-\com{Tile-size}             & The size of a tile\\
-\com{Wlz-true-voxel-size}   & The voxel size of the object\\
-\com{Wlz-volume}            & The volume of the object\\
-\com{Wlz-n-component}       & The number of components in a compound object\\
-\com{Wlz-distance-range}    & The range of the sectioning plane distance\\
-\com{Wlz-sectioning-angles} & The pitch, yaw and roll angles of of the sectioning plane\\
-\com{Wlz-coordinate-3D}     & The 3D coordinates defined in 2D by the \com{PRL} command\\
-\com{Wlz-grey-stats}        & Simple statistics of the Woolz object image values.\\
-\com{Wlz-grey-value}        & The grey or RGB value of a point specified either the \com{PRL} or the \com{PAB} commands\\
-\com{Wlz-transformed-coordinate-3d} & The display coordinates and displacement from the sectioning plane of a 3D point defined by \com{PAB}\\
-\com{Wlz-foreground-objects}& The components of the compound object that 2D/3D query point is a foreground\\
+\com{IIP-server}            & Identify if WLZ-IIP is running. \\
+\com{Max-size}              & The size of the section. \\
+\com{Tile-size}             & The size of a tile. \\
+\com{Wlz-true-voxel-size}   & The voxel size of the object. \\
+\com{Wlz-volume}            & The volume of the object or first selection (if it exists). \\
+\com{Wlz-n-component}       & The number of components in a compound object. \\
+\com{Wlz-distance-range}    & The range of the sectioning plane distance. \\
+\com{Wlz-sectioning-angles} & The pitch, yaw and roll angles of of the sectioning plane. \\
+\com{Wlz-coordinate-3D}     & The 3D coordinates defined in 2D by the \com{PRL} command. \\
+\com{Wlz-grey-stats}        & Simple statistics of the image values of the object or first selection (if it exists). \\
+\com{Wlz-grey-value}        & The grey or RGB value of a point specified either the \com{PRL} or the \com{PAB} commands. \\
+\com{Wlz-transformed-coordinate-3d} & The display coordinates and displacement from the sectioning plane of a 3D point
+                                      defined by \com{PAB}. \\
+\com{Wlz-foreground-objects}& The components of the compound object that 2D/3D query point is a foreground. \\
 \hline
 \end{tabular}
 \caption{Extended object overview}
@@ -473,7 +474,9 @@ Returns the volume of the object.\\
 \texttt{INT {\sltt volume}} \newline The volume of the Woolz object\\
 & \textbf{Example} & \outparam\texttt{OBJ=Wlz-volume}\newline
 \inparam\texttt{Wlz-volume:748}\\
-& \textbf{Note} & The volume is object specific, but view independent.\\
+& \textbf{Note} & The volume is object specific, but view independent,
+                  with the volume being of the object or first
+		  selection if it exists. \\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
@@ -579,7 +582,8 @@ t $\in$ {\sltt WLZ\_GREY\_INT | WLZ\_GREY\_SHORT | WLZ\_GREY\_UBYTE |
 & \textbf{Example} & \outparam\texttt{OBJ=Wlz-grey-value}\newline
 \inparam\texttt{Wlz-grey-stats: 489600 UBYTE 0 255 8.5857e+06 1.42684e+09 17.5362 51.0567}\\
 & \textbf{Note} & For RGB$\alpha$ Woolz objects the computed values will be for the modulus of the image values.\newline
-                  When the object does not have image values {\sltt NULL} will be returned.
+                  The statistics are of the object or first selection if it exists.
+                  When the object of first selection does not have image values {\sltt NULL} will be returned.
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
@@ -648,6 +652,9 @@ image processing operators (occupancy and union) may
 given a list indices in their expressions.
 The occupancy operator may also be given no indices
 which implies all components of the compound object.
+Whether complex selections that use image processing operations
+are allowed can be controlled using the COMPLEX\_SELECTION
+environment variable.
 The image processing expressions can be written using the
 syntax defined in table \ref{tbl:imgpsyntax}.
 This allows expressions such as:
@@ -698,36 +705,39 @@ are described in table \ref{tbl:imgpops}.
 
 \begin{table}
 \centering
-\begin{tabular}{|p{0.5\textwidth}|p{0.5\textwidth}|}
+\begin{tabular}{|p{0.3\textwidth}|p{0.2\textwidth}|p{0.5\textwidth}|}
 \hline
-\textbf{Operator}                                                   &  \textbf{Description} \\
+\textbf{Operator}                                        &\textbf{Complexity} &  \textbf{Description} \\
 \hline
-background\verb=(=\emph{exp},\emph{value}\verb=)=                   & Sets the background value (value outside the
+background\verb=(=\emph{exp},\emph{value}\verb=)=                   & 1 & Sets the background value (value outside the
                                                                       expresion object's domain) to the given value. \\
-diff\verb=(=\emph{exp},\emph{exp}\verb=)=                           & The difference between the two given domains. \\
-dilation\verb=(=\emph{exp},\emph{radius}\verb=)=                    & The dilation of the domain by \emph{radius}\ voxels. \\
-domain\verb=(=\emph{exp}\verb=)=                                    & The domain of the expresion's object. \\
-erosion\verb=(=\emph{exp},\emph{radius}\verb=)=                     & The erosion of the domain by \emph{radius}\ voxels. \\
-fill\verb=(=\emph{exp}\verb=)=                                      & Fills all holes not connected to the outside in the
+diff\verb=(=\emph{exp},\emph{exp}\verb=)=                           & 2 & The difference between the two given domains. \\
+dilation\verb=(=\emph{exp},\emph{radius}\verb=)=                    & 2 & The dilation of the domain by \emph{radius} voxels. \\
+domain\verb=(=\emph{exp}\verb=)=                                    & 1 & The domain of the expresion's object. \\
+erosion\verb=(=\emph{exp},\emph{radius}\verb=)=                     & 2 & The erosion of the domain by \emph{radius}\ voxels. \\
+fill\verb=(=\emph{exp}\verb=)=                                      & 2 & Fills all holes not connected to the outside in the
                                                                       given expression's domain. \\
-intersect\verb=(=\emph{exp list}\verb=)=                            & The intersection of the domains in the given lists. \\
-occupancy\verb=(=\emph{idx list}\verb=?)=                           & The domain occupancy in the optional list. \\
-setvalue\verb=(=\emph{exp},\emph{value}\verb=)=                     & Creates an object with the domain of the given
+intersect\verb=(=\emph{exp list}\verb=)=                            & 2 & The intersection of the domains in the given lists. \\
+occupancy\verb=(=\emph{idx list}\verb=?)=                           & 2 & The domain occupancy in the optional list. \\
+setvalue\verb=(=\emph{exp},\emph{value}\verb=)=                     & 2 & Creates an object with the domain of the given
                                                                       expression and all values set to the given value. \\
-threshold\verb=(=\emph{exp},\emph{value},\emph{comparison}\verb=)=  & Creates an object where the image values satisfy
+threshold\verb=(=\emph{exp},\emph{value},
+                 \emph{comparison}\verb=)=                      & 2 & Creates an object where the image values satisfy
 						                      the given \emph{value} and \emph{comparison}.
 								      Here the value is floating point and valid comparisons
-								      are \verb=lt= (less than), \verb=le= (less than or equal), \verb=eq= (equal),
-								      \verb=ge= (greater than or equal) and \verb=gt)= (greater than). \\
-transfer\verb=(=\emph{exp},\emph{exp}\verb=)=                        & Creates a new object with the domain of the first
+								      are \verb=lt= (less than), 
+								      \verb=le= (less than or equal), \verb=eq= (equal),
+								      \verb=ge= (greater than or equal) and
+								      \verb=gt)= (greater than). \\
+transfer\verb=(=\emph{exp},\emph{exp}\verb=)=                       & 2 & Creates a new object with the domain of the first
                                                                       expression's object and the values of the second.
 								      Values outside the domain of the second but within
 								      the first are set to the second's background value. \\
 union\verb=(=\emph{exp list}\verb=|=\emph{idx list},
-             \emph{exp list}\verb=|=\emph{idx list}\verb=)=         & The union of the domains in the given lists. \\
+             \emph{exp list}\verb=|=\emph{idx list}\verb=)=         & 2 & The union of the domains in the given lists. \\
 \hline
 \end{tabular}
-\caption{Descriptions of image processing operators}.
+\caption{Descriptions of image processing operators with complexity values}.
 \label{tbl:imgpops}
 \end{table}
 
@@ -1118,15 +1128,20 @@ Table~\ref{tab:parameters} changing the logging, caches and tile sizes.
 \hline
 \textbf{Parameter}          & \textbf{Description}                        & \textbf{Default value} \\
 \hline
-\texttt{LOGFILE}                         & Location of log file                                 & /tmp/iipsrv.log \\
+\texttt{LOGFILE}                         & Location of log file.                                & /tmp/iipsrv.log \\
 \texttt{LOGLEVEL}                        & Log level (EMERG, FATAL,                             & WARN \\
                                          & ALERT, CRIT, ERROR, WARN,                            & \\
-					 & NOTICE, INFO, DEBUG)                                 & \\
-\texttt{FILESYSTEM\_PREFIX}              & Prefix directory for images                          & '' \\
-\texttt{MAX\_WLZOBJ\_CACHE\_SIZE}        & Maximum Woolz object cache size in MBs               & 1024 \\
-\texttt{MAX\_WLZOBJ\_CACHE\_COUNT}	 & Maximum number of Woolz object in cache		& 100 \\
-\texttt{WLZ\_TILE\_WIDTH}                & Tile width in pixels                                 & 100  \\
-\texttt{WLZ\_TILE\_HEIGHT}               & Tile height in pixels                                & 100  \\
+					 & NOTICE, INFO, DEBUG).                                & \\
+\texttt{FILESYSTEM\_PREFIX}              & Prefix directory for images.                         & '' \\
+\texttt{MAX\_WLZOBJ\_CACHE\_SIZE}        & Maximum Woolz object cache size in MBs.              & 1024 \\
+\texttt{MAX\_WLZOBJ\_CACHE\_COUNT}	 & Maximum number of Woolz object in cache.		& 100 \\
+\texttt{WLZ\_TILE\_WIDTH}                & Tile width in pixels.                                & 100  \\
+\texttt{WLZ\_TILE\_HEIGHT}               & Tile height in pixels.                               & 100  \\
+\texttt{COMPLEX\_SELECTION}		 & Controls complex selections                          & 0 \\
+                                         & with values:                                         & \\
+                                         & 0 - No complex selections,                           & \\
+					 & 1 - All low cost selections,                         & \\
+					 & 2 - All selections.                                  & \\
 \hline
 \end{tabular}
 \caption{WlzIIPSrv extra configuration parameters}
@@ -1209,8 +1224,9 @@ FastCgiServer /opt/apache/fcgi-bin/wlziipsrv.fcgi \
 -initial-env MAX_CVT=3000 \
 -initial-env MAX_WLZOBJ_CACHE_COUNT=100 \
 -initial-env MAX_WLZOBJ_CACHE_SIZE=4000 \
--initial-env WLZ_TILE_WIDTH="100" \
--initial-env WLZ_TILE_HEIGHT="100"
+-initial-env WLZ_TILE_WIDTH=100 \
+-initial-env WLZ_TILE_HEIGHT=100 \
+-initial-env COMPLEX_SELECTION=0
 \end{verbatim}
 
 \bibliographystyle{apalike}
