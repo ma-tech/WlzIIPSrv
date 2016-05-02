@@ -31,12 +31,21 @@ static char _Cache_h[] = "University of Edinburgh $Id$";
 
 
 
-// Use the hashmap extensions if we are using >= gcc 3.1
-#ifdef __GNUC__
+// Try to use a good hashmap
+#if defined(HAVE_UNORDERED_MAP)
 
-#if (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || (__GNUC__ >= 4)
-#define USE_HASHMAP 1
+#include <unordered_map>
+#define HASHMAP std::unordered_map
+
+#elif defined(HAVE_TR1_UNORDERED_MAP)
+
+#include <tr1/unordered_map>
+#define HASHMAP std::tr1::unordered_map
+
+#elif defined(HAVE_EXT_HASH_MAP)
+
 #include <ext/hash_map>
+#define HASHMAP __gnu_cxx::hash_map
 namespace __gnu_cxx
 {
   template<> struct hash< const std::string > {
@@ -45,27 +54,22 @@ namespace __gnu_cxx
     }
   };
 }
-#endif
 
-// And the high performance memory pool allocator if >= gcc 3.4
-#if (__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || (__GNUC__ >= 4)
-#define POOL_ALLOCATOR 1
-#include <ext/pool_allocator.h>
-#endif
+#else
 
-#endif
-
-
-#ifndef USE_HASHMAP
 #include <map>
+#define HASHMAP std::map
+
+#endif
+
+#ifdef HAVE_EXT_POOL_ALLOCATOR
+#include <ext/pool_allocator.h>
 #endif
 
 #include <iostream>
 #include <list>
 #include <string>
 #include "RawTile.h"
-
-
 
 /// Cache to store raw tile data
 
@@ -95,18 +99,14 @@ class Cache {
   typedef std::list < std::pair<const std::string,RawTile> >::iterator List_Iter;
 
   /// Index typedef
-#ifdef USE_HASHMAP
-#ifdef POOL_ALLOCATOR
-  typedef __gnu_cxx::hash_map < const std::string, List_Iter,
+#ifdef HAVE_EXT_POOL_ALLOCATOR
+  typedef HASHMAP < std::string, List_Iter,
     __gnu_cxx::hash< const std::string >,
     std::equal_to< const std::string >,
     __gnu_cxx::__pool_alloc< std::pair<const std::string, List_Iter> >
     > TileMap;
 #else
-  typedef __gnu_cxx::hash_map < const std::string,List_Iter > TileMap;
-#endif
-#else
-  typedef std::map < const std::string,List_Iter > TileMap;
+  typedef HASHMAP < std::string,List_Iter > TileMap;
 #endif
 
   /// Main cache storage object
