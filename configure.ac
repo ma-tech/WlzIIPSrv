@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT
-AM_INIT_AUTOMAKE(wlziipsrv,1.1.5)
+AC_INIT([wlziipsrv], [1.1.5])
+AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT( `pwd` )
 
@@ -41,6 +41,14 @@ AC_CHECK_HEADERS(time.h)
 AC_CHECK_HEADERS(sys/time.h)
 AC_CHECK_HEADERS(math.h)
 AC_CHECK_LIB(m, pow)
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(ext/pool_allocator.h)
+AC_CHECK_HEADERS(tr1/unordered_map)
+AC_CHECK_HEADERS(unordered_map)
+AC_CHECK_HEADERS(ext/hash_map)
+AC_LANG_RESTORE
 
 dnl For our windows build
 AC_CHECK_HEADERS(windows.h)
@@ -323,7 +331,7 @@ dnl	************************************************************
 
 
 
-INCLUDES="$INCLUDES -I."
+INCLUDES="INCLUDES -I."
 AC_SUBST(INCLUDES)
 
 AC_SUBST(LIBS)
