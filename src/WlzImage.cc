@@ -970,6 +970,7 @@ throw(string)
   if(viewParams->selector)
   {
     //if selector existis
+    int cpxExp = viewParams->selector->complexSelection;
     CompoundSelector *iter = viewParams->selector;
     while(iter)
     {
@@ -979,7 +980,7 @@ throw(string)
 	{
           WlzObject *obj= NULL;
 
-          obj = WlzImageExpEval(iter->expression); // Assigns obj.
+          obj = WlzImageExpEval(cpxExp, iter->expression); // Assigns obj.
 	  if(obj)
 	  {
 	    renderObj(tile_buf, obj, tmpObj, pos2D, size, iter);
@@ -1037,14 +1038,16 @@ throw(string)
 * \brief        Evaluates a morphological expression with reference to the
 *               given object but first tries to retrieve it from the Woolz
 *               object cache.
+* \param	cpxExp			Control for complex expressions.
 * \param        exp                     Morphological expression to be
 *                                       evaluated using the current object.
 */
-WlzObject      *WlzImage::WlzImageExpEval(WlzExp *exp)
+WlzObject      *WlzImage::WlzImageExpEval(int cpxExp, WlzExp *exp)
 {
   char          *eS;
   string   	cS;
   WlzObject	*cObj = NULL;
+  WlzErrorNum   errNum = WLZ_ERR_NONE;
 
   eS = WlzExpStr(exp, NULL, NULL);
   if(eS)
@@ -1055,11 +1058,16 @@ WlzObject      *WlzImage::WlzImageExpEval(WlzExp *exp)
   }
   if(cObj == NULL)
   {
-    cObj = WlzExpEval(wlzObject, exp, NULL);
+    cObj = WlzExpEval(wlzObject, cpxExp, exp, &errNum);
     if(cObj)
     {
       WlzAssignObject(cObj, NULL);
       addObjectToCache(cObj, cS);
+    }
+    else if(errNum != WLZ_ERR_NONE)
+    {
+      LOG_WARN("WlzImage::WlzImageExpEval() Woolz error = " <<
+               WlzStringFromErrorNum(errNum, NULL));
     }
   }
   return(cObj);
@@ -1248,7 +1256,8 @@ throw(std::string)
 
 /*!
 * \ingroup	WlzIIPServer
-* \brief	Gets simple grey value statistics for the current object.
+* \brief	Gets simple grey value statistics for the current object
+* 		or if used the first selection.
 * \param	n		Destination for the object's volume.
 * \param	t		Destination for the object's type.
 * \param	gl		Destination for minimum grey value.
@@ -1264,9 +1273,23 @@ WlzImage::getGreyStats(int &n, WlzGreyType &t, double &gl, double &gu,
                        double &sum, double &ss, double &mean, double &sdev)
 throw(std::string)
 {
+  WlzObject	*obj = NULL;
   WlzErrorNum	errNum = WLZ_ERR_NONE;
+
   prepareObject();
-  WlzObject *obj = getObj();
+  if(viewParams->selector)
+  {
+    CompoundSelector *sel = viewParams->selector;
+    if(sel && sel->expression)
+    {
+      obj = WlzImageExpEval(sel->complexSelection,
+                            sel->expression); // Assigns obj.
+    }
+  }
+  if(obj == NULL)
+  {
+    obj = WlzAssignObject(getObj(), NULL);
+  }
   n = WlzGreyStats(obj, &t, &gl, &gu, &sum, &ss, &mean, &sdev, &errNum);
   if(errNum != WLZ_ERR_NONE)
   {
@@ -1304,17 +1327,32 @@ throw(std::string)
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Return object volume
+ * \brief        Return volume of the object or if used the first selection.
  * \return       the object volume
  */
 WlzLong 	WlzImage::getVolume()
 throw(std::string)
 {
   WlzLong	vol = 0;
+  WlzObject	*obj = NULL;
   WlzErrorNum	errNum = WLZ_ERR_NONE;
 
   prepareObject();
-  vol = WlzVolume(getObj(), &errNum);
+  if(viewParams->selector)
+  {
+    CompoundSelector *sel = viewParams->selector;
+    if(sel && sel->expression)
+    {
+      obj = WlzImageExpEval(sel->complexSelection,
+                            sel->expression); // Assigns obj.
+    }
+  }
+  if(obj == NULL)
+  {
+    obj = WlzAssignObject(getObj(), NULL);
+  }
+  vol = WlzVolume(obj, &errNum);
+  (void )WlzFreeObj(obj);
   if(errNum != WLZ_ERR_NONE)
   {
     throw(makeWlzErrorMessage("WlzImage::getVolume()", errNum));
