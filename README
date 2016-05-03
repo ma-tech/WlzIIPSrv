@@ -3,7 +3,7 @@ Woolz Internet Imaging Protocol (IIP) Server
 
 ($Id$)
 
-Bill.Hill@igmm.mrc.ac.uk 2013
+Bill.Hill@igmm.ed.ac.uk 2013
 
 The Woolz Internet Imaging Protocol (IIP) Server (WlzIIPSrv) extends
 the {IIP} and was forked from the IIP Server of Ruven Pillay (IIPSrv).
@@ -21,7 +21,7 @@ Some features of the extensions are:
   Linux server (eg 1 CPU, 16GB RAM, SATA disks).
 * An arbitrary number of image overlay domains.
 * Selection and composition of overlay domains.
-* Morphological operations on overlay domains.
+* Image processing operations.
 * Image thresholding and image value remapping.
 * Transparent PNG tiles.
 
@@ -42,7 +42,7 @@ A quick overview of building the server (see manual for details):
 
 * Download, build and install External and Woolz from
   https://github.com/ma-tech, see their README files for how to do this.
-* Edit and then execute the script build.sh
+* Copy, edit and then execute the script build.sh
 * Copy the fcgi server to your fcgi bin directory.
 
 To build the code documentation use:

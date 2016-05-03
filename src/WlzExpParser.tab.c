@@ -110,9 +110,11 @@ static char _WlzExpParser_yacc[] = "MRC HGU $Id$";
 #include "WlzExpTypeParser.h"
 #include "WlzExpParserParam.h"
 
+extern int yyerror(const char *msg);
+
 
 /* Line 371 of yacc.c  */
-#line 116 "WlzExpParser.tab.cacc"
+#line 118 "WlzExpParser.tab.cacc"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -196,7 +198,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 200 "WlzExpParser.tab.cacc"
+#line 202 "WlzExpParser.tab.cacc"
 
 #ifdef short
 # undef short
@@ -501,9 +503,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    82,    82,    86,    92,   100,   111,   117,   121,   125,
-     132,   136,   140,   144,   148,   152,   156,   160,   164,   168,
-     172,   176,   181,   186,   190,   194,   198,   202
+       0,    84,    84,    88,    94,   102,   113,   119,   123,   127,
+     134,   138,   142,   146,   150,   154,   158,   162,   166,   170,
+     174,   178,   183,   188,   192,   196,   200,   204
 };
 #endif
 
@@ -1466,7 +1468,7 @@ yyreduce:
     {
         case 2:
 /* Line 1792 of yacc.c  */
-#line 83 "WlzExpParser.yacc"
+#line 85 "WlzExpParser.yacc"
     { ((WlzExpParserParam*)data)->exp    = (yyvsp[(1) - (1)].exp);
 		  ((WlzExpParserParam*)data)->nPar   = 0;
 		}
@@ -1474,7 +1476,7 @@ yyreduce:
 
   case 3:
 /* Line 1792 of yacc.c  */
-#line 87 "WlzExpParser.yacc"
+#line 89 "WlzExpParser.yacc"
     { ((WlzExpParserParam*)data)->exp = (yyvsp[(1) - (5)].exp);
 		  ((WlzExpParserParam*)data)->nPar = 2;
 		  ((WlzExpParserParam*)data)->par[0] = (yyvsp[(3) - (5)].u);
@@ -1484,7 +1486,7 @@ yyreduce:
 
   case 4:
 /* Line 1792 of yacc.c  */
-#line 94 "WlzExpParser.yacc"
+#line 96 "WlzExpParser.yacc"
     { ((WlzExpParserParam*)data)->exp = (yyvsp[(1) - (7)].exp);
 		  ((WlzExpParserParam*)data)->nPar = 3;
 		  ((WlzExpParserParam*)data)->par[0] = (yyvsp[(3) - (7)].u);
@@ -1495,7 +1497,7 @@ yyreduce:
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 102 "WlzExpParser.yacc"
+#line 104 "WlzExpParser.yacc"
     { ((WlzExpParserParam*)data)->exp = (yyvsp[(1) - (9)].exp);
 		  ((WlzExpParserParam*)data)->nPar = 4;
 		  ((WlzExpParserParam*)data)->par[0] = (yyvsp[(3) - (9)].u);
@@ -1507,7 +1509,7 @@ yyreduce:
 
   case 6:
 /* Line 1792 of yacc.c  */
-#line 112 "WlzExpParser.yacc"
+#line 114 "WlzExpParser.yacc"
     {
 		  (yyval.idx_rng) = WlzExpMakeIndexRange((yyvsp[(1) - (3)].u), (yyvsp[(3) - (3)].u));
 		}
@@ -1515,7 +1517,7 @@ yyreduce:
 
   case 7:
 /* Line 1792 of yacc.c  */
-#line 118 "WlzExpParser.yacc"
+#line 120 "WlzExpParser.yacc"
     {
 		  (yyval.idx_lst) = WlzExpMakeIndex((yyvsp[(1) - (1)].u));
 		}
@@ -1523,7 +1525,7 @@ yyreduce:
 
   case 8:
 /* Line 1792 of yacc.c  */
-#line 122 "WlzExpParser.yacc"
+#line 124 "WlzExpParser.yacc"
     {
 		  (yyval.idx_lst) = (yyvsp[(1) - (1)].idx_rng);
 		}
@@ -1531,7 +1533,7 @@ yyreduce:
 
   case 9:
 /* Line 1792 of yacc.c  */
-#line 126 "WlzExpParser.yacc"
+#line 128 "WlzExpParser.yacc"
     {
 		  (yyval.idx_lst) = WlzExpMakeIndexList((yyvsp[(1) - (3)].idx_lst), (yyvsp[(3) - (3)].idx_lst));
 		}
@@ -1539,7 +1541,7 @@ yyreduce:
 
   case 10:
 /* Line 1792 of yacc.c  */
-#line 133 "WlzExpParser.yacc"
+#line 135 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeIndex((yyvsp[(1) - (1)].u));
 		}
@@ -1547,7 +1549,7 @@ yyreduce:
 
   case 11:
 /* Line 1792 of yacc.c  */
-#line 137 "WlzExpParser.yacc"
+#line 139 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeBackground((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].u));
 		}
@@ -1555,7 +1557,7 @@ yyreduce:
 
   case 12:
 /* Line 1792 of yacc.c  */
-#line 141 "WlzExpParser.yacc"
+#line 143 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeDiff((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].exp));
 		}
@@ -1563,7 +1565,7 @@ yyreduce:
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 145 "WlzExpParser.yacc"
+#line 147 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeDilation((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].u));
 		}
@@ -1571,7 +1573,7 @@ yyreduce:
 
   case 14:
 /* Line 1792 of yacc.c  */
-#line 149 "WlzExpParser.yacc"
+#line 151 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeDomain((yyvsp[(3) - (4)].exp));
 		}
@@ -1579,7 +1581,7 @@ yyreduce:
 
   case 15:
 /* Line 1792 of yacc.c  */
-#line 153 "WlzExpParser.yacc"
+#line 155 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeErosion((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].u));
 		}
@@ -1587,7 +1589,7 @@ yyreduce:
 
   case 16:
 /* Line 1792 of yacc.c  */
-#line 157 "WlzExpParser.yacc"
+#line 159 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeFill((yyvsp[(3) - (4)].exp));
 		}
@@ -1595,7 +1597,7 @@ yyreduce:
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 161 "WlzExpParser.yacc"
+#line 163 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeIntersect((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].exp));
 		}
@@ -1603,7 +1605,7 @@ yyreduce:
 
   case 18:
 /* Line 1792 of yacc.c  */
-#line 165 "WlzExpParser.yacc"
+#line 167 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeOccupancy(NULL);
 		}
@@ -1611,7 +1613,7 @@ yyreduce:
 
   case 19:
 /* Line 1792 of yacc.c  */
-#line 169 "WlzExpParser.yacc"
+#line 171 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeOccupancy((yyvsp[(3) - (4)].exp));
 		}
@@ -1619,7 +1621,7 @@ yyreduce:
 
   case 20:
 /* Line 1792 of yacc.c  */
-#line 173 "WlzExpParser.yacc"
+#line 175 "WlzExpParser.yacc"
     {
 		(yyval.exp) = WlzExpMakeOccupancy((yyvsp[(3) - (4)].idx_lst));
 		}
@@ -1627,15 +1629,15 @@ yyreduce:
 
   case 21:
 /* Line 1792 of yacc.c  */
-#line 178 "WlzExpParser.yacc"
+#line 180 "WlzExpParser.yacc"
     {
-		  (yyval.exp) = WlzExpMakeSetvalue((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].u));
+		  (yyval.exp) = WlzExpMakeSetValue((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].u));
 		}
     break;
 
   case 22:
 /* Line 1792 of yacc.c  */
-#line 183 "WlzExpParser.yacc"
+#line 185 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeThreshold((yyvsp[(3) - (8)].exp), (yyvsp[(5) - (8)].u), (yyvsp[(7) - (8)].cmp));
 		}
@@ -1643,7 +1645,7 @@ yyreduce:
 
   case 23:
 /* Line 1792 of yacc.c  */
-#line 187 "WlzExpParser.yacc"
+#line 189 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeTransfer((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].exp));
 		}
@@ -1651,7 +1653,7 @@ yyreduce:
 
   case 24:
 /* Line 1792 of yacc.c  */
-#line 191 "WlzExpParser.yacc"
+#line 193 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeUnion((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].exp));
 		}
@@ -1659,7 +1661,7 @@ yyreduce:
 
   case 25:
 /* Line 1792 of yacc.c  */
-#line 195 "WlzExpParser.yacc"
+#line 197 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeUnion((yyvsp[(3) - (6)].exp), (yyvsp[(5) - (6)].idx_lst));
 		}
@@ -1667,7 +1669,7 @@ yyreduce:
 
   case 26:
 /* Line 1792 of yacc.c  */
-#line 199 "WlzExpParser.yacc"
+#line 201 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeUnion((yyvsp[(3) - (6)].idx_lst), (yyvsp[(5) - (6)].exp));
 		}
@@ -1675,7 +1677,7 @@ yyreduce:
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 203 "WlzExpParser.yacc"
+#line 205 "WlzExpParser.yacc"
     {
 		  (yyval.exp) = WlzExpMakeUnion((yyvsp[(3) - (4)].idx_lst), NULL);
 		}
@@ -1683,7 +1685,7 @@ yyreduce:
 
 
 /* Line 1792 of yacc.c  */
-#line 1687 "WlzExpParser.tab.cacc"
+#line 1689 "WlzExpParser.tab.cacc"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1915,5 +1917,5 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 207 "WlzExpParser.yacc"
+#line 209 "WlzExpParser.yacc"
 

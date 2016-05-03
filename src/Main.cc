@@ -203,6 +203,8 @@ int main( int argc, char *argv[] )
   int jpeg_quality = Environment::getJPEGQuality();
   //  Get our max CVT size (not respected by Woolz objects)
   int max_CVT = Environment::getMaxCVT();
+  // Are complex selection commands allowed?
+  int complex_selection = Environment::getComplexSelection();
   LOG_INFO("Setting filesystem prefix to " <<
            filesystem_prefix);
   LOG_INFO("Setting maximum image cache size to " <<
@@ -218,6 +220,8 @@ int main( int argc, char *argv[] )
 	   Environment::getMaxWlzObjCacheSize() << "MB");
   LOG_INFO("Tile size " << Environment::getWlzTileWidth() << " x " <<
 	   Environment::getWlzTileHeight());
+  LOG_INFO("Complex selection " << Environment::getComplexSelection() << 
+           complex_selection);
 
   // Check for loadable modules, but only if enabled by configure
 #ifdef ENABLE_DL
@@ -326,6 +330,7 @@ int main( int argc, char *argv[] )
       session.png = &png;
       session.imageCache = &imageCache;
       session.tileCache = &tileCache;
+      session.complexSelection = complex_selection;
       session.out = &writer;
 
       // Parse up the command list
@@ -437,7 +442,11 @@ int main( int argc, char *argv[] )
     LOG_INFO("Image closed and deleted" << endl << "Server count is " <<
               accessCount);
     ///////// End of FCGI_ACCEPT while loop or for loop in debug mode //////////
+#ifdef DEBUG //  keeps bracematching sane for editing.
   }
+#else
+  }
+#endif
   LOG_NOTICE("Terminating after " << accessCount << " iterations");
 #ifdef WLZ_IIP_LOG
   log4cpp::Category::shutdown();

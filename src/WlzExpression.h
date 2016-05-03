@@ -144,6 +144,7 @@ extern const char      		*WlzExpCmpToStr(
 				  WlzExpCmpType cmp);
 extern WlzObject      		*WlzExpEval(
 				  WlzObject *inObj,
+				  int cpxExp,
 				  WlzExp *e,
 				  WlzErrorNum *dstErr);
 extern char            		*WlzExpStr(

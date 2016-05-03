@@ -44,6 +44,8 @@ static char _WlzExpParser_yacc[] = "MRC HGU $Id$";
 #include "WlzExpTypeParser.h"
 #include "WlzExpParserParam.h"
 
+extern int yyerror(const char *msg);
+
 %}
  
 %define api.pure
@@ -176,7 +178,7 @@ exp:
 		TOKEN_SETVALUE TOKEN_OP exp TOKEN_SEP
 		TOKEN_UINT TOKEN_CP
 		{
-		  $$ = WlzExpMakeSetvalue($3, $5);
+		  $$ = WlzExpMakeSetValue($3, $5);
 		} |
 		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
 		TOKEN_UINT TOKEN_SEP TOKEN_CMP TOKEN_CP

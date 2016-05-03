@@ -106,6 +106,7 @@ void SEL::run(Session* session, std::string argument)
       break;
   }
   selector->expression = WlzExpAssign(exp);
+  selector->complexSelection = session->complexSelection;
   // Insert at the end of the list
   if (!session->viewParams->selector)
   { //first element
