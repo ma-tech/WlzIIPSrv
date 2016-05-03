@@ -165,9 +165,39 @@ string IIPResponse::getAdvert( const std::string& version ){
 
   string advert = "Content-type: text/html" + eof;
   advert += "Content-disposition: inline;filename=\"iipsrv.html\"" + eof + eof;
-  advert += "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" ><head><title>IIP Server</title><meta name=\"author\" content=\"Zsolt Husz &lt;Zsolt.Huszn@hgu.mrc.ac.uk&gt; Bill Hill&lt; bill.hill@igmm.ed.ac.uk&gt; Ruven Pillay &lt;ruven@users.sourceforge.net&gt;\"/></head><body style=\"font-family:Helvetica,sans-serif; margin:4em\"><center><h1>Woolz Internet Imaging Protocol Server</h1><h2>Version "
-    + version +
-    "</h2><br/><h3>Edinburgh Mouse Atlas: <a href=\"http://www.emouseatlas.org\">http://www.emouseatlas.org</a></h3> <br/><h4>by<br/>MRC, Human Genetics Unit, Zsolt Husz, Bill Hill</h4> <h3> IIP Home Page: <a href=\"http://iipimage.sourceforge.net\">http://iipimage.sourceforge.net</a></h3><br/><h4>by<br/>Ruven Pillay</h4></center></body></html>";
+  advert += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  advert += "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"";
+  advert += "\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">";
+  advert += "<html xmlns=\"http://www.w3.org/1999/xhtml\" ";
+  advert += "xml:lang=\"en\" >";
+  advert += "<head>";
+  advert += "<title>IIP Server</title>";
+  advert += "<meta name=\"author\"";
+  advert += "content=\"Zsolt Husz &lt;Zsolt.Huszn@hgu.mrc.ac.uk&gt; ";
+  advert += "Bill Hill&lt; bill.hill@igmm.ed.ac.uk&gt; ";
+  advert += "Ruven Pillay &lt;ruven@users.sourceforge.net&gt;\"/></head>";
+  advert += "<body style=\"font-family:Helvetica,sans-serif; ";
+  advert += "margin:4em\">";
+  advert += "<center>";
+  advert += "<h1>Woolz Internet Imaging Protocol Server</h1><h2>Version ";
+  advert += version;
+  advert += "</h2>";
+  advert += "<h3>by Zsolt Husz and Bill Hill ";
+  advert += "at the ";
+  advert += "MRC Human Genetics Unit, ";
+  advert += "University of Edinburgh</h3>";
+  advert += "<h3>Edinburgh Mouse Atlas: ";
+  advert += "<a href=\"http://www.emouseatlas.org\">";
+  advert += "http://www.emouseatlas.org</a></h3>";
+  advert += "<h3>Source and documentation: ";
+  advert += "<a href=\"https://github.com/ma-tech\">";
+  advert += "https://github.com/ma-tech</a></h3>";
+  advert += "<br/><br/>";
+  advert += "<h3>The Woolz Internet Imaging Protocol Server is based on ";
+  advert += "IIPImage by Ruven Pillay: ";
+  advert += "<a href=\"http://iipimage.sourceforge.net\">";
+  advert += "http://iipimage.sourceforge.net</a></h3>";
+  advert += "</center></body></html>";
 
   return advert;
 
