@@ -446,7 +446,7 @@ WlzExp		*WlzExpMakeOccupancy(WlzExp *e0)
 * 					value set.
 * \param	val			Value to set.
 */
-WlzExp		*WlzExpMakeSetvalue(WlzExp *e0, unsigned int val)
+WlzExp		*WlzExpMakeSetValue(WlzExp *e0, unsigned int val)
 {
   WlzExp	*e;
 

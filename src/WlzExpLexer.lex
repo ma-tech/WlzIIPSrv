@@ -47,7 +47,7 @@ static char _WlzExpLexer_lex[] = "MRC HGU $Id$";
 %}
  
 %option reentrant noyywrap never-interactive nounistd
-%option bison-bridge
+%option bison-bridge noinput nounput
  
 OP      	"("
 CP      	")"
