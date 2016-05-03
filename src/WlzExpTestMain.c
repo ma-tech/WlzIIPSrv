@@ -50,12 +50,12 @@ static char _WlzExpTestMain_c[] = "University of Edinburgh $Id$";
 int 		main(int argc, char *argv[])
 {
   int		option,
-		nPar = 0,
   		ok = 1,
 		noEval = 0,
   		usage = 0,
 		verbose = 0;
-  unsigned int	i;
+  unsigned int	i,
+  		nPar;
   char		*expStr,
 		*expStr2 = NULL,
   		*inFileStr,
