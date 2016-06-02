@@ -69,6 +69,8 @@ extern int yyerror(const char *msg);
 %token		TOKEN_UNION
  
 %token <u> 	TOKEN_UINT
+%token <i> 	TOKEN_INT
+%token <d> 	TOKEN_FLOAT
 %token <cmp> 	TOKEN_CMP
  
 %left 		TOKEN_SEP
@@ -181,9 +183,31 @@ exp:
 		  $$ = WlzExpMakeSetValue($3, $5);
 		} |
 		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
+		TOKEN_INT TOKEN_SEP TOKEN_CMP TOKEN_CP
+		{
+		  WlzExpOpParam v;
+
+		  v.type = WLZ_EXP_PRM_INT;
+		  v.val.i = $5;
+		  $$ = WlzExpMakeThreshold($3, v, $7);
+		} |
+		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
 		TOKEN_UINT TOKEN_SEP TOKEN_CMP TOKEN_CP
 		{
-		  $$ = WlzExpMakeThreshold($3, $5, $7);
+		  WlzExpOpParam v;
+
+		  v.type = WLZ_EXP_PRM_UINT;
+		  v.val.u = $5;
+		  $$ = WlzExpMakeThreshold($3, v, $7);
+		} |
+		TOKEN_THRESHOLD TOKEN_OP exp TOKEN_SEP
+		TOKEN_FLOAT TOKEN_SEP TOKEN_CMP TOKEN_CP
+		{
+		  WlzExpOpParam v;
+
+		  v.type = WLZ_EXP_PRM_FLOAT;
+		  v.val.d = $5;
+		  $$ = WlzExpMakeThreshold($3, v, $7);
 		} |
 		TOKEN_TRANSFER TOKEN_OP exp TOKEN_SEP exp TOKEN_CP
 		{
