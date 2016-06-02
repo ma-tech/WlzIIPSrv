@@ -22,7 +22,7 @@
     pdfmenubar=true,
     pdffitwindow=false,
     pdfstartview={FitH},
-    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.1.6)},
+    pdftitle={The Woolz Internet Image Protocol (IIP) Server (Version 1.1.7)},
     pdfauthor={Bill Hill},
     pdfsubject={Woolz Internet Image Protocol Server},
     pdfcreator={Bill Hill},
@@ -37,7 +37,7 @@
 
 \newfont{\sltt}{cmsltt10}  % font for command argument (slanted typewriter)
 
-\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.6)}
+\title{The Woolz Internet Image Protocol (IIP) Server (Version 1.1.7)}
 \author{
   Zsult Husz \footnote{Supported by {NIH} under grant \#1R01MH070370-01A2.} \\
   \and
@@ -129,32 +129,58 @@ that may be queried with the \com{OBJ} command.
 \begin{table}[!hp]
 \begin{tabular}{|p{0.15\textwidth}|p{0.5\textwidth}|p{0.45\textwidth}|}
 \hline
-\textbf{Command} &  \textbf{Purpose} & \textbf{Syntax}\\
+\textbf{Command} & \textbf{Purpose} & \textbf{Syntax}\\
 \hline
-\com{CVT} & Request an image to be returned as a composed image. CVT accepts now also PNG and WLZ format requests.& \texttt{CVT={\sltt format}}\\
-\com{DST} & Specify the distance of the sectioning plane& \texttt{DST={\sltt dis}}\\
-\com{FXP} & Specify the fixed point of the viewing section rotation & \texttt{FXP={\sltt X,Y,Z}}\\
-\com{FXT} & Specify the second fixed point of the viewing section rotation & \texttt{FXT={\sltt X,Y,Z}}\\
-\com{MAP} & Define a colour or grey value mapping & \texttt{MAP=
+\com{CVT} 	 & Request an image to be returned as a composed image.
+                   CVT accepts JPG, PNG and WLZ format requests.
+		                    & \texttt{CVT={\sltt format}} \\
+\com{DST}        & Specify the distance of the sectioning plane.
+                                    & \texttt{DST={\sltt dis}} \\
+\com{FPL}        & Specify a viewing section through fitting a plane to
+                   the given points or compound indices.
+                                    & \texttt{FPL={\sltt fspec[,fcpec]*}
+				      \newline
+				      where
+				      \newline
+				      {\sltt fspec = I|(X,Y,Z)}} \\
+\com{FXP}        & Specify the fixed point of the viewing section rotation.
+                                    & \texttt{FXP={\sltt X,Y,Z}} \\
+\com{FXT}        & Specify the second fixed point of the viewing section
+                   rotation.        & \texttt{FXT={\sltt X,Y,Z}} \\
+\com{MAP}        & Define a colour or grey value mapping.
+                                    & \texttt{MAP=
                                     \newline
                                     {\sltt mspec[,mspec[,mspec[,mspec]]]}}
                                     \newline
 				    where
 				    {\sltt mspec}={\sltt t,il,iu,ol,ou,p0,p1} \\
-\com{MOD} & Specify the projection mode & \texttt{MOD={\sltt mode}} \\
-\com{PAB} & Specify the 3D query point absolute in the object coordinate& \texttt{PAB={\sltt X,Y,Z}}\\
-\com{PIT} & Specify the pitch angle of the sectioning rotation& \texttt{PIT={\sltt angle}}\\
-\com{PRL} & Specify the 2D query point relative in tile or display or tile coordinate& \texttt{PRL={\sltt T,X,Y}}\\
-\com{PTL} & Retrieve a tile as a PNG image& \texttt{PTL={\sltt res,tile}}\\
-\com{DPT} & Specify the rendering depth & \texttt{DPT={\sltt depth}} \\
-\com{RMD} & Specify the rendering mode & \texttt{RMD={\sltt mode}} \\
-\com{ROL} & Specify the roll angle of the sectioning rotation & \texttt{ROL={\sltt angle}}\\
-\com{SCL} & Specify the scale used in the sectioning transformation & \texttt{SCL={\sltt scale}} \\
-\com{SEL} & Specify a component of a compound object to be displayed and its
-colour. See \ref{ssec:imgpexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
-\com{UPV} & Specify the up vector for the \com{UP\_IS\_UP} mode & \texttt{UPV={\sltt X,Y,Z}}\\
-\com{WLZ} & Specify the Woolz object & \texttt{WLZ={\sltt path}}\\
-\com{YAW} & Specify the yaw angle of the sectioning rotation& \texttt{YAW={\sltt angle}} \\
+\com{MOD}        & Specify the projection mode.
+				    & \texttt{MOD={\sltt mode}} \\
+\com{PAB}        & Specify the 3D query point absolute in the object
+                   coordinate.      & \texttt{PAB={\sltt X,Y,Z}} \\
+\com{PIT}        & Specify the pitch angle of the sectioning rotation.
+				    & \texttt{PIT={\sltt angle}} \\
+\com{PRL}        & Specify the 2D query point relative in tile or display or
+                   tile coordinate. & \texttt{PRL={\sltt T,X,Y}} \\
+\com{PTL}        & Retrieve a tile as a PNG image.
+				    & \texttt{PTL={\sltt res,tile}} \\
+\com{DPT}        & Specify the rendering depth.
+				    & \texttt{DPT={\sltt depth}} \\
+\com{RMD}        & Specify the rendering mode.
+				    & \texttt{RMD={\sltt mode}} \\
+\com{ROL}        & Specify the roll angle of the sectioning rotation.
+				    & \texttt{ROL={\sltt angle}} \\
+\com{SCL}        & Specify the scale used in the sectioning transformation.
+				    & \texttt{SCL={\sltt scale}} \\
+\com{SEL}        & Specify a component of a compound object to be displayed
+                   and its colour. See \ref{ssec:imgpexp}.
+				    & \texttt{SEL={\sltt E,R,G,B,A}} \\
+\com{UPV}        & Specify the up vector for the \com{UP\_IS\_UP} mode.
+				    & \texttt{UPV={\sltt X,Y,Z}} \\
+\com{WLZ}        & Specify the Woolz object.
+				    & \texttt{WLZ={\sltt path}} \\
+\com{YAW}        & Specify the yaw angle of the sectioning rotation.
+                                    & \texttt{YAW={\sltt angle}} \\
 \hline
 \end{tabular}
 \caption{Extended command overview}
@@ -170,16 +196,23 @@ colour. See \ref{ssec:imgpexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
 \com{Max-size}              & The size of the section. \\
 \com{Tile-size}             & The size of a tile. \\
 \com{Wlz-true-voxel-size}   & The voxel size of the object. \\
-\com{Wlz-volume}            & The volume of the object or first selection (if it exists). \\
+\com{Wlz-volume}            & The volume of the object or first selection
+                              (if it exists). \\
 \com{Wlz-n-component}       & The number of components in a compound object. \\
 \com{Wlz-distance-range}    & The range of the sectioning plane distance. \\
-\com{Wlz-sectioning-angles} & The pitch, yaw and roll angles of of the sectioning plane. \\
-\com{Wlz-coordinate-3D}     & The 3D coordinates defined in 2D by the \com{PRL} command. \\
-\com{Wlz-grey-stats}        & Simple statistics of the image values of the object or first selection (if it exists). \\
-\com{Wlz-grey-value}        & The grey or RGB value of a point specified either the \com{PRL} or the \com{PAB} commands. \\
-\com{Wlz-transformed-coordinate-3d} & The display coordinates and displacement from the sectioning plane of a 3D point
-                                      defined by \com{PAB}. \\
-\com{Wlz-foreground-objects}& The components of the compound object that 2D/3D query point is a foreground. \\
+\com{Wlz-sectioning-angles} & The pitch, yaw and roll angles of of the
+                              sectioning plane. \\
+\com{Wlz-coordinate-3D}     & The 3D coordinates defined in 2D by the
+                              \com{PRL} command. \\
+\com{Wlz-grey-stats}        & Simple statistics of the image values of the
+                              object or first selection (if it exists). \\
+\com{Wlz-grey-value}        & The grey or RGB value of a point specified either
+                              the \com{PRL} or the \com{PAB} commands. \\
+\com{Wlz-transformed-coordinate-3d} & The display coordinates and displacement
+                              from the sectioning plane of a 3D point defined
+			      by \com{PAB}. \\
+\com{Wlz-foreground-objects}& The components of the compound object that 2D/3D
+                              query point is a foreground. \\
 \hline
 \end{tabular}
 \caption{Extended object overview}
@@ -191,14 +224,21 @@ colour. See \ref{ssec:imgpexp}. & \texttt{SEL={\sltt E,R,G,B,A}}\\
 
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{WLZ} & \textbf{Purpose} &
-Specify the Woolz object. It is similar to the \com{FIF} command, however instead of loading Pyramidal Tiled TIFF images, it specifies a Woolz object. Compered with \com{FIF}, the Woolz object is not loaded until a later operation requires this. The Woolz objects are cached.
-3D domain and value objects, and compound objects with 3D domain or value components are supported. For a compound object the domain of the first object must
-include all other object domains. If file name ends with \texttt{.gz}, gzipped Woolz object is expected.\\
-& \textbf{Syntax} & \texttt{WLZ={\sltt path}}\\
-& \textbf{Input Parameters}& \texttt{PATH {\sltt path}} Full path of the Woolz object.\\
-& \textbf{Response} & \com{WLZ} returns nothing when accompanied by other commands\\
-& \textbf{Example} & \outparam\texttt{WLZ=/home/bill/pics/lobster3d.wlz}\\
-& \textbf{Notes} & Equivalent if \com{FIF} \citep[p.25]{IIP97}\\
+Specify the Woolz object. It is similar to the \com{FIF} command, however
+instead of loading Pyramidal Tiled TIFF images, it specifies a Woolz object.
+Compered with \com{FIF}, the Woolz object is not loaded until a later
+operation requires this. The Woolz objects are cached.
+3D domain and value objects, and compound objects with 3D domain or value
+components are supported. For a compound object the domain of the first
+object must include all other object domains.
+If file name ends with \texttt{.gz}, gzipped Woolz object is expected. \\
+& \textbf{Syntax} & \texttt{WLZ={\sltt path}} \\
+& \textbf{Input Parameters}&
+  \texttt{PATH {\sltt path}} Full path of the Woolz object. \\
+& \textbf{Response} &
+  \com{WLZ} returns nothing when accompanied by other commands\\
+& \textbf{Example} & \outparam\texttt{WLZ=/home/bill/pics/lobster3d.wlz} \\
+& \textbf{Notes} & Equivalent if \com{FIF} \citep[p.25]{IIP97} \\
 \end{tabular}
 
 \subsection{Setting sectioning and query parameters}
@@ -208,24 +248,48 @@ The following commands are optional and can be used in any combination.
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{DST} & \textbf{Purpose} &
-Specify the distance of the sectioning plane\\
-& \textbf{Syntax} & \texttt{DST={\sltt dis}}\\
-& \textbf{Input Parameters}& \texttt{FLOAT {\sltt dis}} \newline The distance to the sectioning plane\\
-& \textbf{Response} & none\\
-& \textbf{Example} & \outparam\texttt{DST=12.5}\\
-& \textbf{Default value} & \texttt{0.0}\\
+Specify the distance of the sectioning plane. \\
+& \textbf{Syntax} & \texttt{DST={\sltt dis}} \\
+& \textbf{Input Parameters}&
+  \texttt{FLOAT {\sltt dis}} \newline The distance to the sectioning plane. \\
+& \textbf{Response} & none \\
+& \textbf{Example} & \outparam\texttt{DST=12.5} \\
+& \textbf{Default value} & \texttt{0.0} \\
+\end{tabular}
+\hrule\noindent
+\begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
+\com{FPL} & \textbf{Purpose} & 
+Specify the view by fitting a plane to given points or through components of
+a compound object. \\
+& \textbf{Syntax} & \texttt{FPL={\sltt fspec[,fcpec]*}
+		    \newline
+		    where
+		    \newline
+		    {\sltt fspec = I|(X,Y,Z)}} \\
+& \textbf{Input Parameters}&
+  \texttt{UINT  {\sltt I}} \newline Index of a compound object component
+                           \newline 
+  \texttt{FLOAT {\sltt X}} \newline Point x coordinate\newline 
+  \texttt{FLOAT {\sltt Y}} \newline Point y coordinate\newline
+  \texttt{FLOAT {\sltt Z}} \newline Point z coordinate \\
+& \textbf{Response} & none \\
+& \textbf{Example} & \outparam
+                     \texttt{FXP=(120,20,15),(567,89,45),(339,87,62)} \\
+& \textbf{Default value} &
+  \texttt{Plane through (0,0,0) with PIT=0.0 and YAW=0.0} \\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
 \com{FXP} & \textbf{Purpose} & 
-Specify the view rotation fixed point in the object coordinate system.\\
-& \textbf{Syntax} & \texttt{FXP={\sltt X,Y,Z}}\\
-& \textbf{Input Parameters}& \texttt{FLOAT {\sltt X}} \newline The x coordinate\newline 
-\texttt{FLOAT {\sltt Y}} \newline The y coordinate\newline
-\texttt{FLOAT {\sltt Z}} \newline The z coordinate\\
-& \textbf{Response} & none\\
-& \textbf{Example} & \outparam\texttt{FXP=10.5,20,15.0}\\
-& \textbf{Default value} & \texttt{0.0,0.0,0.0}\\
+Specify the view rotation fixed point in the object coordinate system. \\
+& \textbf{Syntax} & \texttt{FXP={\sltt X,Y,Z}} \\
+& \textbf{Input Parameters}&
+  \texttt{FLOAT {\sltt X}} \newline The x coordinate\newline 
+  \texttt{FLOAT {\sltt Y}} \newline The y coordinate\newline
+  \texttt{FLOAT {\sltt Z}} \newline The z coordinate \\
+& \textbf{Response} & none \\
+& \textbf{Example} & \outparam\texttt{FXP=10.5,20,15.0} \\
+& \textbf{Default value} & \texttt{0.0,0.0,0.0} \\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
@@ -385,7 +449,8 @@ Specify the yaw angle of the sectioning rotation. \\
 \end{tabular}
 \hrule\noindent
 \begin{tabular}{p{\commandcolumna}p{\commandcolumnb}p{\commandcolumnc}}
-\com{CVT} & \textbf{Purpose} & Request an image to be returned as a composed image. CVT accept now also PNG format requests.\\
+\com{CVT} & \textbf{Purpose} & Request an image to be returned as a composed
+image. CVT accepts JPG and PNG format requests.\\
 & \textbf{Syntax} & \texttt{CVT={\sltt format} } \\
 & \textbf{Input Parameters}& \texttt{PNG|JPEG {\sltt format}} output format\\
 & \textbf{Response} & Requested image\\
@@ -686,16 +751,23 @@ are described in table \ref{tbl:imgpops}.
 	    &  & erosion\verb=(=\emph{exp},\emph{uint}\verb=) |= \\
 	    &  & fill\verb=(=\emph{exp}\verb=) |= \\
 	    &  & intersect\verb=(=\emph{exp list},\emph{exp list}\verb=) |= \\
-	    &  & occupancy\verb=(=\emph{index list}\verb=?) |= \\
+	    &  & occupancy\verb=(=\emph{index list}\verb=?)|= \\
 	    &  & setvalue\verb=(=\emph{exp},\emph{val}\verb=) |= \\
 	    &  & threshold\verb=(=\emph{exp},\emph{val},\emph{cmp}\verb=) |= \\
 	    &  & transfer\verb=(=\emph{exp},\emph{exp}\verb=) |= \\
-	    &  & union\verb=(=\emph{exp list}\verb=|=\emph{idx list},\emph{exp list}\verb=|=\emph{idx list}\verb=)= \\
-\emph{idx list}    	&:=& \verb=(=\emph{uint}\verb=|=\emph{idx range}\verb=|=\emph{idx list},\emph{idx list}\verb=)= \\
+	    &  & union\verb=(=\emph{exp list}
+	              \verb=|=\emph{idx list},\emph{exp list}
+		      \verb=|=\emph{idx list}\verb=)= \\
+\emph{idx list}    	&:=& \verb=(=\emph{uint}
+                             \verb=|=\emph{idx range}
+			     \verb=|=\emph{idx list},\emph{idx list}\verb=)= \\
 \emph{idx range}    	&:=& \emph{uint}\verb=-=\emph{uint} \\
-\emph{idx}         	&:=& \verb=[0-9]+= \\
-\emph{uint}         	&:=& \verb=[1-9][0-9]*= \\
-\emph{val}         	&:=& \verb=[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?= \\
+\emph{idx}         	&:=& \emph{uint} \\
+\emph{val}       	&:=& \verb=(=\emph{int}\verb=)|(=\emph{float}
+                             \verb=)([eE]=\emph{int}\verb=)?= \\
+\emph{real}             &:=& \emph{int}\verb=[.]=\emph{uint} \\
+\emph{int}         	&:=& \verb=-?=\emph{uint} \\
+\emph{uint}         	&:=& \verb=[0-9]+= \\
 \emph{cmp}         	&:=& \verb=(lt)|(le)|(eq)|(ge)|(gt)= \\
 \hline
 \end{tabular}
@@ -927,6 +999,7 @@ The list of commands from Table~\ref{tab:comparision} compares command sets of t
 \com{SHD}  & N & S & U \\
 \hline
 \com{DST}  & N & N & S \\
+\com{FPL}  & N & N & S \\
 \com{FXP}  & N & N & S \\
 \com{FXT}  & N & N & S \\
 \com{MAP}  & N & N & S \\
