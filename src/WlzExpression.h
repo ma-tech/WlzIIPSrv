@@ -85,7 +85,9 @@ typedef enum _WlzExpCmpType
 typedef enum _WlzExpParamType
 {
   WLZ_EXP_PRM_NONE	= 0,
+  WLZ_EXP_PRM_INT,
   WLZ_EXP_PRM_UINT,
+  WLZ_EXP_PRM_FLOAT,
   WLZ_EXP_PRM_CMP,
   WLZ_EXP_PRM_EXP,
   WLZ_EXP_PRM_OBJ
@@ -93,8 +95,10 @@ typedef enum _WlzExpParamType
 
 typedef union _WlzExpOpParamVal
 {
-  void		*v;
+  void		 *v;
+  int   	 i;
   unsigned int   u;
+  double	 d;
   WlzExpCmpType	 cmp;
   WlzObject	 *obj;
   struct _WlzExp *exp;
@@ -178,7 +182,7 @@ extern WlzExp          		*WlzExpMakeSetValue(
 				  unsigned int val);
 extern WlzExp          		*WlzExpMakeThreshold(
 				  WlzExp *e,
-				  unsigned int val,
+				  WlzExpOpParam val,
 				  WlzExpCmpType cmp);
 extern WlzExp          		*WlzExpMakeTransfer(
 				  WlzExp *e0,
