@@ -69,13 +69,24 @@ UNION       	"union"
 
  
 UINT      	[0-9]+
+INT		-?{UINT}
+REAL		{INT}[.]{UINT}*
+FLOAT 		({INT}|{REAL})([eE]{INT})?
 CMP		("lt")|("le")|("eq")|("ge")|("gt")
  
 %%
  
 {UINT}        	{
-                  sscanf(yytext,"%d",&yylval->u);
+                  sscanf(yytext,"%u",&(yylval->u));
                   return(TOKEN_UINT);
+		}
+{INT}        	{
+                  sscanf(yytext,"%d",&(yylval->i));
+                  return(TOKEN_INT);
+		}
+{FLOAT}        	{
+                  sscanf(yytext,"%lg",&(yylval->d));
+                  return(TOKEN_FLOAT);
 		}
 {CMP}        	{
                   yylval->cmp = WlzExpCmpFromStr(yytext);
