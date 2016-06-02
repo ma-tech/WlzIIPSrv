@@ -63,7 +63,9 @@ extern int yydebug;
      TOKEN_TRANSFER = 272,
      TOKEN_UNION = 273,
      TOKEN_UINT = 274,
-     TOKEN_CMP = 275
+     TOKEN_INT = 275,
+     TOKEN_FLOAT = 276,
+     TOKEN_CMP = 277
    };
 #endif
 
