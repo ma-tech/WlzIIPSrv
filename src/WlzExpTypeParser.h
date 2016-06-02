@@ -51,7 +51,9 @@ extern "C"
 
 typedef union _WlzExpTypeParser
 {
+  int 		i;
   unsigned int 	u;
+  double	d;
   WlzExpCmpType	cmp;
   WlzObject	*obj;
   WlzExp 	*exp;
