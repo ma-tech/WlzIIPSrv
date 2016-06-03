@@ -36,6 +36,7 @@
 
 noinst_PROGRAMS 	= \
 			WlzExpTest \
+			WlzIIPStringParserTest \
 			wlziipsrv.fcgi
 
 
@@ -81,49 +82,52 @@ else
 endif
 
 wlziipsrv_fcgi_SOURCES 	= \
-			Log.h \
-			Main.cc \
-			IIPImage.h \
-			IIPImage.cc \
-			TPTImage.h \
-			TPTImage.cc \
-			JPEGCompressor.h \
-			JPEGCompressor.cc \
-			PNGCompressor.h \
-			PNGCompressor.cc \
-			RawTile.h \
-			Timer.h \
-			Cache.h \
-			TileManager.h \
-			TileManager.cc \
-			Tokenizer.h \
-			IIPResponse.h \
-			IIPResponse.cc \
-			ImageMap.cc \
-			View.h \
-			View.cc \
-			ColourTransforms.h \
-			ColourTransforms.cc \
-			Environment.h \
-			Writer.h \
-			Task.h \
-			Task.cc \
-			OBJ.cc \
-			FIF.cc \
-			WLZ.cc \
-			WlzRemoteImage.cc \
-			WlzImage.cc \
-			JTL.cc \
-			SEL.cc \
-			MAP.cc \
-			PTL.cc \
-			TIL.cc \
-			ICC.cc \
 			CVT.cc \
-			WlzObjectCache.cc \
+			Cache.h \
+			ColourTransforms.cc \
+			ColourTransforms.h \
+			Environment.h \
+			FIF.cc \
+			ICC.cc \
+			IIPImage.cc \
+			IIPImage.h \
+			IIPResponse.cc \
+			IIPResponse.h \
+			ImageMap.cc \
+			JPEGCompressor.cc \
+			JPEGCompressor.h \
+			JTL.cc \
+			Log.h \
+			MAP.cc \
+			Main.cc \
+			OBJ.cc \
+			PNGCompressor.cc \
+			PNGCompressor.h \
+			PTL.cc \
+			RawTile.h \
+			SEL.cc \
+			TIL.cc \
+			TPTImage.cc \
+			TPTImage.h \
+			Task.cc \
+			Task.h \
+			TileManager.cc \
+			TileManager.h \
+			Timer.h \
+			Tokenizer.h \
+			View.cc \
+			View.h \
+			ViewParameters.cc \
+			ViewParameters.h \
+			WLZ.cc \
 			WlzExpLexer.lex \
 			WlzExpParser.yacc \
 			WlzExpression.c \
+			WlzIIPStringParser.c \
+			WlzImage.cc \
+			WlzObjectCache.cc \
+			WlzRemoteImage.cc \
+			Writer.h \
 			$(BUILT_SOURCES) \
 			$(DSO_SOURCES)
 
@@ -137,6 +141,11 @@ WlzExpTest_SOURCES	= \
 WlzExpLexer.c WlzExpLexer.h:	WlzExpLexer.lex
 			$(MYLEX) --outfile=WlzExpLexer.c \
 		        --header-file=WlzExpLexer.h WlzExpLexer.lex
+
+WlzIIPStringParserTest_SOURCES	= \
+			WlzIIPStringParserTestMain.c \
+			WlzIIPStringParser.c
+			$(BUILT_SOURCES)
 
 # Autoconf, automake, yacc and bison don't work well together. Here
 # instead of outputting WlzExpParser.tab.c we get WlzExpParser.tab.cacc!
