@@ -349,6 +349,12 @@ class MOD : public Task {
 };
 
 
+/// FPL Woolz Command: computes section view by fitting a plane
+class FPL : public Task {
+ public:
+  void run( Session* session, std::string argument );
+};
+
 /// FXP Woolz Command: sets the fixed point
 class FXP : public Task {
  public:

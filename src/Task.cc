@@ -44,6 +44,8 @@ static char _Task_cc[] = "University of Edinburgh $Id$";
 #include "Log.h"
 #include "Task.h"
 #include "Tokenizer.h"
+#include "WlzIIPStringParser.h"
+#include <string.h>
 #include <iostream>
 #include <algorithm>
 
@@ -78,6 +80,7 @@ Task* Task::factory(std::string type)
   else if( type == "pit" ) return new PIT; // Sectioning pitch angle
   else if( type == "rol" ) return new ROL; // Sectioning roll angle
   else if( type == "mod" ) return new MOD; // Sectioning mode
+  else if( type == "fpl" ) return new FPL; // Sectioning fit plane
   else if( type == "fxp" ) return new FXP; // Sectioning fixed point
   else if( type == "fxt" ) return new FXT; // Sectioning second fixed point
   else if( type == "upv" ) return new UPV; // Sectioning up vector
@@ -86,8 +89,10 @@ Task* Task::factory(std::string type)
   else if( type == "prl" ) return new PRL; // Sets a 2D point
   else if( type == "pab" ) return new PAB; // Sets a 3D point
   else if( type == "scl" ) return new SCL; // Sets scale
-  else if( type == "ptl" ) return new PTL; // PNG tile request, equivalent to JTL
-  else if( type == "sel" ) return new SEL; // Selection command for compound objects
+  else if( type == "ptl" ) return new PTL; // PNG tile request, equivalent to
+  					   // JTL
+  else if( type == "sel" ) return new SEL; // Selection command for compound
+                                           // objects
   else if( type == "map" ) return new MAP; // Map image values
   else return NULL;
 }
@@ -334,6 +339,65 @@ void MOD::run(Session* session, std::string argument)
       LOG_INFO("MOD :: Woolz sectioning mode set to " <<
                 session->viewParams->mode);
     }
+  }
+}
+
+void FPL::run(Session* session, std::string argument)
+{
+  if(!*(session->image))
+  {
+    LOG_WARN("FPL :: No session image set.");
+    session->response->setError( "1 3", argument );
+  }
+  else if((*session->image)->getImageType() != "wlz")
+  {
+    LOG_WARN("FPL :: Session image not Woolz.");
+    session->response->setError( "1 3", argument );
+  }
+  else if(argument.length())
+  {
+    int	 	n,
+    		nPos = 0,
+		nIdx = 0;
+    WlzDVertex3	*pos = NULL;
+    int		*idx = NULL;
+    WlzErrorNum	errNum = WLZ_ERR_NONE;
+
+    n = 3 + (argument.length() / 2);
+    if(((pos = (WlzDVertex3 *)AlcMalloc(sizeof(WlzDVertex3) * n)) == NULL) ||
+       ((idx = (int *)AlcMalloc(sizeof(int) * n)) == NULL))
+    {
+      LOG_ERROR("FPL :: Failed to allocate buffers for " << argument)
+    }
+    else
+    {
+      n = WlzIIPStrParseIdxAndPos(&nIdx, idx, &nPos, pos, argument.c_str());
+      if(n != 0)
+      {
+        LOG_WARN("FPL :: Invalid indices or positions format" << argument);
+      }
+      else
+      {
+	// Add positions for at the object centroids for each of the
+	// given compound object indices.
+	for(int i = 0; i < nIdx; ++idx)
+	{
+	  // pos[nPos] by ref
+	  if(((WlzImage*)(*session->image))->getCentroid(idx[i], pos[nPos]))
+	  {
+	    ++nPos;
+	  }
+	  else
+	  {
+	    LOG_WARN("FPL :: Failed to get centroid for index = "
+	             << idx[i]);
+	  }
+	}
+        session->viewParams->setFromPlaneFit(nPos, pos);
+      }
+    }
+    AlcFree(pos);
+    AlcFree(idx);
   }
 }
 
