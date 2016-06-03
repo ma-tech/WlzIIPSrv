@@ -1167,6 +1167,56 @@ WlzDVertex3 WlzImage::getCurrentPointInPlane(){
 }
 
 /*!
+ * \return	True on success.
+ * \ingroup	WlzIIPServer
+ * \brief	Gets the centroid of the indexed object.
+ */
+bool
+WlzImage::getCentroid(int idx, WlzDVertex3 &pos)
+{
+  WlzCompoundArray *array;
+  bool		stat = false;
+  WlzObject	*obj = NULL;
+  WlzErrorNum 	errNum = WLZ_ERR_NONE;
+
+  prepareObject();
+  array = (wlzObject->type == WLZ_COMPOUND_ARR_2)?
+          (WlzCompoundArray *)wlzObject : NULL;
+  if(idx == 0)
+  {
+    obj = (array)? array->o[0]: wlzObject;
+  }
+  else
+  {
+    if(array && (idx < array->n))
+    {
+      obj = array->o[idx];
+    }
+    else
+    {
+      errNum = WLZ_ERR_OBJECT_TYPE;
+    }
+  }
+  if(obj)
+  {
+    WlzDVertex3 com;
+
+    com = WlzCentreOfMass3D(obj, 1, NULL, &errNum);
+    if(errNum == WLZ_ERR_NONE)
+    {
+      pos = com;
+      stat = true;
+    }
+  }
+  if(!stat)
+  {
+    LOG_INFO("WlzImage::getCentroid() failed idx = " << idx <<
+	     " error = " << WlzStringFromErrorNum(errNum, NULL));
+  }
+  return(stat);
+}
+
+/*!
  * \return      The object coordinates of the queried point.
  * \ingroup     WlzIIPServer
  * \brief 	Gets object coordinates of the quieried point with tile or

@@ -147,6 +147,8 @@ class WlzImage : public IIPImage
     void 			getTransformed3DBBox(
     				  WlzIBox3 &box)
 				throw(std::string);
+    bool			getCentroid(
+    				  int idx, WlzDVertex3 &pos);
     WlzDVertex3 		getCurrentPointIn3D();
     WlzDVertex3 		getTransformed3DPoint();
     int 			getForegroundObjects(
