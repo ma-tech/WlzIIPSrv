@@ -293,11 +293,15 @@ void OBJ::wlz_sectioning_angles()
 {
   checkImage();
   checkIfWoolz();
-  double theta = 0.0, phi = 0.0, zeta = 0.0;
-  ((WlzImage*)(*session->image))->getAngles(theta, phi, zeta);
-  LOG_INFO("OBJ :: Wlz-sectioning-angles handler returning " << phi <<
-            " - " << theta << " - " << zeta);
-  session->response->addResponse("Wlz-sectioning-angles", phi, theta, zeta);
+  double theta = 0.0, phi = 0.0, zeta = 0.0, dist = 0.0;
+  ((WlzImage*)(*session->image))->getAngles(theta, phi, zeta, dist);
+  LOG_INFO("OBJ :: Wlz-sectioning-angles handler returning " <<
+           phi   << " - " <<
+	   theta << " - " <<
+	   zeta  << " - " <<
+	   dist  << " (angles in radians");
+  session->response->addResponse("Wlz-sectioning-angles",
+  				 phi, theta, zeta, dist);
 }
 
 void
