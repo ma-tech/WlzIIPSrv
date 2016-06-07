@@ -353,10 +353,16 @@ setFromPlaneFit(int nPos, WlzDVertex3 *pos)
   }
   if(errNum == WLZ_ERR_NONE)
   {
-    pitch = vs->phi;
-    yaw = vs->theta;
-    fixed = pip;
-    LOG_INFO("ViewParameters::setFromPlaneFit() setting pitch.");
+    WlzDVertex3 tmp;
+
+    pitch = vs->phi * 180 / ALG_M_PI;
+    yaw = vs->theta * 180 / ALG_M_PI;
+    // Set distance leaving the current fixed point as is.
+    WLZ_VTX_3_SUB(tmp, pip, fixed);
+    dist = WLZ_VTX_3_DOT(tmp, nrm);
+    LOG_INFO("ViewParameters::setFromPlaneFit() setting pitch = " << pitch <<
+	     ", yaw = " << yaw   <<
+	     ", dist = " << dist);
   }
   (void )WlzFree3DViewStruct(vs);
   if(errNum != WLZ_ERR_NONE)
