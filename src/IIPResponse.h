@@ -161,9 +161,18 @@ class IIPResponse{
   /** \param d response string
       \param a first double value
       \param b second double value
-      \param c thired double value
+      \param c third double value
    */
   void addResponse( const char* d, double a, double b, double c );
+
+  /// Add a response string
+  /** \param g response string
+      \param a first double value
+      \param b second double value
+      \param c third double value
+      \param d forth double value
+   */
+  void addResponse( const char* g, double a, double b, double c, double d );
 
   /// Add a response string
   /** \param s response string
@@ -176,10 +185,10 @@ class IIPResponse{
   /** \param g response string
       \param a first integer value
       \param b second integer value
-      \param c thired integer value
-      \param d thired integer value
-      \param e thired integer value
-      \param f thired integer value
+      \param c third integer value
+      \param d forth integer value
+      \param e fifth integer value
+      \param f sixth integer value
    */
   void addResponse( const char* g, int a, int b, int c, int d, int e, int f  );
 

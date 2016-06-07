@@ -219,6 +219,15 @@ void IIPResponse::addResponse( const char* d, double a, double b, double c ){
   responseBody.append( eof );
 }
 
+void IIPResponse::addResponse(const char* g,
+                              double a, double b, double c, double d )
+{
+  char tmp[128];
+  snprintf(tmp, 128, "%s:%g %g %g %g", g, a, b, c, d);
+  responseBody.append(tmp);
+  responseBody.append(eof);
+}
+
 void IIPResponse::addResponse( const char* g, int a, int b, int c, int d, int e, int f  ){
 
   char tmp[128]; 
