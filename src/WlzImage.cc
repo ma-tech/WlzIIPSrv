@@ -1104,19 +1104,22 @@ void WlzImage::getDepthRange(double& min, double& max){
 
 /*!
  * \ingroup      WlzIIPServer
- * \brief        Return in degrees the rotation angles of the section
- * \param        theta reference to theta rotation angle
- * \param        phi reference to phi rotation angle
- * \param        zeta reference to zeta rotation angle
- * \return       void
- * \par      Source:
- *                WlzImage.cc
+ * \brief       Return in degrees the rotation angles of the section and
+ * 		distance from the section fixed point.
+ * \param       theta 		Reference to theta rotation angle.
+ * \param       phi 		Reference to phi rotation angle.
+ * \param       zeta 		Reference to zeta rotation angle.
+ * \param	dist		Reference to distance.
  */
-void WlzImage::getAngles(double& theta, double& phi, double& zeta){
+void
+WlzImage::
+getAngles(double &theta, double &phi, double &zeta, double &dist)
+{
   prepareViewStruct(); 
   theta = wlzViewStr->theta / WLZ_M_PI * 180.0;
   phi   = wlzViewStr->phi   / WLZ_M_PI * 180.0;
   zeta  = wlzViewStr->zeta  / WLZ_M_PI * 180.0;
+  dist  = wlzViewStr->dist;
 }
 
 /*!

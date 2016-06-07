@@ -140,7 +140,8 @@ class WlzImage : public IIPImage
     void 			getAngles(
     				  double &theta,
 				  double &phi,
-				  double &zeta);
+				  double &zeta,
+				  double &dist);
     void 			get3DBoundingBox(
     				  WlzIBox3 &box)
 				throw(std::string);
