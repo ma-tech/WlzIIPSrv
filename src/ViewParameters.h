@@ -156,36 +156,40 @@ class ViewParameters
 {
   public:
 
-    double            dist;		/*!< distance to sectioning plane */
-    double            yaw;              /*!< yaw angle of sectioning plane */
-    double            pitch;            /*!< pitch angle of sectioning plane */
-    double            roll;             /*!< roll angle of sectioning plane */
-    double            scale;            /*!< scale of the sectioning plane */
-    WlzThreeDViewMode mode;             /*!< 3D View Mode of sectioning plane */
-    WlzDVertex3       fixed;            /*!< fixed point */
-    WlzDVertex3       fixed2;           /*!< second fixed point */
-    WlzDVertex3       up;               /*!< upvector */
+    double            dist;		/*!< Distance to sectioning plane. */
+    double            yaw;              /*!< Yaw angle of sectioning plane
+    					     stored here using degrees. */
+    double            pitch;            /*!< Pitch angle of sectioning plane 
+    					     stored here using degrees. */
+    double            roll;             /*!< Roll angle of sectioning plane 
+    					     stored here using degrees. */
+    double            scale;            /*!< Scale of the sectioning plane. */
+    WlzThreeDViewMode mode;             /*!< 3D View Mode of the sectioning
+    					     plane. */
+    WlzDVertex3       fixed;            /*!< Fixed point .*/
+    WlzDVertex3       fixed2;           /*!< Second fixed point. */
+    WlzDVertex3       up;               /*!< upvector. */
 
-    double	      depth;		/*!< rendering depth */
-    RenderModeType    rmd;		/*!< rendering mode */
+    double	      depth;		/*!< Rendering depth. */
+    RenderModeType    rmd;		/*!< Rendering mode. */
 
     //selection have no access methods
-    int x;                              /*!< current point x coordinate */
-    int y;                              /*!< current point y coordinate */
-    int tile;                           /*!< current point tile */
+    int x;                              /*!< Current point x coordinate. */
+    int y;                              /*!< Current point y coordinate. */
+    int tile;                           /*!< Current point tile. */
 
-    bool alpha;                         /*!< ask for transparent tile
+    bool alpha;                         /*!< Ask for transparent tile
                                              (for PNG)*/
 
-    WlzDVertex3       queryPoint;       /*!< 3D point for GreyValue enquery */
+    WlzDVertex3       queryPoint;       /*!< 3D point for GreyValue enquery. */
     QueryPointType    queryPointType;   /*!< Type of point to be used for
-					      GreyValue enquery */
+					      GreyValue enquery. */
 
     ImageMap	      map;              /*!< Image value map. */
-    CompoundSelector  *selector;        /*!< list of compound object
-                                             selection */
-    CompoundSelector  *lastsel;         /*!< last element of the selector
-    					     list */
+    CompoundSelector  *selector;        /*!< List of compound object
+                                             selection. */
+    CompoundSelector  *lastsel;         /*!< Last element of the selector
+    					     list. */
 
     /// Constructor
     ViewParameters();
