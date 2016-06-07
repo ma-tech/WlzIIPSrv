@@ -380,11 +380,15 @@ void FPL::run(Session* session, std::string argument)
       {
 	// Add positions for at the object centroids for each of the
 	// given compound object indices.
-	for(int i = 0; i < nIdx; ++idx)
+	for(int i = 0; i < nIdx; ++i)
 	{
 	  // pos[nPos] by ref
 	  if(((WlzImage*)(*session->image))->getCentroid(idx[i], pos[nPos]))
 	  {
+	    LOG_INFO("FPL :: centroid[" << i << "] = (" <<
+	             pos[nPos].vtX << ", " <<
+	             pos[nPos].vtY << ", " <<
+	             pos[nPos].vtZ << ")");
 	    ++nPos;
 	  }
 	  else
