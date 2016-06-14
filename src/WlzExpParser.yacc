@@ -87,6 +87,11 @@ input:
 		{ ((WlzExpParserParam*)data)->exp    = $1;
 		  ((WlzExpParserParam*)data)->nPar   = 0;
 		} |
+		exp TOKEN_SEP TOKEN_UINT
+		{ ((WlzExpParserParam*)data)->exp = $1;
+		  ((WlzExpParserParam*)data)->nPar = 1;
+		  ((WlzExpParserParam*)data)->par[0] = $3;
+		} |
 		exp TOKEN_SEP TOKEN_UINT TOKEN_SEP TOKEN_UINT
 		{ ((WlzExpParserParam*)data)->exp = $1;
 		  ((WlzExpParserParam*)data)->nPar = 2;
