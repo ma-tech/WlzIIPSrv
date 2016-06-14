@@ -671,14 +671,15 @@ WlzErrorNum			WlzImage::renderObj(
         WlzObject *mskObj = NULL;
 
 	/* Get section image, masking it if an alpha channel is being used. */
-        if(viewParams->alpha)
+        if(viewParams->alpha && gvnObj->values.core)
 	{
 	  mskP = &mskObj;
 	}
 	renObj = WlzAssignObject(
 		 WlzGetSubSectionFromObject(gvnObj, tileObj, wlzViewStr,
 		 			    interp, mskP, &errNum), NULL);
-        if((errNum == WLZ_ERR_NONE) && (mskObj != NULL))
+        if((errNum == WLZ_ERR_NONE) && 
+	   (renObj != NULL) && (mskObj != NULL))
 	{
 	  WlzObject *tmpObj;
 
@@ -700,7 +701,7 @@ WlzErrorNum			WlzImage::renderObj(
       errNum = WLZ_ERR_PARAM_DATA;
       break;
   }
-  if(renObj == NULL || errNum != WLZ_ERR_NONE)
+  if((renObj == NULL) || (errNum != WLZ_ERR_NONE))
   {
     throw(
     makeWlzErrorMessage(
