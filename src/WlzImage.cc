@@ -640,7 +640,9 @@ void WlzImage::closeImage() {
 * \ingroup      WlzIIPServer
 * \brief	Renders a Woolz object by either sectioning or projecting
 * 		the given 3D object to generate a single tile in tile_buf
-* 		for the tileing given by tileObj.
+* 		for the tileing given by tileObj. If an alpha channel is
+* 		being used and sectioning is being used then the returned
+* 		section will be masked.
 * \param        tileBuf   allocated memmory location for the tile
 * \param        gvnObj	   The given 3D woolz object to render.
 * \param        tileObj    Given tile object set up for the requested tile.
@@ -664,9 +666,29 @@ WlzErrorNum			WlzImage::renderObj(
   switch(viewParams->rmd)
   {
     case RENDERMODE_SECT:
-      renObj = WlzAssignObject(
-	       WlzGetSubSectionFromObject(gvnObj, tileObj, wlzViewStr, interp,
-					  NULL, &errNum), NULL);
+      {
+	WlzObject **mskP = NULL;
+        WlzObject *mskObj = NULL;
+
+	/* Get section image, masking it if an alpha channel is being used. */
+        if(viewParams->alpha)
+	{
+	  mskP = &mskObj;
+	}
+	renObj = WlzAssignObject(
+		 WlzGetSubSectionFromObject(gvnObj, tileObj, wlzViewStr,
+		 			    interp, mskP, &errNum), NULL);
+        if((errNum == WLZ_ERR_NONE) && (mskObj != NULL))
+	{
+	  WlzObject *tmpObj;
+
+          tmpObj = WlzAssignObject(
+	           WlzGreyTransfer(mskObj, renObj, 0, &errNum), NULL);
+          (void )WlzFreeObj(renObj);
+	  renObj = tmpObj;
+        }
+	(void )WlzFreeObj(mskObj);
+      }
       break;
     case RENDERMODE_PROJ_N: // FALLTHROUGH
     case RENDERMODE_PROJ_D: // FALLTHROUGH
