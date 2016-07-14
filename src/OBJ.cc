@@ -371,6 +371,10 @@ void OBJ::wlz_true_voxel_size()
   float *voxel_size = ((WlzImage*)(*session->image))->getTrueVoxelSize();
   LOG_INFO("OBJ :: Wlz-voxel-size handler returning " <<
             voxel_size[0] << "," << voxel_size[1] << "," << voxel_size[2]);
+  session->response->addResponse("Wlz-true-voxel-size",
+                                 voxel_size[0],
+				 voxel_size[1],
+				 voxel_size[2]);
 }
 
 void OBJ::wlz_n_components()
