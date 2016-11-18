@@ -12,19 +12,46 @@ autoreconf
 # autoreconf -i --force
 
 #export MA=$HOME
+export MA=/opt/MouseAtlas/
 #export MA=$HOME/MouseAtlas/Build/
-export MA=/opt/MouseAtlas
+#export MA=$HOME/MouseAtlas/Build/debug
 
-# Set C and C++ flags
-#export CFLAGS=-g
-export CFLAGS='-O3 -mfpmath=sse'
-#export CXXFLAGS=-g
-export CXXFLAGS='-O3 -mfpmath=sse'
+# Configure for an optimised build on systems with compilers and x86_64
+# processors developed after 2013
+./configure  \
+    --enable-optimise \
+    --enable-static-fcgi \
+    --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=$MA/lib/ \
+    --with-log4cpp-incl=$MA/include --with-log4cpp-lib=$MA/lib \
+    --with-wlz-incl=$MA/include --with-wlz-lib=$MA/lib \
+    --with-nifti-incl=$MA/include --with-nifti-lib=$MA/lib \
+    --with-tiff-includes=$MA/include --with-tiff-libraries=$MA/lib \
+    --with-jpeg-includes=$MA/include --with-jpeg-libraries=$MA/lib \
+    --with-png-includes=$MA/include --with-png-libraries=$MA/lib \
+    --enable-openmp --enable-avx2 --enable-lto
 
-# Configure
-./configure --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=/opt/fcgi/lib \
-            --with-nifti-incl=$MA/include --with-nifti-lib=$MA/lib \
-            --with-log4cpp-incl=$MA/include --with-log4cpp-lib=$MA/lib \
-            --with-wlz-incl=$MA/include --with-wlz-lib=$MA/lib \
-	    --enable-openmp
+# Configure for an optimised build on older systems
+# ./configure  \
+#     --enable-optimise \
+#     --enable-static-fcgi \
+#     --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=$MA/lib/ \
+#     --with-log4cpp-incl=$MA/include --with-log4cpp-lib=$MA/lib \
+#     --with-wlz-incl=$MA/include --with-wlz-lib=$MA/lib \
+#     --with-nifti-incl=$MA/include --with-nifti-lib=$MA/lib \
+#     --with-tiff-includes=$MA/include --with-tiff-libraries=$MA/lib \
+#     --with-jpeg-includes=$MA/include --with-jpeg-libraries=$MA/lib \
+#     --with-png-includes=$MA/include --with-png-libraries=$MA/lib \
+#     --enable-openmp
+
+# Configure for a debug build
+# ./configure  \
+#     --enable-debug \
+#     --enable-static-fcgi \
+#     --with-fcgi-incl=/opt/fcgi/include --with-fcgi-lib=$MA/lib/ \
+#     --with-log4cpp-incl=$MA/include --with-log4cpp-lib=$MA/lib \
+#     --with-wlz-incl=$MA/include --with-wlz-lib=$MA/lib \
+#     --with-nifti-incl=$MA/include --with-nifti-lib=$MA/lib \
+#     --with-tiff-includes=$MA/include --with-tiff-libraries=$MA/lib \
+#     --with-jpeg-includes=$MA/include --with-jpeg-libraries=$MA/lib \
+#     --with-png-includes=$MA/include --with-png-libraries=$MA/lib
 

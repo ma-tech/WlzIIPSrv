@@ -1,6 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([wlziipsrv], [1.1.8])
+AC_INIT([wlziipsrv], [1.1.9])
+
+AC_CANONICAL_TARGET
+
+AC_GNU_SOURCE
+
 AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT( `pwd` )
@@ -13,6 +18,7 @@ dnl yywrap to be used and yywrap doesn't support the command line options
 dnl needed.
 MYLEX=flex
 YACC=bison
+SIMD=''
 NIFTI_DIR="no"
 AC_PROG_CC
 AC_PROG_CPP
@@ -21,6 +27,38 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_CHECK_PROG(MYLEX,flex,flex,noflex)
 AC_CHECK_PROG(MYYACC,bison,bison,nobison)
+CFLAGS=''
+CXXFLAGS=''
+
+dnl Check CPU type
+echo "Checking target cpu/system type"
+case ${target_cpu} in
+  i386|i486|i586|i686)
+    CDEF_ARCH="-D__x86"
+    ;;
+  x86_64|amd64)
+    CDEF_ARCH="-D__x86"
+    ;;
+  ia64)
+    CDEF_ARCH="-D__x86"
+    ;;
+  alpha)
+    CDEF_ARCH="-D__alpha"
+    ;;
+  sparc|sparc64)
+    CDEF_ARCH="-D__sparc"
+    ;;
+  ppc|powerpc)
+    CDEF_ARCH="-D__ppc"
+    ;;
+  mips)
+    CDEF_ARCH="-D__mpis"
+    ;;
+  *)
+    echo "Warning: CPU type ${target_cpu} unknown."
+    ;;
+esac
+
 if test "$MYYACC" != "bison"
 then
   AC_MSG_ERROR("wlziipsrv requires the GNU bison to build");
@@ -250,6 +288,48 @@ AC_SUBST(LIBWLZ_LDFLAGS)
 AC_SUBST(LIBWLZ_LIBS)
 
 
+dnl     ************************************************************ 
+dnl	Set debug
+AC_ARG_ENABLE(debug,
+  [  --enable-debug       build with debugging flags set])
+AS_IF([test "x$enable_debug" = "xyes"], [
+    CFLAGS="${CFLAGS} -g -fPIC -DDEBUG"
+    LDFLAGS="${LDFLAGS} -g -DDEBUG"
+])
+
+
+dnl	************************************************************ 
+dnl 	Set defaults for optimisation
+AC_ARG_ENABLE(optimise,
+  [  --enable-optimise    build with optimisation flags set])
+AS_IF([test "x$enable_optimise" = "xyes"], [
+    # GNU CC
+    if test x"$CC" = x"gcc"
+    then
+      case ${target_cpu} in
+	i386|i486|i586|i686)
+	  CFLAGS="${CFLAGS} -fPIC -O2 -fomit-frame-pointer"
+	  ;;
+	x86_64|amd64)
+	  if test x"$SIMD" = "x"
+	  then
+	    SIMD="-msse3"
+	  fi
+	  CFLAGS="${CFLAGS} -fPIC -O3"
+	  ;;
+	*)
+	  CFLAGS="${CFLAGS} -fPIC -O2"
+	  ;;
+	esac
+      fi
+    ])
+
+dnl     ************************************************************ 
+dnl     Allow avx2 optimisation
+AC_ARG_ENABLE(avx2,
+  [AC_HELP_STRING([--enable-avx2],[enable AVX2 SIMD optimizations])],
+  SIMD='-mavx2')
+
 dnl	************************************************************ 
 dnl 	Check for openmp used
 
@@ -263,13 +343,11 @@ then
 	if test "$CC" = "gcc"
 	then
 	  CFLAGS="${CFLAGS} -fopenmp"
-	  CXXFLAGS="${CXXFLAGS} -fopenmp"
 	fi
 	# Intel CC
 	if test "$CC" = "icc"
 	then
 	  CFLAGS="${CFLAGS} -openmp"
-	  CXXFLAGS="${CXXFLAGS} -openmp"
 	fi
 
 fi
@@ -289,13 +367,11 @@ then
 	if test "$CC" = "gcc"
 	then
 	  CFLAGS="${CFLAGS} -flto"
-	  CXXFLAGS="${CXXFLAGS} -flto"
 	fi
 	# Intel CC
 	if test "$CC" = "icc"
 	then
 	  CFLAGS="${CFLAGS} -ipo"
-	  CXXFLAGS="${CXXFLAGS} -ipo"
 	fi
 
 fi
@@ -389,6 +465,11 @@ AC_C_INLINE
 SYSTEM=unix
 AC_SUBST([SYSTEM])
 
+AS_IF([ test "$CC" = "gcc" -a "x$enable_optimise" = "xyes" ],
+      CFLAGS="$CFLAGS $SIMD")
+
+CXXFLAGS="${CXXFLAGS} ${CFLAGS}"
+
 AC_PROG_CC_WARNINGS
 
 
@@ -406,9 +487,9 @@ The Woolz IIP server has been configured on ${host} with
   C compiler:                       ${CC}
   Linker:                           ${LD}
   Archiver:                         ${AR}
-  CFLAGS:                           ${CFLAGS}
-  CXXFLAGS:                         ${CXXFLAGS}
-  LDFLAGS:                          ${LDFLAGS}
+  CFLAGS:                          ${CFLAGS}
+  CXXFLAGS:                       ${CXXFLAGS}
+  LDFLAGS:                         ${LDFLAGS}
 
 To build:                          make
 ])
