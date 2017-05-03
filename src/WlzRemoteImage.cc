@@ -475,9 +475,13 @@ WlzRemoteImage::wlzRemoteReadObj(const char* filename, const char* serverInput, 
   
   WLZ_VTX_3_SET(offset, 0, 0, 0);
   
-  domObj = WlzMakeMain(ret->type, ret->domain, ret->values, NULL, NULL, &errNum);
+  domObj = WlzMakeMain(ret->type, ret->domain, ret->values, NULL, NULL,
+  		       &errNum);
   if(errNum == WLZ_ERR_NONE && NULL != domObj)
-    outObj = WlzMakeTiledValuesFromObj(domObj, tlSz, copy, gType, bgdV, &errNum);
+  {
+    outObj = WlzMakeTiledValuesFromObj(domObj, tlSz, copy, gType,
+                                       0, NULL, bgdV, &errNum);
+  }
   
   if(errNum == WLZ_ERR_NONE && NULL != outObj)
     WlzWriteObj(fP, outObj);

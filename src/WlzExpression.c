@@ -2044,7 +2044,7 @@ static WlzObject *WlzExpSetvalue(WlzObject *iObj, unsigned int val,
       bgdV.v.inv = 0;
       fgdV.v.inv = ival;
     }
-    tType = WlzGreyTableType(WLZ_GREY_TAB_RAGR, fgdV.type, &errNum);
+    tType = WlzGreyValueTableType(0, WLZ_GREY_TAB_RAGR, fgdV.type, &errNum);
     if(errNum == WLZ_ERR_NONE)
     {
       rObj = WlzNewObjectValues(iObj, tType, bgdV, 1, fgdV, &errNum);
