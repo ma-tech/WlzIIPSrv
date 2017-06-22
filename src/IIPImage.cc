@@ -125,7 +125,9 @@ void IIPImage::testImageType()
 	0 == strcmp(type.c_str(), "wlz"))
       isFile = true;
     else {
-      ifstream file( imagePath.c_str() );
+      std::string filename = fileSystemPrefix + imagePath;
+
+      ifstream file( filename.c_str() );
       
       if( file ){
 	isFile = true;
