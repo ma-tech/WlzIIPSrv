@@ -293,8 +293,8 @@ dnl	Set debug
 AC_ARG_ENABLE(debug,
   [  --enable-debug       build with debugging flags set])
 AS_IF([test "x$enable_debug" = "xyes"], [
-    CFLAGS="${CFLAGS} -g -fPIC -DDEBUG"
-    LDFLAGS="${LDFLAGS} -g -DDEBUG"
+    CFLAGS="${CFLAGS} -g -fPIC"
+    LDFLAGS="${LDFLAGS} -g"
 ])
 
 
