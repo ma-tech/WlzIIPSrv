@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([wlziipsrv], [1.1.9])
+AC_INIT([wlziipsrv], [1.1.])
 
 AC_CANONICAL_TARGET
 
