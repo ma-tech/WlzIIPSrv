@@ -47,7 +47,7 @@ static void
 png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
   png_uint_32 check;
-  png_destination_ptr dest=(png_destination_ptr)(png_ptr->io_ptr);
+  png_destination_ptr dest=(png_destination_ptr)png_get_io_ptr(png_ptr);
 
   if (dest-> size+length > dest->mx) {
     dest->mx+= (10240>length ? 10240 : length);
